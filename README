@@ -1,0 +1,50 @@
+Please read the COPYRIGHT information in the current directory carefully.
+
+
+CONTENT:
+./src:	UDT source codes
+./app:	Example applications
+./sim:	NS-2 module and simulation scripts
+./doc:	UDT documentation
+
+
+To make:
+	make -e os=XXX arch=YYY
+
+XXX: [LINUX(default), UNIX, BSD]
+YYY: [IA32(default), POWERPC, SPARC]
+
+For example, on OS X, you need to do:
+	make -e os=BSD arch=POWERPC
+
+
+To make UDT on some platforms other than those listed above:
+UDT has been tested on those platforms but not on any other. It may 
+or may NOT work on other systems. You can try to make it. If it 
+does not work, you can try to modify the source codes according to the 
+migration guide in the documentation.
+
+
+To use UDT in your application:
+Read index.htm in ./doc.
+
+
+To migrate UDT to other language or platforms:
+Read index.htm in ./doc.
+
+
+To report bugs, request new features, or make a contribution to the software:
+visit http://sourceforge.net/projects/dataspace/
+
+
+Join the discussion mailling list:
+http://lists.sourceforge.net/lists/listinfo/dataspace-sabul
+
+
+To query technical/research issues about the protocol:
+write to: Yunhong Gu [gu@lac.uic.edu]
+
+
+Thanks for using UDT. It is appreciated, but not obligated, that 
+you can share with us the performance results of your applications 
+using UDT and/or any improvement or modifications you make to it.

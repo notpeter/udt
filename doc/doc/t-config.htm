@@ -1,0 +1,154 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Tutorial: 
+    Configuration</i></font></td>
+  </tr>
+</table>
+<h1><font face="Verdana" size="4">Configuration</font></h1>
+<p><font face="Verdana" size="2">Options of UDT is read and set through
+<a href="opt.htm">getOpt</a> and <a href="opt.htm">setOpt</a> methods. The UDT 
+options can be classified as 3 categories: address, transfer mode, and buffer 
+size.</font></p>
+<p><font face="Verdana" size="2">Before modifying any option, bear in mind that 
+it is NOT a must to do modify default options. If the application has a sound performance with 
+default options, just leave them alone.</font></p>
+<p><font face="Verdana" size="2">Address setting is equivalent to set the same 
+parameters in <a href="open.htm">open</a> method. Port number is often fixed at 
+the udt side, so it is needed to be explicitly set (together with
+<a href="opt.htm">UDT_PCH</a> option, telling UDT that the port number cannot be 
+changed). IP address setting is 
+usually necessary for multi-homed host. If it is not set, UDT will use the first 
+one found by <u>getaddrinfo</u>.</font></p>
+<p><font face="Verdana" size="2">Setting transfer mode is usually a policy 
+issue. First of all, the application may want to choose IPv4 or IPv6, using the
+<a href="opt.htm">UDT_IPV</a> option. Applications may also need to configure sending and receiving 
+mode, for blocking or non-blocking, respectively. Unlike socket, the transfer 
+mode can be set separately for sending and receiving in UDT.</font></p>
+<p><font face="Verdana" size="2">The semantics of non-blocking sending is NOT 
+same as socket. Non-blocking sending of UDT always returns immediately without 
+waiting for the completeness of data sending.</font></p>
+<p><font face="Verdana" size="2">The <a href="opt.htm">UDT_MFLAG</a> option is 
+for the convenience of programmer. In the situation that the application uses 
+non-blocking sending, it is hard to trace when the buffer is successfully 
+received by the peer side and it is safe to release the memory. Set this flag 
+UDT will release it automatically after the data is sent. However, be careful 
+that sometimes the memory is not allowed to be released (e.g., a static array) 
+or the application does not want it to be released.</font></p>
+<p><font face="Verdana" size="2">Flow control is something like the TCP window 
+control. The <a href="opt.htm">UDT_FC</a> set up the maximum window size, or the 
+maximum number of unacknowledged packets. It is definitely NOT the larger, the 
+better. A sound value should be <i>bandwidth * <u>
+max</u>(RTT + <font color="#008000">0.01</font></i></font><i>) </i>or greater.&nbsp; 
+A smaller value will limit the performance.</p>
+<p>The UDT buffer is for temporally storing received data. So larger value is 
+better. But be sure that the buffer size should not be too large comparing to 
+the physical memory size.</p>
+<p>UDT uses UDP as data channel, so the UDP buffer size affects the performance. 
+Again, a larger value is generally better, but the effects becomes smaller and 
+disappears as the buffer size increases. Generally, sending buffer should be 
+less than receiving buffer.</p>
+<p style="margin-top: 0; margin-bottom: 0"><b><font face="Verdana" size="2">
+Example: read current UDT settings</font></b></p>
+<p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">int intval;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">bool boolval;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">int vallen;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">// read UDT configurations</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">// udt is a pointer to a UDT entity</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_PORT, &amp;intval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_PCH, &amp;boolval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_SNDSYN, &amp;boolval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_RCVSYN, &amp;boolval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_MFLAG, &amp;intval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_FC, &amp;intval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_SBUF, &amp;intval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_USB, &amp;intval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_URB, &amp;intval, vallen);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">udt-&gt;getOpt(UDT_IPV, &amp;intval, vallen);</font></td>
+  </tr>
+</table>
+<p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+<p style="margin-top: 0; margin-bottom: 0"><b><font face="Verdana" size="2">
+Example: modify UDT settings</font></b></p>
+<p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber3" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">int intval;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">bool boolval;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">int vallen;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    &nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">intval = 9000;<br>
+    udt-&gt;setOpt(UDT_PORT, &amp;intval, sizeof(int));<br>
+    boolval = false;<br>
+    udt-&gt;setOpt(UDT_PCH, &amp;boolval, sizeof(bool));<br>
+    <br>
+    boolval = false;<br>
+    udt-&gt;setOpt(UDT_SNDSYN, &amp;boolval, sizeof(bool));<br>
+    boolval = true;<br>
+    udt-&gt;setOpt(UDT_RCVSYN, &amp;boolval, sizeof(bool));<br>
+    intval = 1;<br>
+    udt-&gt;setOpt(UDT_MFLAG, &amp;intval, sizeof(int));<br>
+    <br>
+    intval = 25600;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">udt-&gt;setOpt(UDT_FC, &amp;intval, sizeof(int));<br>
+    <br>
+    intval = 40960000;<br>
+    udt-&gt;setOpt(UDT_BUF, &amp;intval, sizeof(int));<br>
+    <br>
+    intval = 256000;<br>
+    udt-&gt;setOpt(UDT_USB, &amp;intval, sizeof(int));<br>
+    udt-&gt;setOpt(UDT_URB, &amp;intval, sizeof(int));<br>
+    <br>
+    intval = 4;<br>
+    udt-&gt;setOpt(UDT_IPV, &amp;intval, sizeof(int));<br>
+    <br>
+    char* ip = &quot;206.220.241.13&quot;;<br>
+    udt-&gt;setOpt(UDT_ADDR, ip, 16);</font></p>
+    </td>
+  </tr>
+</table>
+<p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
+<br>
+&nbsp;</font></p>
+
+</body>
+
+</html>

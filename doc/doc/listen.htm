@@ -1,0 +1,65 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: CUDT 
+    Methods</i></font></td>
+  </tr>
+</table>
+<h1><font size="4" face="Verdana">listen</font></h1>
+<p><font face="Verdana" size="2">The <b>listen</b> method enables a server UDT 
+entity to wait for the peer side to connect to it.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">void listen(</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; const int&amp;
+    <font color="#FFFFFF"><i>timeo </i></font>= <font color="#008000">0</font></font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">);</font></td>
+  </tr>
+</table>
+<h4><font face="Verdana" size="2">Parameters</font></h4>
+<dl>
+  <dt><i><font face="Verdana" size="2">timeo</font></i></dt>
+  <dd><font face="Verdana" size="2">[in] The time (in microseconds) to wait 
+  before a successful connection.</font></dd>
+</dl>
+<h4><font face="Verdana" size="2">Return Values</font></h4>
+<p><font face="Verdana" size="2">NONE.</font></p>
+<h4><font face="Verdana" size="2">Exceptions</font></h4>
+<p><font face="Verdana" size="2">Exception will be threw out if no client tried 
+to connect before timer expires (if <i>timeo</i> is greater than 0).</font></p>
+<H4><font face="Verdana" size="2">Description</font></H4>
+<P><font face="Verdana" size="2">The <b>listen</b> method waits for the client 
+side to <a href="connect.htm">connect</a> to construct a UDT connection. If <i>
+timeo</i> is not greater than 0, the server can be blocked forever if there is 
+no client side <a href="connect.htm">connect</a> to it. Otherwise, it exit with 
+a connection failure exception if the timer expires.</font></P>
+<P><font face="Verdana" size="2">Once it receives a handshake packet from a 
+client, the two peer sides exchanges the information such as maximum flow window 
+size and MTU. All values are selected to be the smaller 
+one.</font></P>
+<P><font face="Verdana" size="2">The sending and receiving threads are started 
+after <b>listen</b>, and the UDT entity is ready for data transfer.</font></P>
+<p></p>
+<p></p>
+<H4><font face="Verdana" size="2">See Also</font></H4>
+<P><font face="Verdana" size="2"><b>
+<a href="open.htm">open</a>, <a href="connect.htm">connect</a></b></font></P>
+
+</body>
+
+</html>

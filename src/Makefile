@@ -1,0 +1,51 @@
+C++ = g++
+
+ifndef os
+   os = LINUX
+endif
+
+ifndef arch
+   arch = IA32
+endif
+
+#WARNING: Optimization option may decrease the performance!
+
+CCFLAGS = -fPIC -Wall -D$(os) -finline-functions
+
+ifeq ($(arch), IA32)
+   CCFLAGS += -mcpu=pentiumpro -march=pentiumpro -mmmx -msse -DIA32
+endif
+
+ifeq ($(arch), POWERPC)
+   CCFLAGS += -mcpu=powerpc
+endif
+
+ifeq ($(arch), SPARC)
+   CCFLAGS += -mcpu=sparc
+endif
+
+OBJS = common.o list.o buffer.o packet.o channel.o udt.o
+DIR = $(shell pwd)
+
+all: libudt.so libudt.a udt
+
+%.o: %.cpp
+	$(C++) $(CCFLAGS) $< -c
+
+libudt.so: $(OBJS)
+ifneq ($(os), BSD)
+	gcc -shared $^ -o $@
+endif
+	
+
+libudt.a: $(OBJS)
+	ar -rus $@ $^
+
+udt:
+	cp udt.h udt
+
+clean:
+	rm -f *.o *.so *.a udt
+
+install:
+	export LD_LIBRARY_PATH=$(DIR):$$LD_LIBRARY_PATH

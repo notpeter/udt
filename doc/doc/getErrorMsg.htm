@@ -1,0 +1,93 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: CUDTException 
+    Methods</i></font></td>
+  </tr>
+</table>
+<h1><font face="Verdana" size="4">getErrorMessage</font></h1>
+<p><font face="Verdana" size="2">The <b>getErrorMessage</b> method gives the 
+text description of the exception.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">char* getErrorMessage(<br>
+    );</font></p>
+    </td>
+  </tr>
+</table>
+<h4><font face="Verdana" size="2">Parameters</font></h4>
+<p><font face="Verdana" size="2">NONE.</font></p>
+<h4><font face="Verdana" size="2">Return Values</font></h4>
+<p><font face="Verdana" size="2">Text string describing the exception or error.</font></p>
+<h4><font face="Verdana" size="2">Exceptions</font></h4>
+<p><font face="Verdana" size="2">No exception will be caused.</font></p>
+<H4><font face="Verdana" size="2">Description</font></H4>
+<P><font face="Verdana" size="2">The <b>getErrorMessage</b> method is used to 
+provide simple description of the exception or error. To provide information to 
+the program, <a href="getErrorNo.htm">getErrorNo</a> should be used.</font></P>
+<p></p>
+<p></p>
+<H4><font face="Verdana" size="2">Examples</font></H4>
+<p>This example code shows how to detect exception and output the error 
+information:</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">CUDT udt;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    &nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">try</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">{</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; //do some UDT operations, 
+    e.g., udt.send(data, len);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">}</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">catch (CUDTException e)</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">{</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; cout &lt;&lt; &quot;error happens: &quot; &lt;&lt; 
+    e.getErrorMessage() &lt;&lt; endl;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; // process exceptions<br>
+    };</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">catch (...)</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">{</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; cout &lt;&lt; &quot;unknown error 
+    happens, program exit.&quot; &lt;&lt; endl;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; return;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">}</font></p>
+    </td>
+  </tr>
+</table>
+<H4><font face="Verdana" size="2">See Also</font></H4>
+<P>
+<font face="Verdana" size="2"><b>
+<a href="getErrorNo.htm">getErrorNo</a></b></font></P>
+
+</body>
+
+</html>

@@ -1,0 +1,153 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Tutorial: </i></font>
+    <i><font face="Verdana" size="2">Hello World!</font></i></td>
+  </tr>
+</table>
+<h1><font face="Verdana" size="4">Hello World!</font></h1>
+<p><font face="Verdana" size="2">In this section we will introduce the simplest 
+UDT program that can transfer data in high performance.</font></p>
+<p><font face="Verdana" size="2">This simple &quot;Hello World!&quot; example includes a 
+server program and a client program just like any socket programming tutorial. 
+Note that in UDT it does not matter which side starts first.</font></p>
+<p><b><font face="Verdana" size="2">UDT server example</font></b></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">#include &lt;iostream&gt;<br>
+    #include &lt;udt.h&gt;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">int main()</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">{</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;<font face="Courier New" size="1">&nbsp; 
+    CUDT* server = new CUDT;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; try<br>
+&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //bind to 
+    any free port number</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int 
+    serverport = server-&gt;open(7000);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    &nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; 
+    &quot;server is read at port: &quot; &lt;&lt; serverport &lt;&lt; endl;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    &nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //waiting 
+    for a client<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; server-&gt;listen();<br>
+&nbsp;&nbsp; }<br>
+&nbsp;&nbsp; catch(CUDTException e)<br>
+&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; &quot;error msg: &quot; &lt;&lt; e.getErrorMessage();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;<br>
+&nbsp;&nbsp; }</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; char data[1000000];</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; server-&gt;send(data, 1000000);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    &nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; while (server-&gt;getCurrSndBufSize() 
+    &gt; 0)</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; usleep(10);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; server-&gt;close();</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; return 1;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">}</font></td>
+  </tr>
+</table>
+<p><font face="Verdana" size="2">This simple server tries to bind itself at port 
+7000. This may succeed or not, and the real port number is returned by the
+<a href="open.htm">open</a> method. See <a href="open.htm">open</a> reference 
+for how to bind to a fixed port number. After connection (<a href="listen.htm">listen</a> 
+method is an unbound blocking call), the server sends out a 1000000 bytes block.
+</font></p>
+<p style="margin-top: 0; margin-bottom: 0"><b><font face="Verdana" size="2">UDT 
+client example</font></b></p>
+<p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">#include &lt;iostream&gt;<br>
+    #include &lt;udt.h&gt;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">int main()</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">{</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;<font face="Courier New" size="1">&nbsp; 
+    CUDT* client = new CUDT;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; try<br>
+&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //bind to 
+    any free port number</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+    client-&gt;open();</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; //connect 
+    to a server, <i>foo</i> is the server IP, <i>bar</i> is the server port 
+    number (may be 7000 or other)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; client-&gt;connect(<i>foo</i>, <i>bar</i>);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; }<br>
+&nbsp;&nbsp; catch(CUDTException e)<br>
+&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; &quot;error msg: &quot; &lt;&lt; e.getErrorMessage();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return 0;<br>
+&nbsp;&nbsp; }</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; char data[1000000];</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; client-&gt;recv(data, 1000000);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; client-&gt;close();</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; return 1;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">}</font></td>
+  </tr>
+</table>
+<p><font face="Verdana" size="2">The client does not care about the port number, 
+so the return value of <a href="open.htm">open</a> is not checked. It receives 
+1000000 bytes after a successful connection.</font></p>
+
+</body>
+
+</html>

@@ -1,0 +1,62 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: CUDT 
+    Methods</i></font></td>
+  </tr>
+</table>
+<h1 style="margin-bottom: 0"><font face="Verdana" size="4">setRate</font></h1>
+<p><font face="Verdana" size="2">The <b>setRate </b>method assigns the initial 
+sending rate for a server.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
+    void setRate(</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; const int&amp;
+    <font color="#FFFFFF">rate</font><br>
+    );</font></p>
+    </td>
+  </tr>
+</table>
+<h4><font face="Verdana" size="2">Parameters</font></h4>
+<dl>
+  <dt><font face="Verdana" size="2"><i>rate</i> </font></dt>
+  <dd><font face="Verdana" size="2">[in] The assigned sending rate, in bps (bits 
+  per second).</font></dd>
+</dl>
+<h4><font face="Verdana" size="2">Return Values</font></h4>
+<p><font face="Verdana" size="2">NONE.</font></p>
+<h4><font face="Verdana" size="2">Exceptions</font></h4>
+<p style="margin-bottom: 0"><font face="Verdana" size="2">A
+<a href="cudtexception.htm">CUDTException</a> exception can be threw out if the <i>rate</i> is not more than
+<font color="#008000">0</font>.</font></p>
+<H4><font face="Verdana" size="2">Description</font></H4>
+<P><font face="Verdana" size="2">The <b>setRate </b>method assigns an initial 
+sending rate of the server. However, this is not the final initial sending rate, 
+if the client side passes a lower value in the handshake packet. It is often a 
+better way to specify the initial sending rate at the client side with
+<a href="requestRate.htm">requestRate</a>.</font></P>
+<h4><font face="Verdana" size="2">Notes</font></h4>
+<P><font face="Verdana" size="2">Although the <b>setRate</b> method is designed 
+to set the initial sending rate, it actually can be called at any phase of the 
+application to modify the sending rate outside UDT.&nbsp; Because of this 
+feature, <b>setRate</b> method can be used to expand application rate control.</font></P>
+<H4><font face="Verdana" size="2">See Also</font></H4>
+<P><a href="send.htm"><b><font face="Verdana" size="2">requestRate</font></b></a></P>
+
+</body>
+
+</html>

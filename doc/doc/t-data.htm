@@ -1,0 +1,90 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Tutorial: 
+    Transfer Data</i></font></td>
+  </tr>
+</table>
+<h1><font face="Verdana" size="4">Transfer Data</font></h1>
+<p><font face="Verdana" size="2">After the UDT connection is built up, 
+transferring data is much easier than socket <u>send</u> or <u>recv</u>. In this 
+section we will introduce the blocking and non-blocking mode data transfer.</font></p>
+<h4><font face="Verdana" size="2">Blocking Sending</font></h4>
+<p><font face="Verdana" size="2">Blocking is the simplest mode, a UDT
+<a href="send.htm">send</a> call will be blocked until the buffer is 
+successfully received by the peer side. If multiple <a href="send.htm">send</a> 
+calls are used in multi-thread applications, all calls will be blocked and 
+released one by one as the buffers in the waiting queue are sent out. However, the 
+release order is NOT guaranteed by UDT, but depends on the thread mechanism on 
+specific operating systems.</font></p>
+<p><font face="Verdana" size="2">The default sending mode of UDT is 
+non-blocking for performance purpose (to eliminate the waiting time between two 
+buffer sending).</font></p>
+<h4><font face="Verdana" size="2">Blocking Receiving</font></h4>
+<p><font face="Verdana" size="2">Receiving is in blocking mode by default. The 
+situation is similar as block sending. Unlike socket, UDT <a href="recv.htm">
+recv</a> will not return until it receives exactly the same amount of data as it 
+requires.</font></p>
+<h4><font face="Verdana" size="2">Non-Blocking Sending</font></h4>
+<p><font face="Verdana" size="2">What a non-blocking sending call does is to put 
+the buffer into the sending queue and returns. Note that the semantics is not 
+the same as socket non-blocking call. It is simple but there are two issues 
+should be taken enough care of.</font></p>
+<p><font face="Verdana" size="2">The first is that the application need to care 
+about the sending queue size. Since it is unknown to the application if the 
+previous buffers have been sent out, a careless application may crash the host 
+by using up the physical memory. A better way is to check the sending buffer size 
+by <a href="getCurrSndBufSize.htm">getCurrSndBufSize</a> method before a 
+non-blocking <a href="send.htm">send</a> is called.</font></p>
+<p><font face="Verdana" size="2">The following example demonstrates the idea:</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">while (true)</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">{</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; // Produce data here...</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; ...</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; while (udt.getCurrSndBufSize() 
+    &gt; 100000000) //Using a large value here, but not too large for the system 
+    memory</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; usleep(10);</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; udt.send(data, len)</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">};</font></td>
+  </tr>
+</table>
+<p><font face="Verdana" size="2">If the application sends out raw data and does 
+not need them any more after they are sent, the <a href="opt.htm">UDT_MFLAG</a> 
+can be set to let the allocated memory released automatically by UDT.</font></p>
+<p><font face="Verdana" size="2">The second problem occurs after data sending. 
+When applications are to exit or close UDT connection, they should use <a href="getCurrSndBufSize.htm">getCurrSndBufSize</a> 
+to check if all the data in the buffer has been sent out.</font></p>
+<h4><font face="Verdana" size="2">Non-Blocking Receiving</font></h4>
+<p><font face="Verdana" size="2">Non-blocking receiving is much simpler than 
+sending. It checks the size of received data in UDT buffer. If there is enough 
+data to fulfill the buffer, the <a href="recv.htm">recv</a> call returns 
+successfully, otherwise it throws an exception with the buffer untouched.</font></p>
+<p><font face="Verdana" size="2">Non-blocking receiving is not encouraged to use because it has lower performance than blocking receiving, especially when 
+the buffer is large.</font></p>
+
+</body>
+
+</html>

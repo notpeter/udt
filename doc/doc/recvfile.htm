@@ -1,0 +1,73 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: CUDT 
+    Methods</i></font></td>
+  </tr>
+</table>
+<h1 style="margin-bottom: 0"><font face="Verdana" size="4">recvfile</font></h1>
+<p><font face="Verdana" size="2">The <b>recvfile </b>method receives data into a 
+file stream.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
+    void recvfile(<br>
+&nbsp;&nbsp; ofstream&amp; <font color="#FFFFFF">ofs</font>,</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; const long long&amp;
+    <font color="#FFFFFF">offset</font>,</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; const long long&amp;
+    <font color="#FFFFFF">size</font><br>
+    );</font></p>
+    </td>
+  </tr>
+</table>
+<h4><font face="Verdana" size="2">Parameters</font></h4>
+<dl>
+  <dt><font face="Verdana" size="2"><i>ofs</i> </font></dt>
+  <dd><font face="Verdana" size="2">[in] The output file stream into which the 
+  data will be written.</font></dd>
+  <dt>&nbsp;</dt>
+  <dt><i><font face="Verdana" size="2">offset</font></i><font face="Verdana" size="2"> </font></dt>
+  <dd><font face="Verdana" size="2">[in] The position from where data will be 
+  put in.</font></dd>
+</dl>
+<dl>
+  <dt><i><font face="Verdana" size="2">size</font></i><font face="Verdana" size="2"> </font></dt>
+  <dd><font face="Verdana" size="2">[in] The total length of data to be received. </font></dd>
+</dl>
+<h4><font face="Verdana" size="2">Return Values</font></h4>
+<p><font face="Verdana" size="2">NONE.</font></p>
+<h4><font face="Verdana" size="2">Exceptions</font></h4>
+<p style="margin-bottom: 0"><font face="Verdana" size="2">A
+<a href="cudtexception.htm">CUDTException</a> exception can be threw out if the UDT entity is not connected 
+or the connection has been broken, or any file stream exception arises for <i>
+ofs</i>.</font></p>
+<H4><font face="Verdana" size="2">Description</font></H4>
+<P><font face="Verdana" size="2">The <b>recvfile </b>method receives data into a 
+file stream no matter the data is sent by <a href="send.htm">send</a>,
+<a href="sendfile.htm">sendfile</a>, or in a mixed way.</font></P>
+<P><font face="Verdana" size="2"><b>recvfile</b> is always in blocking mode. The
+<a href="opt.htm">UDT_RCVSYN</a> option only affects <a href="recv.htm">recv</a>.</font></P>
+<P><font face="Verdana" size="2"><font color="#008000">Zero</font> or negative 
+value is allowed for <i>size</i>. In such situation, the method returns immediately.</font></P>
+<H4><font face="Verdana" size="2">See Also</font></H4>
+<P><font face="Verdana" size="2"><b>
+<a href="send.htm">send</a>, <a href="recv.htm">recv</a>, <a href="sendfile.htm">sendfile</a></b></font></P>
+
+</body>
+
+</html>

@@ -1,0 +1,81 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Tutorial: Error 
+    Handling</i></font></td>
+  </tr>
+</table>
+<h1><font face="Verdana" size="4">Error Handling</font></h1>
+<p><font face="Verdana" size="2">Checking return value is never the right way to 
+detect errors in UDT. Instead, the only error detection method is to catch 
+exceptions. The <a href="cudtexception.htm">CUDTException</a> class is used to 
+record and provide error information.</font></p>
+<p><font face="Verdana" size="2">To read the detail descriptions of the errors 
+or exceptions, <a href="getErrorMsg.htm">getErrorMessage</a> should be used. UDT 
+also records the system <u>errno</u> for application to processing the 
+exceptions.</font></p>
+<p><font face="Verdana" size="2">There are 6 major categories of exceptions, and 
+some minor categories in each major category. The major categories are:<br>
+1: network setup exception<br>
+2: network connection broken<br>
+3: memory exception<br>
+4: file exception<br>
+5: method not supported<br>
+6+: undefined error</font></p>
+<h4><font face="Verdana" size="2">Examples</font></h4>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
+    CUDT udt;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    &nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">try</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">{</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; // UDT_PCH has been set to 
+    false.</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">&nbsp;&nbsp; udt.open(21);&nbsp;&nbsp; 
+    //it is trying to open an illegal port</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">}</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">catch (CUDTException e)</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">{</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; // process error...</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; cout &lt;&lt; &quot;error message: &quot; &lt;&lt; 
+    e.getErrorMessage() &lt;&lt; endl;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">}</font></td>
+  </tr>
+</table>
+<p><font face="Verdana" size="2">In the example above, the output will be:</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <font face="Verdana" size="2">error message: Couldn't set up network 
+    connection: Permission denied.</font></td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+
+</body>
+
+</html>

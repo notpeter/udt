@@ -1,0 +1,293 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: CUDT 
+    Methods</i></font></td>
+  </tr>
+</table>
+<h1 style="margin-bottom: 0"><font face="Verdana" size="4">getOpt</font></h1>
+<h1 style="margin-top: 0"><font face="Verdana" size="4">setOpt</font></h1>
+<p><font face="Verdana" size="2">The <b>getOpt </b>and<b> setOpt</b> methods 
+read or set up UDT options respectively.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
+    void getOpt(<br>
+&nbsp;&nbsp; UDTOpt <font color="#FFFFFF">optName</font>,</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; const void*
+    <font color="#FFFFFF">optval</font>, </font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; const int&amp;
+    <font color="#FFFFFF">optlen</font>);<br>
+    );</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+    <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
+    void setOpt(<br>
+&nbsp;&nbsp; UDTOpt <font color="#FFFFFF">optName</font>,</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; void* <font color="#FFFFFF">
+    optval</font>, </font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; int&amp; <font color="#FFFFFF">
+    optlen</font>);<br>
+    );</font></td>
+  </tr>
+</table>
+<h4><font face="Verdana" size="2">Parameters</font></h4>
+<dl>
+  <dt><i><font face="Verdana" size="2">optName</font></i><font face="Verdana" size="2"> </font></dt>
+  <dd><font face="Verdana" size="2">[in] The <font color="#008000">enum</font> 
+  name of UDT option. The name and meaning are listed in the table below:</font></dd>
+  <dt>&nbsp;</dt>
+  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="AutoNumber3" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
+    <tr>
+      <th align="center" bgcolor="#C0C0C0" width="133"><b>
+      <font face="Verdana" size="2">Name</font></b></th>
+      <th align="center" bgcolor="#C0C0C0" width="323"><b>
+      <font face="Verdana" size="2">Meaning</font></b></th>
+      <th align="center" bgcolor="#C0C0C0" width="812"><b>
+      <font face="Verdana" size="2">Comment</font></b></th>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font size="1" face="Verdana">
+      UDT_ADDR</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Local IP address</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      string of IPv4 or IPv6 address, e.g., &quot;127.0.0.1&quot;, or &quot;::1&quot;.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_PORT</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Local port number</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font size="1" face="Verdana">
+      Default value is <font color="#008000">0</font> (i.e., choose any 
+      available port).</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_PCH</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      If the given port number changeable</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      <font color="#008000">true</font>: Yes; <font color="#008000">false</font>: 
+      No. Default value is <font color="#008000">false</font>.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_MTU</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      MTU (Maximum Transfer Unit)</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Default value is <font color="#008000">1500</font> bytes. </font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_SNDSYN</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Blocking mode of the data sending</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      <font color="#008000">true</font>: blocking sending; <font color="#008000">
+      false</font>: non-blocking sending. Default value is <font color="#008000">
+      false</font>.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_RCVSYN</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Blocking mode of the data receiving&nbsp; </font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      <font color="#008000">true</font>: blocking receiving;
+      <font color="#008000">false</font>: non-blocking receiving. Default value 
+      is <font color="#008000">true</font>.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_MFLAG</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      How to deal with the buffer after it is sent</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      <font color="#008000">0</font>: return to application;
+      <font color="#008000">1</font>: automatically free it by UDT. Default 
+      value is <font color="#008000">1</font>.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_RC</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Rate control algorithm option</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      NOT supported in current version.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_FC</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Maximum flow window size</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Default value is <font color="#008000">25600</font>.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_BUF</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT buffer size</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Default value is <font color="#008000">40960000</font> bytes.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_USB</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDP sending buffer size</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Default value is <font color="#008000">65536</font> bytes.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_URB</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDP receiving buffer size</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      Default value is <font color="#008000">4194304</font> bytes.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      UDT_IPV</font></td>
+      <td width="323">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      IP version</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+      <font color="#008000">4</font>: IPv4; <font color="#008000">6</font>: 
+      IPv6. Default value is <font color="#008000">4</font>.</font></td>
+    </tr>
+    </table>
+  <dt>&nbsp;</dt>
+  <dt><font face="Verdana" size="2"><i>optval</i> </font></dt>
+  <dd><font face="Verdana" size="2">[in] The pointer to the value of UDT option 
+  of <i>optName</i>. </font></dd>
+</dl>
+<dl>
+  <dt><font face="Verdana" size="2"><i>optlen</i> </font></dt>
+  <dd><font face="Verdana" size="2">[in (setOpt), out (getOpt)] The length of 
+  the <i>optval</i>. </font></dd>
+</dl>
+<h4><font face="Verdana" size="2">Return Values</font></h4>
+<p><font face="Verdana" size="2">NONE.</font></p>
+<p style="margin-bottom: 0"><font face="Verdana" size="2">A
+<a href="cudtexception.htm">CUDTException</a> exception can be threw out if one of the following situation 
+satisfied:</font></p>
+<p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2">&nbsp;&nbsp;&nbsp; 
+1. <b>setOpt</b> is called after the UDT has been connected.</font></p>
+<p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2">&nbsp;&nbsp;&nbsp; 
+2. <i>optval</i> is not a meaningful value for the given optName.</font></p>
+<p style="margin-top: 0"><font face="Verdana" size="2">&nbsp;&nbsp;&nbsp; 3. The
+<i>optName</i> is not supported in the current version.</font></p>
+<H4><font face="Verdana" size="2">Description</font></H4>
+<P><font face="Verdana" size="2">The <b>setOpt</b> method set the UDT option <i>
+optName</i> with the value of <i>optval</i>. The parameter of <i>optlen</i> is 
+only useful for <a href="opt.htm">UDT_ADDR</a> or <a href="opt.htm">UDT_MCADDR</a>. 
+It MUST be called before <a href="listen.htm">listen</a> or
+<a href="connect.htm">connect</a> methods, since the option value will be used 
+to initialize the data structures in these two methods.</font></P>
+<P><font face="Verdana" size="2">The <b>getOpt</b> method read the current 
+option value. The value is written into the buffer pointed by <i>optval</i>, and 
+the length is returned in <i>optlen</i>. The returned value may be meaningless if 
+the method is called before <a href="open.htm">open</a> or <a href="opt.htm">
+setOpt</a>. For example, the <a href="opt.htm">UDT_PORT</a> value is 0 at that time.</font></P>
+<p><font face="Verdana" size="2"><a href="opt.htm">UDT_FC</a> is generally set as <i>bandwidth * <u>
+max</u>(RTT, <font color="#008000">0.01</font></i></font><i>)</i> or  greater. </p>
+<p><font face="Verdana" size="2">Setting <a href="opt.htm">UDT_PORT</a> or
+<a href="opt.htm">UDT_ADDR</a> is equivalent to call <a href="open.htm">open</a> 
+with the same parameters.</font></p>
+<H4><font face="Verdana" size="2">Examples</font></H4>
+<P>
+<P><font face="Verdana" size="2">To set data sending in non-blocking mode, the 
+codes can be like:</font></P>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">CUDT udt;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">bool block = false;</font></p>
+    <p><font face="Courier New" size="1">udt.setOpt(UDT_SNDSYN, &amp;block, 
+    sizeof(bool));</font></td>
+  </tr>
+</table>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p><font face="Verdana" size="2">To explicitly assign an IPv4 address, </font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">CUDT udt;</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">char* addr = &quot;192.168.0.1&quot;;</font></p>
+    <p><font face="Courier New" size="1">udt.setOpt(UDT_ADDR, addr, 
+    strlen(addr));</font></td>
+  </tr>
+</table>
+<H4><font face="Verdana" size="2">See Also</font></H4>
+<P><font face="Verdana" size="2"><b>
+<a href="listen.htm">listen</a>, <a href="connect.htm">connect</a>,</b> <b>
+<a href="open.htm">open</a></b></font></P>
+
+</body>
+
+</html>

@@ -1,0 +1,80 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: CUDT 
+    Methods</i></font></td>
+  </tr>
+</table>
+<h1><font size="4" face="Verdana">connect</font></h1>
+<p><font face="Verdana" size="2">The <b>connect</b> method connects to a server 
+UDT entity and constructs a UDT connection.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">void connect(<br>
+&nbsp;&nbsp; const char* <font color="#FFFFFF"><i>ip</i></font>,</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; const int&amp;
+    <font color="#FFFFFF"><i>port,</i></font></font><p style="margin-top: 0; margin-bottom: 0">
+    <i><font face="Courier New" size="1" color="#FFFFFF">&nbsp;&nbsp; </font>
+    </i><font face="Courier New" size="1">const int&amp;</font><font face="Courier New" size="1" color="#FFFFFF"><i> 
+    timeo </i></font><font face="Courier New" size="1">= <font color="#008000">0</font><br>
+    );</font></td>
+  </tr>
+</table>
+<h4><font face="Verdana" size="2">Parameters</font></h4>
+<dl>
+  <dt><font face="Verdana" size="2"><i>ip</i> </font></dt>
+  <dd><font face="Verdana" size="2">[in] The server IP address or domain name.</font></dd>
+  <dt>&nbsp;</dt>
+  <dt><font face="Verdana" size="2"><i>port</i> </font></dt>
+  <dd><font face="Verdana" size="2">[in] The port number that the is listening.</font></dd>
+  <dt>&nbsp;</dt>
+  <dt><i><font face="Verdana" size="2">timeo</font></i></dt>
+  <dd><font face="Verdana" size="2">[in] The time (in microseconds) to wait 
+  before a successful connection.&nbsp; </font></dd>
+</dl>
+<h4><font face="Verdana" size="2">Return Values</font></h4>
+<p><font face="Verdana" size="2">NONE.</font></p>
+<h4><font face="Verdana" size="2">Exceptions</font></h4>
+<p><font face="Verdana" size="2">Exception will be threw out if no server is 
+ready to be connected at the given <i>ip</i> and <i>port</i> address before timer expires (if <i>timeo</i> is greater than 0).</font></p>
+<H4><font face="Verdana" size="2">Description</font></H4>
+<P><font face="Verdana" size="2">The 
+<A><b>connect</b></A> method tries to connect to the UDT server at <i>ip</i>:<i>port</i>, 
+even there is no such a server. A UDT server is NOT necessarily to be started 
+earlier than the client side. The <b>connect</b> method keeps querying the UDP
+<i>port</i> at <i>ip</i> until it receives a handshake packet from the server, 
+which has called <a href="listen.htm">listen</a> at that time.</font></P>
+<P><font face="Verdana" size="2">The client side sends handshake packets to the 
+server with its own initial maximum flow window size and MTU. 
+Once it receives feedback from the server, these values are updated with the 
+values in the returned handshake packet.</font></P>
+<P><font face="Verdana" size="2">The sending and receiving threads are started 
+after <b>connect</b>, and the UDT entity is ready for data transfer.</font></P>
+<P><font face="Verdana" size="2">If the <i>timeo</i> is not greater than
+<font color="#008000">0</font>,&nbsp; the method will be indefinitely blocked 
+until the connection is successfully brought up. Otherwise, it will exit with an 
+exception if connection is not built before timer expires.</font></P>
+<p></p>
+<p></p>
+<H4><font face="Verdana" size="2">See Also</font></H4>
+<P>
+<b><font face="Verdana" size="2"><a href="open.htm">open</a></font></b><font face="Verdana" size="2"><b>,
+<a href="listen.htm">listen</a></b></font></P>
+
+</body>
+
+</html>
