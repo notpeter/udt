@@ -7,10 +7,12 @@
 
 int main(int argc, char* argv[])
 {
-   #ifndef BSD
-      if ((argc != 5) || (0 == atoi(argv[2])) || (0 == atoll(argv[4])))
-   #else
+   #ifdef BSD
       if ((argc != 5) || (0 == atoi(argv[2])) || (0 == strtoll(argv[4], NULL, 10)))
+   #elif WIN32
+      if ((argc != 5) || (0 == atoi(argv[2])) || (0 == _atoi64(argv[4])))
+   #else
+      if ((argc != 5) || (0 == atoi(argv[2])) || (0 == atoll(argv[4])))
    #endif
    {
       cout << "usage: recvfile server_ip server_port filename filesize" << endl;
@@ -30,14 +32,20 @@ int main(int argc, char* argv[])
       return 0;
    }
 
+   #ifdef TRACE
+      recver->trace();
+   #endif
+
    ofstream ofs(argv[3]);
 
    try
    {
-      #ifndef BSD
-         recver->recvfile(ofs, 0, atoll(argv[4]));
-      #else
+      #ifdef BSD
          recver->recvfile(ofs, 0, strtoll(argv[4], NULL, 10));
+      #elif WIN32
+         recver->recvfile(ofs, 0, _atoi64(argv[4]));
+      #else
+         recver->recvfile(ofs, 0, atoll(argv[4]));
       #endif
    }
    catch(CUDTException e)

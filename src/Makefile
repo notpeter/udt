@@ -10,10 +10,10 @@ endif
 
 #WARNING: Optimization option may decrease the performance!
 
-CCFLAGS = -fPIC -Wall -D$(os) -finline-functions
+CCFLAGS = -fPIC -Wall -D$(os) -finline-functions #-DTRACE
 
 ifeq ($(arch), IA32)
-   CCFLAGS += -mcpu=pentiumpro -march=pentiumpro -mmmx -msse -DIA32
+   CCFLAGS += -DIA32 #-mcpu=pentiumpro -march=pentiumpro -mmmx -msse
 endif
 
 ifeq ($(arch), POWERPC)
@@ -22,6 +22,10 @@ endif
 
 ifeq ($(arch), SPARC)
    CCFLAGS += -mcpu=sparc
+endif
+
+ifeq ($(arch), IA64)
+   CCFLAGS += -DIA64
 endif
 
 OBJS = common.o list.o buffer.o packet.o channel.o udt.o

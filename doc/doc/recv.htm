@@ -17,13 +17,13 @@
   </tr>
 </table>
 <h1 style="margin-bottom: 0"><font face="Verdana" size="4">recv</font></h1>
-<p><font face="Verdana" size="2">The <b>recv </b>method receives some size of 
+<p><font face="Verdana" size="2">The <b>recv </b>method receives certain size of 
 data into a local memory buffer.</font></p>
 <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
-    void recv(<br>
+    int recv(<br>
 &nbsp;&nbsp; char* <font color="#FFFFFF">data</font>,</font></p>
     <p style="margin-top: 0; margin-bottom: 0">
     <font face="Courier New" size="1">&nbsp;&nbsp; const int&amp;
@@ -43,7 +43,7 @@ data into a local memory buffer.</font></p>
   <dd><font face="Verdana" size="2">[in] The length of data to be received. </font></dd>
 </dl>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">NONE.</font></p>
+<p><font face="Verdana" size="2">Actual size of data received.</font></p>
 <h4><font face="Verdana" size="2">Exceptions</font></h4>
 <p style="margin-bottom: 0"><font face="Verdana" size="2">A
 <a href="cudtexception.htm">CUDTException</a> exception can be threw out if the UDT entity is not connected 
@@ -53,7 +53,7 @@ but there is not enough data in the UDT buffer.</font></p>
 <P><font face="Verdana" size="2">The <b>recv </b>method returns immediately if 
 the <a href="opt.htm">UDT_RCVSYN</a> is set to <font color="#008000">true</font>. 
 In such a case, an exception may arise if there is not enough data to be written 
-into the buffer. Meanwhile, the content of the buffer is modified. </font></P>
+into the buffer. Meanwhile, the content of the buffer is not modified. </font></P>
 <P><font face="Verdana" size="2">In blocking mode, the <b>recv</b> method waits 
 until the buffer is fulfilled.</font></P>
 <P><font face="Verdana" size="2"><font color="#008000">Zero</font> or negative 

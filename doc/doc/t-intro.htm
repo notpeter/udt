@@ -17,21 +17,21 @@
   </tr>
 </table>
 <h1><font face="Verdana" size="4">Introduction to programming with UDT</font></h1>
-<p><font face="Verdana" size="2">UDT is a C++ library. The  two classes 
+<p><font face="Verdana" size="2">UDT is a C++ library. The two classes 
 exposed to application programmers are <a href="cudt.htm">CUDT</a> and
 <a href="cudtexception.htm">CUDTException</a>. </font></p>
 <p><font face="Verdana" size="2">Using UDT is even simpler than socket 
-programming. Like socket, UDT needs first to bind to a port and/or IP address 
-(using <a href="open.htm">open</a> method), and then <a href="listen.htm">listen</a> 
-to a client (as a server) or <a href="connect.htm">connect</a> to a server (as a 
+programming. Like sockets, UDT needs first to bind to a port and/or IP address 
+(using the <a href="open.htm">open</a> method), and then <a href="listen.htm">listen</a>s 
+to a client (as a server) or <a href="connect.htm">connect</a>s to a server (as a 
 client) to construct the connection. The only difference is that the UDT
 <a href="listen.htm">listen</a> can only accept one connection, not like TCP <u>
 listen</u>, which can <u>accept</u> multiple client requests. </font></p>
-<p><font face="Verdana" size="2">The parameters, or options, can be tuned by 
-application to gain higher performance or any special purpose. The
-<a href="opt.htm">getOpt</a> and <a href="opt.htm">setOpt</a> methods of UDT is 
-just like <u>getsockopt</u> and <u>setsockopt</u> functions of socket.</font></p>
-<p><font face="Verdana" size="2">Data and file can be transfer in either 
+<p><font face="Verdana" size="2">The parameters, or options, can be tuned by the 
+application to gain higher performance or for other special purposes. The
+<a href="opt.htm">getOpt</a> and <a href="opt.htm">setOpt</a> methods of UDT are 
+just like the <u>getsockopt</u> and <u>setsockopt</u> functions of socket.</font></p>
+<p><font face="Verdana" size="2">Data and files can be transfered in either 
 direction after a successful connection.</font></p>
 <p><font face="Verdana" size="2">UDT methods are thread safe.</font></p>
 <p><font face="Verdana" size="2">Any applications with UDT should use the 

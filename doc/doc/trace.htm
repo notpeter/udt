@@ -1,0 +1,118 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: CUDT 
+    Methods</i></font></td>
+  </tr>
+</table>
+<h1 style="margin-bottom: 0"><span lang="zh-cn"><font face="Verdana" size="4">
+trace</font></span></h1>
+<p><font face="Verdana" size="2">The <b><span lang="zh-cn">trace</span> </b>method 
+<span lang="zh-cn">prints the internal protocol parameters and performance trace 
+to the screen or a file</span>.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
+    void <span lang="zh-cn">trace</span>(<br>
+&nbsp;&nbsp; <span lang="zh-cn">const int&amp;</span> <span lang="zh-cn"> <font color="#FFFFFF">
+    interval </font>= 1000000</span>,</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; const <span lang="zh-cn">
+    char*</span> <span lang="zh-cn"><font color="#FFFFFF">tracefile </font>= 
+    NULL</span><br>
+    );</font></p>
+    </td>
+  </tr>
+</table>
+<h4><font face="Verdana" size="2">Parameters</font></h4>
+<dl>
+  <dt><font face="Verdana" size="2"><span lang="zh-cn"><i>interval</i></span> </font></dt>
+  <dd><font face="Verdana" size="2">[in] <span lang="zh-cn">The trace sample 
+  interval, in microseconds</span>.</font></dd>
+</dl>
+<dl>
+  <dt><span lang="zh-cn"><i><font face="Verdana" size="2">tracefile</font></i></span></dt>
+  <dd><font face="Verdana" size="2">[in] <span lang="zh-cn">the name of the 
+  trace file, default is NULL, which means output will be print to screen</span>. </font></dd>
+</dl>
+<h4><font face="Verdana" size="2">Return Values</font></h4>
+<p><font face="Verdana" size="2">NONE.</font></p>
+<h4><font face="Verdana" size="2">Exceptions</font></h4>
+<p style="margin-bottom: 0"><span lang="zh-cn"><font face="Verdana" size="2">
+NONE</font></span><font face="Verdana" size="2">.</font></p>
+<H4><font face="Verdana" size="2">Description</font></H4>
+<p><font face="Verdana" size="2">The <span lang="zh-cn"><b>trace</b> method is 
+to help performance testing and trouble shooting. This method is not enabled 
+unless the &quot;-DTRACE&quot; option is set at compile time.</span></font></p>
+<p><span lang="zh-cn"><font face="Verdana" size="2">The trace format is as 
+follows:</font></span></p>
+  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="AutoNumber3" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
+    <tr>
+      <th bgcolor="#C0C0C0" width="81"><span lang="zh-cn">
+      <font face="Verdana" size="2">Sending Speed</font></span></th>
+      <th bgcolor="#C0C0C0" width="81"><span lang="zh-cn">
+      <font face="Verdana" size="2">Receiving Speed</font></span></th>
+      <th bgcolor="#C0C0C0" width="81"><span lang="zh-cn">
+      <font face="Verdana" size="2">Flow Window Size</font></span></th>
+      <th bgcolor="#C0C0C0" width="82"><span lang="zh-cn">
+      <font face="Verdana" size="2">Inter-Packet Time</font></span></th>
+      <th bgcolor="#C0C0C0" width="82"><span lang="zh-cn">
+      <font face="Verdana" size="2">RTT</font></span></th>
+      <th bgcolor="#C0C0C0" width="82"><span lang="zh-cn">
+      <font face="Verdana" size="2">Sent ACK</font></span></th>
+      <th bgcolor="#C0C0C0" width="82"><span lang="zh-cn">
+      <font face="Verdana" size="2">Received ACK</font></span></th>
+      <th bgcolor="#C0C0C0" width="82"><span lang="zh-cn">
+      <font face="Verdana" size="2">Sent NAK</font></span></th>
+      <th bgcolor="#C0C0C0" width="82"><span lang="zh-cn">
+      <font face="Verdana" size="2">Receved NAK</font></span></th>
+      <th bgcolor="#C0C0C0" width="82"><span lang="zh-cn">
+      <font face="Verdana" size="2">Loss Rate</font></span></th>
+    </tr>
+    <tr>
+      <td width="81" align="center">
+      <span lang="zh-cn"><font face="Verdana" size="1">Mbps</font></span></td>
+      <td width="81" align="center">
+      <span lang="zh-cn"><font face="Verdana" size="1">Mbps</font></span></td>
+      <td width="81" align="center">
+      &nbsp;</td>
+      <td width="82" align="center">
+      <span lang="zh-cn"><font face="Verdana" size="1">us</font></span></td>
+      <td width="82" align="center">
+      <span lang="zh-cn"><font face="Verdana" size="1">ms</font></span></td>
+      <td width="82" align="center">
+      &nbsp;</td>
+      <td width="82" align="center">
+      &nbsp;</td>
+      <td width="82" align="center">
+      &nbsp;</td>
+      <td width="82" align="center">
+      &nbsp;</td>
+      <td width="82" align="center">
+      <span lang="zh-cn"><font face="Verdana" size="1">%</font></span></td>
+    </tr>
+  </table>
+<p><font face="Verdana" size="2">The <span lang="zh-cn"><b>trace</b> method 
+simply enables the trace output and will returns immediately. If this method is 
+called more than once in one UDT session, only the first call works and all the 
+followings are omitted</span></font><font face="Verdana" size="2">. The sample interval 
+should be able to be divided by 0.01 seconds, or 10000 microseconds, otherwise 
+it is rounded to the smallest value that can be divided by 0.01 but is greater 
+than the input value. Meanwhile, any value that is less than 0.1 seconds, or 
+100000 microseconds will not produce any trace.</font></p>
+
+</body>
+
+</html>

@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2003, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT)
@@ -51,18 +51,21 @@ UDT packet definition: packet.h
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 09/16/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/09/2004
 *****************************************************************************/
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <stdio.h>
+#ifndef WIN32
+   #include <netdb.h>
+   #include <arpa/inet.h>
+   #include <unistd.h>
+   #include <fcntl.h>
+   #include <string.h>
+   #include <stdio.h>
+   #include <errno.h>
+#else
+   #include <winsock2.h>
+   #include <ws2tcpip.h>
+#endif
 
 #include "udt.h"
 
@@ -70,6 +73,14 @@ written by
 // For BSD compatability
 #ifdef BSD
    #define socklen_t int
+#elif WIN32
+   #define socklen_t int
+#endif
+
+#ifndef WIN32
+   #define NET_ERROR errno
+#else
+   #define NET_ERROR WSAGetLastError()
 #endif
 
 
@@ -77,10 +88,21 @@ CChannel::CChannel():
 m_iSndBufSize(102400),
 m_iRcvBufSize(307200)
 {
+   #ifdef WIN32
+      WORD wVersionRequested;
+      WSADATA wsaData;
+      wVersionRequested = MAKEWORD(2, 2);
+
+      if (0 != WSAStartup(wVersionRequested, &wsaData))
+         throw CUDTException(1, 0, NET_ERROR);
+   #endif
 }
 
 CChannel::~CChannel()
 {
+   #ifdef WIN32
+      WSACleanup();
+   #endif
 }
 
 void CChannel::open(__int32& port, const bool& ch, const char* ip)
@@ -89,14 +111,23 @@ void CChannel::open(__int32& port, const bool& ch, const char* ip)
    m_iSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
    if (m_iSocket < 0)
-      throw CUDTException(1, 0, errno);
+      throw CUDTException(1, 0, NET_ERROR);
 
    // IPv4 address
    sockaddr_in addr4;
    addr4.sin_family = AF_INET;
    addr4.sin_port = htons(port);
    if (NULL != ip)
-      inet_pton(AF_INET, ip, &(addr4.sin_addr));
+   {
+      #ifndef WIN32
+         inet_pton(AF_INET, ip, &(addr4.sin_addr));
+      #else
+         addrinfo hint, *addr;
+         getaddrinfo(ip, NULL, &hint, &addr);
+         addr4.sin_addr.s_addr = ((sockaddr_in*)addr->ai_addr)->sin_addr.s_addr;
+         freeaddrinfo(addr);
+      #endif
+   }
    else
       addr4.sin_addr.s_addr = INADDR_ANY;
    memset(&(addr4.sin_zero), '\0', 8);
@@ -104,12 +135,12 @@ void CChannel::open(__int32& port, const bool& ch, const char* ip)
    if (0 != bind(m_iSocket, (sockaddr *)&addr4, sizeof(addr4)))
    {
       if (!ch)
-         throw CUDTException(1, 1, errno);
+         throw CUDTException(1, 1, NET_ERROR);
 
       // searching any free port number
       addr4.sin_port = 0;
       if (-1 == bind(m_iSocket, (sockaddr *)&addr4, sizeof(addr4)))
-         throw CUDTException(1, 1, errno);
+         throw CUDTException(1, 1, NET_ERROR);
    }
 
    // Read the actual port number
@@ -134,7 +165,7 @@ void CChannel::open6(__int32& port, const bool& ch, const char* ip)
    m_iSocket = socket(AF_INET6, SOCK_DGRAM, 0);
 
    if (m_iSocket < 0)
-      throw CUDTException(1, 0, errno);
+      throw CUDTException(1, 0, NET_ERROR);
 
    // IPv6 address
    sockaddr_in6 addr6;
@@ -142,19 +173,28 @@ void CChannel::open6(__int32& port, const bool& ch, const char* ip)
    addr6.sin6_family = AF_INET6;
    addr6.sin6_port = htons(port);
    if (NULL != ip)
-      inet_pton(AF_INET6, ip, &(addr6.sin6_addr));
+   {
+      #ifndef WIN32
+         inet_pton(AF_INET6, ip, &(addr6.sin6_addr));
+      #else
+         addrinfo hint, *addr;
+         getaddrinfo(ip, NULL, &hint, &addr);
+         addr6.sin6_addr = ((sockaddr_in6*)addr->ai_addr)->sin6_addr;
+         freeaddrinfo(addr);
+      #endif
+   }
    else
       addr6.sin6_addr = in6addr_any;
 
    if (0 != bind(m_iSocket, (sockaddr *)&addr6, sizeof(addr6)))
    {
       if (!ch)
-         throw CUDTException(1, 1, errno);
+         throw CUDTException(1, 1, NET_ERROR);
 
       // searching any free port
       addr6.sin6_port = 0;
       if (-1 == bind(m_iSocket, (sockaddr *)&addr6, sizeof(addr6)))
-         throw CUDTException(1, 1, errno);
+         throw CUDTException(1, 1, NET_ERROR);
    }
 
    // read the actual port number
@@ -175,7 +215,11 @@ void CChannel::open6(__int32& port, const bool& ch, const char* ip)
 
 void CChannel::disconnect() const
 {
-   close(m_iSocket);
+   #ifndef WIN32
+      close(m_iSocket);
+   #else
+      closesocket(m_iSocket);
+   #endif
 }
 
 void CChannel::connect(const char* ip, const __int32& port)
@@ -193,13 +237,13 @@ void CChannel::connect(const char* ip, const __int32& port)
 
    //looking for IPv4 address
    if (getaddrinfo(ip, portstr, &hints, &addr4) < 0)
-      throw CUDTException(1, 3, errno);
+      throw CUDTException(1, 3, NET_ERROR);
 
    // try to connect each possible address
    pt = addr4;
    while (NULL != pt)
    {
-      if (0 == ::connect(m_iSocket, pt->ai_addr, pt->ai_addrlen))
+      if (0 == ::connect(m_iSocket, pt->ai_addr, int(pt->ai_addrlen)))
          break;
 
       pt = pt->ai_next;
@@ -209,7 +253,7 @@ void CChannel::connect(const char* ip, const __int32& port)
 
    // failed.
    if (NULL == pt)
-      throw CUDTException(1, 4, errno);
+      throw CUDTException(1, 4, NET_ERROR);
 }
 
 void CChannel::connect6(const char* ip, const __int32& port)
@@ -227,13 +271,13 @@ void CChannel::connect6(const char* ip, const __int32& port)
 
    //query IPv6 address
    if (getaddrinfo(ip, portstr, &hints, &addr6) < 0)
-      throw CUDTException(1, 3, errno);
+      throw CUDTException(1, 3, NET_ERROR);
 
    //try to connect each possible address
    pt = addr6;
    while (NULL != pt)
    {
-      if (0 == ::connect(m_iSocket, pt->ai_addr, pt->ai_addrlen))
+      if (0 == ::connect(m_iSocket, pt->ai_addr, int(pt->ai_addrlen)))
          break;
 
       pt = pt->ai_next;
@@ -244,7 +288,13 @@ void CChannel::connect6(const char* ip, const __int32& port)
 
    //failed. raise exception.
    if (NULL == pt)
-      throw CUDTException(1, 4, errno);
+      throw CUDTException(1, 4, NET_ERROR);
+}
+
+void CChannel::connect(const sockaddr* addr)
+{
+   if (0 != ::connect(m_iSocket, addr, sizeof(sockaddr)))
+      throw CUDTException(1, 4, NET_ERROR);
 }
 
 __int32 CChannel::send(char* buffer, const __int32& size) const
@@ -315,11 +365,24 @@ const CChannel& CChannel::operator>>(CPacket& packet) const
    return *this;
 }
 
+__int32 CChannel::recvfrom(CPacket& packet, sockaddr* addr) const
+{
+   char* buf = new char [packet.getPacketVector()[0].iov_len + packet.getPacketVector()[1].iov_len];
+   socklen_t addrsize = sizeof(sockaddr);
+
+   if (::recvfrom(m_iSocket, buf, packet.getPacketVector()[0].iov_len + packet.getPacketVector()[1].iov_len, MSG_PEEK, addr, &addrsize) <= 0)
+      return 0;
+
+   (*this) >> packet;
+
+   return packet.getLength();
+}
+
 __int32 CChannel::getSndBufSize()
 {
    socklen_t size;
 
-   getsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, &m_iSndBufSize, &size);
+   getsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, &size);
 
    return m_iSndBufSize;
 }
@@ -328,7 +391,7 @@ __int32 CChannel::getRcvBufSize()
 {
    socklen_t size;
 
-   getsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, &m_iRcvBufSize, &size);
+   getsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, &size);
 
    return m_iRcvBufSize;
 }
@@ -350,19 +413,26 @@ void CChannel::addMembership(const char* mcip)
    mreq.imr_multiaddr.s_addr=inet_addr(mcip);
    mreq.imr_interface.s_addr=htonl(INADDR_ANY);
 
-   if (setsockopt(m_iSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0)
-      throw CUDTException(1, 4, errno);
+   if (setsockopt(m_iSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mreq, sizeof(mreq)) < 0)
+      throw CUDTException(1, 4, NET_ERROR);
 }
 
 void CChannel::joinGroup(const char* mcip)
 {
    ipv6_mreq mreq;
 
-   inet_pton(AF_INET6, mcip, mreq.ipv6mr_multiaddr.s6_addr);
+   #ifndef WIN32
+      inet_pton(AF_INET6, mcip, mreq.ipv6mr_multiaddr.s6_addr);
+   #else
+      addrinfo hint, *addr;
+      getaddrinfo(mcip, NULL, &hint, &addr);
+      memcpy(mreq.ipv6mr_multiaddr.s6_addr, &(((sockaddr_in6*)addr->ai_addr)->sin6_addr), sizeof(in6_addr));
+      freeaddrinfo(addr);
+   #endif
    mreq.ipv6mr_interface = 0;
 
-   if (setsockopt(m_iSocket, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) < 0)
-      throw CUDTException(1, 4, errno); 
+   if (setsockopt(m_iSocket, IPPROTO_IPV6, IPV6_JOIN_GROUP, (char *)&mreq, sizeof(mreq)) < 0)
+      throw CUDTException(1, 4, NET_ERROR); 
 }
 
 void CChannel::getAddr(unsigned char* ip) const
@@ -384,8 +454,8 @@ void CChannel::getAddr6(unsigned char* ip) const
 void CChannel::setChannelOpt()
 {
    // set sending and receiving buffer size
-   setsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, &m_iRcvBufSize, sizeof(__int32));
-   setsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, &m_iSndBufSize, sizeof(__int32));
+   setsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, sizeof(__int32));
+   setsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, sizeof(__int32));
 
    timeval tv;
    tv.tv_sec = 0;
@@ -399,13 +469,17 @@ void CChannel::setChannelOpt()
 
    #ifdef UNIX
       // Set non-blocking I/O
-      // UNIX and WIN32 do not support SO_RCVTIMEO
+      // UNIX does not support SO_RCVTIMEO
       __int32 opts = fcntl(m_iSocket, F_GETFL);
       if (-1 == fcntl(m_iSocket, F_SETFL, opts | O_NONBLOCK))
-         throw CUDTException(1, 2, errno);
+         throw CUDTException(1, 2, NET_ERROR);
+   #elif WIN32
+      DWORD ot = 1; //milliseconds
+      if (setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&ot, sizeof(DWORD)) < 0)
+         throw CUDTException(1, 2, NET_ERROR);
    #else
       // Set receiving time-out value
-      if (setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(timeval)) < 0)
-         throw CUDTException(1, 2, errno);
+      if (setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(timeval)) < 0)
+         throw CUDTException(1, 2, NET_ERROR);
    #endif
 }

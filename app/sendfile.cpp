@@ -4,6 +4,8 @@
 #include <iostream>
 #include <udt.h>
 
+using namespace std;
+
 int main(int argc, char* argv[])
 {
    //usage: sendfile "filename"
@@ -15,6 +17,11 @@ int main(int argc, char* argv[])
    }
 
    CUDT* sender = new CUDT;
+
+   #ifdef WIN32
+      intval = 1052;
+      client->setOpt(UDT_MTU, &intval, sizeof(int));
+   #endif
 
    try
    {
@@ -29,14 +36,17 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-   timeval t1, t2;
+   #ifdef TRACE
+      sender->trace();
+   #endif
 
+   timeval t1, t2;
    gettimeofday(&t1, 0);
 
    ifstream ifs(argv[1]);
 
    ifs.seekg(0, ios::end);
-   long long size = ifs.tellg();
+   streamsize size = ifs.tellg();
    ifs.seekg(0, ios::beg);
 
    try

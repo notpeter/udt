@@ -23,7 +23,7 @@ file stream.</font></p>
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
-    void recvfile(<br>
+    int recvfile(<br>
 &nbsp;&nbsp; ofstream&amp; <font color="#FFFFFF">ofs</font>,</font></p>
     <p style="margin-top: 0; margin-bottom: 0">
     <font face="Courier New" size="1">&nbsp;&nbsp; const long long&amp;
@@ -50,7 +50,7 @@ file stream.</font></p>
   <dd><font face="Verdana" size="2">[in] The total length of data to be received. </font></dd>
 </dl>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">NONE.</font></p>
+<p><font face="Verdana" size="2">Actual size of data received.</font></p>
 <h4><font face="Verdana" size="2">Exceptions</font></h4>
 <p style="margin-bottom: 0"><font face="Verdana" size="2">A
 <a href="cudtexception.htm">CUDTException</a> exception can be threw out if the UDT entity is not connected 

@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2003, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT)
@@ -47,12 +47,11 @@ The receiving buffer is a logically circular memeory block.
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 09/03/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 12/16/2003
 *****************************************************************************/
 
 
 #include <string.h>
-
 #include "udt.h"
 
 
@@ -61,9 +60,15 @@ m_pBlock(NULL),
 m_pLastBlock(NULL),
 m_pCurrSendBlk(NULL),
 m_pCurrAckBlk(NULL),
-m_iCurrBufSize(0)
+m_iCurrBufSize(0),
+m_iCurrSendPnt(0),
+m_iCurrAckPnt(0)
 {
-   pthread_mutex_init(&m_BufLock, NULL);
+   #ifndef WIN32
+      pthread_mutex_init(&m_BufLock, NULL);
+   #else
+      m_BufLock = CreateMutex(NULL, false, "SndBufferLock");
+   #endif
 }
 
 CSndBuffer::~CSndBuffer()
@@ -210,7 +215,7 @@ void CSndBuffer::ackData(const __int32& len, const __int32& payloadsize)
 
 __int32 CSndBuffer::getCurrBufSize() const
 {
-   return m_iCurrBufSize;
+   return m_iCurrBufSize - m_iCurrAckPnt;
 }
 
 
@@ -547,6 +552,14 @@ __int32 CRcvBuffer::registerUserBuf(char* buf, const __int32& len)
    // update the protocol buffer pointer
    m_iStartPos = (m_iStartPos + len) % m_iSize;
    m_iLastAckPos = m_iStartPos;
+
+   return m_iUserBufAck;
+}
+
+__int32 CRcvBuffer::getCurUserBufSize() const
+{
+   if (NULL == m_pcUserBuf)
+      return 0;
 
    return m_iUserBufAck;
 }

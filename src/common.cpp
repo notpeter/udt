@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2003, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT)
@@ -52,23 +52,94 @@ method to catch and handle UDT errors and exceptions.
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 09/11/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 12/07/2003
 *****************************************************************************/
 
 
-#include <unistd.h>
-#include <string.h>
-#include <math.h>
-#include <stdlib.h>
+#ifndef WIN32
+   #include <unistd.h>
+   #include <string.h>
+   #include <stdlib.h>
+   #include <errno.h>
+#else
+   #include <winsock2.h>
+   #include <ws2tcpip.h>
+#endif
 
+#include <math.h>
 #include "udt.h"
 
+#ifdef WIN32
+   int UDT_API gettimeofday(timeval *tv, void*)
+   {
+      LARGE_INTEGER ccf;
+      if (QueryPerformanceFrequency(&ccf))
+      {
+         LARGE_INTEGER cc;
+         QueryPerformanceCounter(&cc);
+         tv->tv_sec = cc.QuadPart / ccf.QuadPart;
+         tv->tv_usec = (cc.QuadPart % ccf.QuadPart) / (ccf.QuadPart / 1000000);
+      }
+      else
+      {
+         unsigned __int64 ft;
+         GetSystemTimeAsFileTime((FILETIME *)&ft);
+         tv->tv_sec = ft / 10000000;
+         tv->tv_usec = (ft % 10000000) / 10;
+      }
+
+      return 0;
+   }
+
+   int readv(SOCKET s, const iovec* vector, int count)
+   {
+      DWORD rsize = 0;
+      DWORD flag = 0;
+
+      WSARecv(s, (LPWSABUF)vector, count, &rsize, &flag, NULL, NULL);
+
+      return rsize;
+   }
+
+   int writev(SOCKET s, const iovec* vector, int count)
+   {
+      DWORD ssize = 0;
+
+      WSASend(s, (LPWSABUF)vector, count, &ssize, 0, NULL, NULL);
+
+      return ssize;
+   }
+#endif
 
 void CTimer::rdtsc(unsigned __int64 &x) const
 {
-   #ifdef IA32
+   #ifdef WIN32
+      if (!QueryPerformanceCounter((LARGE_INTEGER *)&x))
+      {
+         timeval t;
+         gettimeofday(&t, 0);
+         x = t.tv_sec * 1000000 + t.tv_usec;
+      }
+   #elif IA32
       // read CPU clock with RDTSC instruction on IA32 acrh
       __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
+
+     // on Windows
+     /*
+         unsigned __int32 a, b;
+         __asm 
+         {
+            __emit 0x0f
+            __emit 0x31
+            mov a, eax
+            mov b, ebx
+         }
+         x = b;
+         x = (x << 32) + a;
+      */
+
+   #elif IA64
+      __asm__ volatile ("mov %0=ar.itc" : "=r"(x) :: "memory");
    #else
       // use system call to read time clock for other archs
       timeval t;
@@ -81,7 +152,13 @@ void CTimer::rdtsc(unsigned __int64 &x) const
 
 unsigned __int64 CTimer::getCPUFrequency() const
 {
-   #ifdef IA32
+   #ifdef WIN32
+      __int64 ccf;
+      if (QueryPerformanceFrequency((LARGE_INTEGER *)&ccf))
+         return ccf / 1000000;
+      else
+         return 1;
+   #elif IA32
    {
       // alternative: read /proc/cpuinfo
 
@@ -92,6 +169,16 @@ unsigned __int64 CTimer::getCPUFrequency() const
       rdtsc(t2);
 
       // CPU clocks per microsecond
+      return (t2 - t1) / 100000;
+   }
+   #elif IA64
+   {
+      unsigned __int64 t1, t2;
+
+      rdtsc(t1);
+      usleep(100000);
+      rdtsc(t2);
+
       return (t2 - t1) / 100000;
    }
    #else
@@ -120,6 +207,8 @@ void CTimer::sleepto(const unsigned __int64& nexttime)
    {
       #ifdef IA32
          __asm__ volatile ("nop; nop; nop; nop; nop;");
+      #elif IA64
+         __asm__ volatile ("nop 0; nop 0; nop 0; nop 0; nop 0;");
       #endif
 
       // TODO: use high precision timer if it is available
@@ -139,14 +228,23 @@ void CTimer::interrupt()
 CGuard::CGuard(pthread_mutex_t& lock):
 m_Mutex(lock)
 {
-   m_iLocked = pthread_mutex_lock(&m_Mutex);
+   #ifndef WIN32
+      m_iLocked = pthread_mutex_lock(&m_Mutex);
+   #else
+      m_iLocked = WaitForSingleObject(m_Mutex, INFINITE);
+   #endif
 }
 
 // Automatically unlock in destructure
 CGuard::~CGuard()
 {
-   if (0 == m_iLocked)
-      pthread_mutex_unlock(&m_Mutex);
+   #ifndef WIN32
+      if (0 == m_iLocked)
+         pthread_mutex_unlock(&m_Mutex);
+   #else
+      if (WAIT_FAILED != m_iLocked)
+         ReleaseMutex(m_Mutex);
+   #endif
 }
 
 
@@ -433,9 +531,16 @@ void CPktTimeWindow::probe2Arrival()
 //
 CUDTException::CUDTException(__int32 major, __int32 minor, __int32 err):
 m_iMajor(major),
-m_iMinor(minor),
-m_iErrno(err)
+m_iMinor(minor)
 {
+   if (-1 == err)
+      #ifndef WIN32
+         m_iErrno = errno;
+      #else
+         m_iErrno = GetLastError();
+      #endif
+   else
+      m_iErrno = err;
 }
 
 CUDTException::~CUDTException()
@@ -465,7 +570,6 @@ const char* CUDTException::getErrorMessage()
         
         default:
            break;
-
         }
 
         break;
@@ -547,10 +651,17 @@ const char* CUDTException::getErrorMessage()
    }
 
    // Adding "errno" information
-   if (0 != m_iErrno)
+   if (0 < m_iErrno)
    {
       strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-      strncpy(m_pcMsg + strlen(m_pcMsg), strerror(m_iErrno), 1024 - strlen(m_pcMsg) - 2);
+      #ifndef WIN32
+         strncpy(m_pcMsg + strlen(m_pcMsg), strerror(m_iErrno), 1024 - strlen(m_pcMsg) - 2);
+      #else
+         LPVOID lpMsgBuf;
+         FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, m_iErrno, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
+         strncpy(m_pcMsg + strlen(m_pcMsg), (char*)lpMsgBuf, 1024 - strlen(m_pcMsg) - 2);
+         LocalFree(lpMsgBuf);
+      #endif
    }
 
    // Adding a CR/LF charactor

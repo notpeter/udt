@@ -17,48 +17,46 @@
   </tr>
 </table>
 <h1><font face="Verdana" size="4">Configuration</font></h1>
-<p><font face="Verdana" size="2">Options of UDT is read and set through
+<p><font face="Verdana" size="2">Options of UDT are read and set through
 <a href="opt.htm">getOpt</a> and <a href="opt.htm">setOpt</a> methods. The UDT 
-options can be classified as 3 categories: address, transfer mode, and buffer 
+options can be classified in 3 categories: address, transfer mode, and buffer 
 size.</font></p>
 <p><font face="Verdana" size="2">Before modifying any option, bear in mind that 
-it is NOT a must to do modify default options. If the application has a sound performance with 
-default options, just leave them alone.</font></p>
-<p><font face="Verdana" size="2">Address setting is equivalent to set the same 
-parameters in <a href="open.htm">open</a> method. Port number is often fixed at 
-the udt side, so it is needed to be explicitly set (together with
+it is NOT required that you modify the default options. If the application has sound performance with 
+the default options, just leave them alone.</font></p>
+<p><font face="Verdana" size="2">Address setting is equivalent to setting the same 
+parameters in the <a href="open.htm">open</a> method. Port number is often fixed at 
+the udt server side, so it needs to be explicitly set (together with the
 <a href="opt.htm">UDT_PCH</a> option, telling UDT that the port number cannot be 
 changed). IP address setting is 
-usually necessary for multi-homed host. If it is not set, UDT will use the first 
+usually necessary for multi-homed hosts. If it is not set, UDT will use the first 
 one found by <u>getaddrinfo</u>.</font></p>
 <p><font face="Verdana" size="2">Setting transfer mode is usually a policy 
 issue. First of all, the application may want to choose IPv4 or IPv6, using the
 <a href="opt.htm">UDT_IPV</a> option. Applications may also need to configure sending and receiving 
-mode, for blocking or non-blocking, respectively. Unlike socket, the transfer 
+modes, for blocking or non-blocking, respectively. Unlike sockets, the transfer 
 mode can be set separately for sending and receiving in UDT.</font></p>
 <p><font face="Verdana" size="2">The semantics of non-blocking sending is NOT 
-same as socket. Non-blocking sending of UDT always returns immediately without 
-waiting for the completeness of data sending.</font></p>
+the same as sockets. Non-blocking sending of UDT always returns immediately without 
+waiting for the complete data sending.</font></p>
 <p><font face="Verdana" size="2">The <a href="opt.htm">UDT_MFLAG</a> option is 
-for the convenience of programmer. In the situation that the application uses 
+for the convenience of programmers. In the situation that the application uses 
 non-blocking sending, it is hard to trace when the buffer is successfully 
-received by the peer side and it is safe to release the memory. Set this flag 
+received by the peer side and it is safe to release the memory. (Note that UDT does NOT replicate the user buffer.) By setting this flag 
 UDT will release it automatically after the data is sent. However, be careful 
 that sometimes the memory is not allowed to be released (e.g., a static array) 
 or the application does not want it to be released.</font></p>
 <p><font face="Verdana" size="2">Flow control is something like the TCP window 
-control. The <a href="opt.htm">UDT_FC</a> set up the maximum window size, or the 
-maximum number of unacknowledged packets. It is definitely NOT the larger, the 
-better. A sound value should be <i>bandwidth * <u>
-max</u>(RTT + <font color="#008000">0.01</font></i></font><i>) </i>or greater.&nbsp; 
+control. The <a href="opt.htm">UDT_FC</a> option sets up the maximum window size, or the 
+maximum number of unacknowledged packets. A sound value should be <i>bandwidth * (RTT + <font color="#008000">0.01</font>)</i> or greater.&nbsp; 
 A smaller value will limit the performance.</p>
-<p>The UDT buffer is for temporally storing received data. So larger value is 
-better. But be sure that the buffer size should not be too large comparing to 
+<p>The UDT buffer is for temporally storing received data. So larger values are 
+better. But be sure that the buffer size is not too large compared to 
 the physical memory size.</p>
-<p>UDT uses UDP as data channel, so the UDP buffer size affects the performance. 
-Again, a larger value is generally better, but the effects becomes smaller and 
-disappears as the buffer size increases. Generally, sending buffer should be 
-less than receiving buffer.</p>
+<p>UDT uses UDP as the data channel, so the UDP buffer size affects the performance. 
+Again, a larger value is generally better, but the effects become smaller and 
+disappear as the buffer size increases. Generally, the sending buffer size should be 
+smaller than the receiving buffer size.</p>
 <p style="margin-top: 0; margin-bottom: 0"><b><font face="Verdana" size="2">
 Example: read current UDT settings</font></b></p>
 <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>

@@ -247,8 +247,8 @@ option value. The value is written into the buffer pointed by <i>optval</i>, and
 the length is returned in <i>optlen</i>. The returned value may be meaningless if 
 the method is called before <a href="open.htm">open</a> or <a href="opt.htm">
 setOpt</a>. For example, the <a href="opt.htm">UDT_PORT</a> value is 0 at that time.</font></P>
-<p><font face="Verdana" size="2"><a href="opt.htm">UDT_FC</a> is generally set as <i>bandwidth * <u>
-max</u>(RTT, <font color="#008000">0.01</font></i></font><i>)</i> or  greater. </p>
+<p><font face="Verdana" size="2"><a href="opt.htm">UDT_FC</a> is generally set as <i>bandwidth * (RTT + <font 
+color="#008000">0.01</font></i></font><i>)</i> or  greater. </p>
 <p><font face="Verdana" size="2">Setting <a href="opt.htm">UDT_PORT</a> or
 <a href="opt.htm">UDT_ADDR</a> is equivalent to call <a href="open.htm">open</a> 
 with the same parameters.</font></p>

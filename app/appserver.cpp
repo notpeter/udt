@@ -1,17 +1,21 @@
-// This program sends and then receives 734MB data
+// This program starts as a server and then receives data until client closes.
 // work with appclient.cpp
 // Usage: appserver [server_port]
 
 //
 // This simple program is a quick introdution to UDT usage.
-// There is no comments in its counterpart, appclient.cpp, if you 
-// want to read clean source codes.
+// There is no comments in its counterpart, appclient.cpp, if you want to read clean source codes.
 //
 
+#ifndef WIN32
+   #include <unistd.h>
+   #include <stdlib.h>
+#endif
+
 #include <iostream>
-#include <unistd.h>
-#include <stdlib.h>
 #include <udt.h>
+
+using namespace std;
 
 int main(int argc, char* argv[])
 {
@@ -37,36 +41,6 @@ int main(int argc, char* argv[])
 
    try
    {
-      //can be called anywhere after step 1.
-      // read UDT configurations
-      server->getOpt(UDT_PORT, &intval, vallen);
-      cout << "current port number: " << intval << endl;
-      server->getOpt(UDT_PCH, &boolval, vallen);
-      cout << "current port number changable?: " << boolval << endl;
-
-      server->getOpt(UDT_SNDSYN, &boolval, vallen);
-      cout << "Sending is blocking?: " << boolval << endl;
-      server->getOpt(UDT_RCVSYN, &boolval, vallen);
-      cout << "Receiving is blocking?: " << boolval << endl;
-      server->getOpt(UDT_MFLAG, &intval, vallen);
-      cout << "Sent buffer is auto-released?: " << intval << endl;
-
-      server->getOpt(UDT_FC, &intval, vallen);
-      cout << "Maximum flow control window size: " << intval << endl;
-
-      server->getOpt(UDT_BUF, &intval, vallen);
-      cout << "UDT buffer size: " << intval << endl;
-
-      server->getOpt(UDT_USB, &intval, vallen);
-      cout << "UDP sending buffer size: " << intval << endl;
-
-      server->getOpt(UDT_URB, &intval, vallen);
-      cout << "UDP receiving buffer size: " << intval << endl;
-
-      server->getOpt(UDT_IPV, &intval, vallen);
-      cout << "Using IP version: " << "IPv" << intval << endl;
-
-
       // set up UDT configurations
       // all options have default values, which works well for most networks.
       // This is only for demonstration, you may not need to change them in real applications.
@@ -77,33 +51,24 @@ int main(int argc, char* argv[])
       boolval = false;
       server->setOpt(UDT_PCH, &boolval, sizeof(bool));
 
-      // blocking or non-blocking, for sending and receiving, respectively
-      boolval = false;
-      server->setOpt(UDT_SNDSYN, &boolval, sizeof(bool));
-      boolval = true;
-      server->setOpt(UDT_RCVSYN, &boolval, sizeof(bool));
-      // UDT can auto delete the sent buffer if necessary
-      intval = 1;
-      server->setOpt(UDT_MFLAG, &intval, sizeof(int));
-   
       // Maximum flow window size, similar as the maximum TCP control window size
       //DO NOT touch this if you are not quite familiar with the protocol mechanism ;-)
-      intval = 25600;
-      //server->setOpt(UDT_FC, &intval, sizeof(int));
+      intval = 100000;
+      server->setOpt(UDT_FC, &intval, sizeof(int));
 
       //UDT protocol buffer that temporally stores received data before you call "recv/recvfile"
       //larger is better, but not too large to affect the system performance
-      intval = 40960000;
+      intval = 91920000;
       server->setOpt(UDT_BUF, &intval, sizeof(int));
 
       // UDP sending and receiving buffer
-      intval = 256000;
+      //intval = 256000;
       //server->setOpt(UDT_USB, &intval, sizeof(int));
       //server->setOpt(UDT_URB, &intval, sizeof(int));
 
-      // IP version, 4 or 6
-      intval = 4;
-      server->setOpt(UDT_IPV, &intval, sizeof(int));
+      // Must set up MTU if the current MTU setting is not 1500
+      //intval = 1500;
+      //server->setOpt(UDT_MTU, &intval, sizeof(int));
 
       // May be useful on host with multiple IP addresses
       //char* ip = "145.146.98.41";
@@ -111,6 +76,9 @@ int main(int argc, char* argv[])
    }
    catch (CUDTException e)
    {
+      //UDT uses C++ exception to feedback error and exceptions.
+      //The try...catch... structure should be used for error detection.
+      //CUDTException class is defined in UDT.
       cout << "error msg: " << e.getErrorMessage();
       return 0;
    }
@@ -147,86 +115,71 @@ int main(int argc, char* argv[])
    }
 
 
+      // read UDT configurations
+      //can be called anywhere after step 1.
+
+      //cout.setf(ios::boolalpha);
+      server->getOpt(UDT_PORT, &intval, vallen);
+      cout << "current port number: " << intval << endl;
+      server->getOpt(UDT_PCH, &boolval, vallen);
+      cout << "current port number changable?: " << boolval << endl;
+      server->getOpt(UDT_SNDSYN, &boolval, vallen);
+      cout << "Sending is blocking?: " << boolval << endl;
+      server->getOpt(UDT_RCVSYN, &boolval, vallen);
+      cout << "Receiving is blocking?: " << boolval << endl;
+      server->getOpt(UDT_MFLAG, &intval, vallen);
+      cout << "Sent buffer is auto-released?: " << intval << endl;
+      server->getOpt(UDT_FC, &intval, vallen);
+      cout << "Maximum flow control window size: " << intval << endl;
+      server->getOpt(UDT_BUF, &intval, vallen);
+      cout << "UDT buffer size: " << intval << endl;
+      server->getOpt(UDT_USB, &intval, vallen);
+      cout << "UDP sending buffer size: " << intval << endl;
+      server->getOpt(UDT_URB, &intval, vallen);
+      cout << "UDP receiving buffer size: " << intval << endl;
+      server->getOpt(UDT_IPV, &intval, vallen);
+      cout << "Using IP version: " << "IPv" << intval << endl;
+      server->getOpt(UDT_MTU, &intval, vallen);
+      cout << "Maximum Transmission Unit (MTU): " << intval << endl;
+
+
+   #ifdef TRACE
+      server->trace();
+   #endif
+
+
 //step 5: data sending/receiving.
    //now you can use UDT to send/receive data
    //you may need to modify the send/recv codes to adapt to the blocking/nonblocking configuration.
 
    timeval time1, time2;
-
+   int blocknum = 0;
    char* data;
-   int size = 7340000;
-
-   gettimeofday(&time1, 0);
-
-   for (int i = 0; i < 1000; i ++)
-   {
-      data = new char[size];
-
-      try
-      {
-         while (server->getCurrSndBufSize() > 40960000)
-            usleep(10);
-         server->send(data, size);
-
-         server->getOpt(UDT_MFLAG, &intval, vallen);
-         if (0 == intval)
-            delete [] data;
-
-         cout << "sent block" << i << endl;
-      }
-      catch(CUDTException e)
-      {
-         cout << "error msg: " << e.getErrorMessage();
-         return 0;
-      }
-   }
-
-   //UDT uses C++ exception to feedback error and exceptions.
-   //The try...catch... structure should be used for error detection.
-   //CUDTException class is defined in UDT.
-
-   //wait until all data are sent out
-   try
-   {
-      while (server->getCurrSndBufSize() > 0)
-         usleep(10);
-   }
-   catch(CUDTException e)
-   {
-      cout << "error msg: " << e.getErrorMessage();
-      return 0;
-   }
-
-   gettimeofday(&time2, 0);
-   cout << "speed = " << 60000.0 / double(time2.tv_sec - time1.tv_sec + (time2.tv_usec - time1.tv_usec) / 1000000.0) << "Mbits/sec" << endl;
-
-
+   int size = 10000000;
    data = new char[size];
 
    gettimeofday(&time1, 0);
-   for (int i = 0; i < 1000; i++)
+   while (true)
    {
       try
       {
          server->recv(data, size);
-         
-         cout << "recv block " << i << endl;
+         blocknum ++;
       }
       catch (CUDTException e)
       {
-         cout << "error msg: " << e.getErrorMessage();
-         return 0;
+         break;
       }
    }
    gettimeofday(&time2, 0);
 
-   cout << "speed = " << 60000.0 / double(time2.tv_sec - time1.tv_sec + (time2.tv_usec - time1.tv_usec) / 1000000.0) << "Mbits/sec" << endl;
+   cout << "speed = " << blocknum * (size/1000000) * 8 / double(time2.tv_sec - time1.tv_sec + (time2.tv_usec - time1.tv_usec) / 1000000.0) << "Mbits/sec" << endl;
 
    delete [] data;
 
 
 //step 6: close the UDT connection.
-   //that is the end.
+   //this is the end.
 
    server->close();
    delete server;

@@ -1,5 +1,5 @@
 /******************************************************************************
-Copyright © 2001 - 2003, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT)
@@ -44,36 +44,26 @@ System specific types are defined here.
 
 Data structures list:
 
-CHandshake: Handshake Information
-
-UDTOpt: UDT Options
-
-CTimer: Timer Facility
-
-CUDTException: Exception Handling Facility
-
-CACKWindow: ACK History Window
-
-CPktTimeWindow: Packet time/delay history window
-
-CPacket: Packet Definition
-
-CChannel: UDP Transport Channel
-
-CList: Loss Lists and Irregular Packet List
-   CSndLossList
-   CRcvLossList
-   CIrregularLossPktList
-
-CSndBuffer: Sending Buffer Management 
-CRcvBuffer: Receiving Buffer Management
-
-CUDT: UDT 
+CHandshake:	Handshake Information
+UDTOpt:		UDT Options
+CTimer:		Timer Facility
+CUDTException:	Exception Handling Facility
+CACKWindow:	ACK History Window
+CPktTimeWindow:	Packet time/delay history window
+CPacket:	Packet Definition
+CChannel:	UDP Transport Channel
+CList:		Loss Lists and Irregular Packet List
+		CSndLossList
+		CRcvLossList
+		CIrregularLossPktList
+CSndBuffer:	Sending Buffer Management 
+CRcvBuffer:	Receiving Buffer Management
+CUDT: 		UDT
 *****************************************************************************/
 
 /*****************************************************************************
 written by:
-   Yunhong Gu [ygu@cs.uic.edu], last updated 09/11/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/20/2003
 *****************************************************************************/
 
 
@@ -81,29 +71,55 @@ written by:
 #define _UDT_H_
 
 
-#include <pthread.h>
-#include <sys/time.h>
-#include <sys/uio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#ifndef WIN32
+   #include <pthread.h>
+   #include <sys/time.h>
+   #include <sys/uio.h>
+   #include <sys/types.h>
+   #include <sys/socket.h>
+   #include <netinet/in.h>
+   #include <stdio.h>
+#else
+   #include <windows.h>
+#endif
 
 #include <fstream> 
 using namespace std;
 
 
-// Explicitly define 32-bit and 64-bit numbers
 #ifndef WIN32
+   // Explicitly define 32-bit and 64-bit numbers
    #define __int32 int
    #define __int64 long long
+#else
+   // Windows compability
+   typedef HANDLE pthread_t;
+   typedef HANDLE pthread_mutex_t;
+   typedef HANDLE pthread_cond_t;
+
+   #ifdef UDT_EXPORTS
+      #define UDT_API __declspec(dllexport)
+   #else
+      #define UDT_API __declspec(dllimport)
+   #endif
+
+   struct iovec
+   {
+      __int32 iov_len;
+      char* iov_base;
+   };
+
+   int UDT_API gettimeofday(timeval *tv, void*);
+   int readv(SOCKET s, const iovec* vector, int count);
+   int writev(SOCKET s, const iovec* vector, int count);
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 struct CHandShake
 {
-   unsigned __int32 m_piIP[16];	// IP address
-   __int32 m_iPort;		// port number
+   __int32 m_iVersion;		// UDT version
+   __int32 m_iISN;		// random initial sequence number
    __int32 m_iMTU;		// MTU setting
    __int32 m_iFlightFlagSize;	// Flow control window size 
 };
@@ -331,10 +347,14 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef WIN32
 class CUDTException
+#else
+class UDT_API CUDTException
+#endif
 {
 public:
-   CUDTException(__int32 major = 0, __int32 minor = 0, __int32 err = 0);
+   CUDTException(__int32 major = 0, __int32 minor = 0, __int32 err = -1);
    virtual ~CUDTException();
 
       // Functionality:
@@ -376,7 +396,6 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 // See packet.cpp for packet structure and coding
-
 class CChannel;
 
 class CPacket
@@ -560,6 +579,16 @@ public:
    const CChannel& operator>>(CPacket& packet) const;
 
       // Functionality:
+      //    Receive a packet from the channel and record the source address.
+      // Parameters:
+      //    0) [in] packet: reference to a CPacket entity.
+      //    1) [in] addr: pointer to the source address.
+      // Returned value:
+      //    Actual size of data received.
+
+   __int32 recvfrom(CPacket& packet, sockaddr* addr) const;
+
+      // Functionality:
       //    Bind the local UDP entity to the peer side for sending/receiving.
       // Parameters:
       //    0) [in] ip: Peer side IP address.
@@ -578,6 +607,15 @@ public:
       //    None.
 
    void connect6(const char* ip, const __int32& port);
+
+      // Functionality:
+      //    Connect to the peer side whose address is in the sockaddr structure.
+      // Parameters:
+      //    0) [in] addr: pointer to the peer side address.
+      // Returned value:
+      //    None.
+
+   void connect(const sockaddr* addr);
 
       // Functionality:
       //    Disconnect and close the UDP entity.
@@ -661,7 +699,11 @@ public:
    void getAddr6(unsigned char* ip) const;
 
 private:
-   __int32 m_iSocket;			// socket descriptor
+   #ifndef WIN32
+      __int32 m_iSocket;		// socket descriptor
+   #else
+      SOCKET m_iSocket;
+   #endif
 
    __int32 m_iSndBufSize;		// UDP sending buffer size
    __int32 m_iRcvBufSize;		// UDP receiving buffer size
@@ -1030,6 +1072,15 @@ public:
 
    __int32 registerUserBuf(char* buf, const __int32& len);
 
+      // Functionality:
+      //    Query how many data has been received into user buffer.
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    Size of valid data in user buffer; or 0 if no user buffer presented.
+
+   __int32 getCurUserBufSize() const;
+
 private:
    char* m_pcData;			// pointer to the protocol buffer
    __int32 m_iSize;			// size of the protocol buffer
@@ -1045,7 +1096,11 @@ private:
 
 
 //////////////////////////////////////////////////////////////////////////////
+#ifndef WIN32
 class CUDT
+#else
+class UDT_API CUDT
+#endif
 {
 public:
    CUDT();
@@ -1109,7 +1164,7 @@ public:
       // Returned value:
       //    None.
 
-   void send(char* data, const __int32& len);
+   __int32 send(char* data, const __int32& len);
 
       // Functionality:
       //    Request UDT to receive data to a memory block "data" with size of "len".
@@ -1117,9 +1172,9 @@ public:
       //    0) [in] data: The address of the application data to be received.
       //    1) [in] len: The desired size of data to be received.
       // Returned value:
-      //    None.
+      //    Actual size of data that has been sent.
 
-   void recv(char* data, const __int32& len);
+   __int32 recv(char* data, const __int32& len);
 
       // Functionality:
       //    Request UDT to send out a file described as "fd", starting from "offset", with size of "size".
@@ -1128,9 +1183,9 @@ public:
       //    1) [in] offset: From where to read and send data;
       //    2) [in] size: How many data to be sent.
       // Returned value:
-      //    None.
+      //    Actual size of received data.
 
-   void sendfile(ifstream& ifs, const __int64& offset, const __int64& size);
+   __int64 sendfile(ifstream& ifs, const __int64& offset, const __int64& size);
 
       // Functionality:
       //    Request UDT to receive data into a file described as "fd", starting from "offset", with expected size of "size".
@@ -1139,9 +1194,9 @@ public:
       //    1) [in] offset: From where to write data;
       //    2) [in] size: How many data to be received.
       // Returned value:
-      //    None.
+      //    Actual size of data that has been sent.
 
-   void recvfile(ofstream& ofs, const __int64& offset, const __int64& size);
+   __int64 recvfile(ofstream& ofs, const __int64& offset, const __int64& size);
 
       // Functionality:
       //    Configure UDT options.
@@ -1150,7 +1205,7 @@ public:
       //    1) [in] optval: The value to be set.
       //    2) [in] optlen: size of "optval".
       // Returned value:
-      //    None.
+      //    Actual size of received data.
 
    void setOpt(UDTOpt optName, const void* optval, const __int32& optlen);
 
@@ -1174,10 +1229,24 @@ public:
 
    __int32 getCurrSndBufSize();
 
+#ifdef TRACE
+      // Functionality:
+      //    Trace the UDT performance. 
+      // Parameters:
+      //    0) [in] interval: trace interval, in microseconds.
+      //    1) [in] tracefile: output file.
+      // Returned value:
+      //    None
+
+   void trace(const __int32& interval = 1000000, const char* tracefile = NULL);
+#endif
+
+private: // Version
+   const __int32 m_iVersion;
 
 private: // Threads, data channel, and timing facility
-   pthread_t* m_pSndThread;			// Sending thread
-   pthread_t* m_pRcvThread;			// Receiving thread
+   pthread_t m_SndThread;			// Sending thread
+   pthread_t m_RcvThread;			// Receiving thread
    CChannel* m_pChannel;			// UDP channel
    CTimer* m_pTimer;				// Timing facility
    unsigned __int64 m_ullCPUFrequency;		// CPU clock frequency, used for Timer
@@ -1201,13 +1270,12 @@ private: // Options
    bool m_bSynRecving;				// Receiving syncronization mode
    __int32 m_iMemFlag;				// How UDT deal with the sent buffer (0: return; 1: release; 2:munmap)
    __int32 m_iRCAlg;				// Rate control algorithm
-   __int32 m_iFlightFlagSize;			// Maximum flow window size
-   __int32 m_iFlowWindowSize;			// Flow control window size
+   __int32 m_iFlightFlagSize;			// Maximum number of packets in flight from the peer side
    __int32 m_iUDTBufSize;			// UDT buffer size (for receiving)
    __int32 m_iUDPSndBufSize;			// UDP sending buffer size
    __int32 m_iUDPRcvBufSize;			// UDP receiving buffer size
    __int32 m_iIPversion;			// IP version
-   __int32 m_bMulticast;			// Multicast
+   bool m_bMulticast;				// Multicast
    char m_pcMCIP[40];				// Multicast IP address
    __int32 m_iMCPort;				// Multicast port number
    bool m_bLossy;				// Unreliable option
@@ -1217,12 +1285,15 @@ private: // Options
 private: // Status
    volatile bool m_bConnected;			// Whether the connection is on or off
    volatile bool m_bClosing;			// If the UDT entity is closing
+   volatile bool m_bShutdown;			// If the peer side has shutdown the connection
    bool m_bOpened;				// If the UDT entity has been opened
    bool m_bInitiator;				// If the UDT entity initilize the connection
    bool m_bSlowStart;				// If UDT is during slow start phase
    bool m_bFreeze;				// freeze the data sending
    __int32 m_iEXPCount;				// Expiration counter
    __int32 m_iBandwidth;			// Estimated bandwidth
+
+   pthread_mutex_t m_ShutdownLock;
 
 private: // Sending related data
    CSndBuffer* m_pSndBuffer;			// Sender buffer
@@ -1250,6 +1321,11 @@ private: // Sending related data
 
    __int32 m_iLastDecSeq;			// Sequence number sent last decrease occurs
    __int32 m_iDecCount;				// Number of sending rate decrease
+
+   __int32 m_iISN;				// Initial Sequence Number
+
+   __int32 m_iFlowWindowSize;                   // Flow control window size
+   __int32 m_iMaxFlowWindowSize;		// Maximum flow window size = flight flag size of the peer side
 
 private: // Receiving related data
    CRcvBuffer* m_pRcvBuffer;			// Receiver buffer
@@ -1284,8 +1360,13 @@ private: // Thread-safe protectors
    pthread_mutex_t m_RecvLock;
 
 private: // Thread handlers
-   static void* sndHandler(void* sender);
-   static void* rcvHandler(void* recver);
+   #ifndef WIN32
+      static void* sndHandler(void* sender);
+      static void* rcvHandler(void* recver);
+   #else
+      static DWORD WINAPI sndHandler(LPVOID sender);
+      static DWORD WINAPI rcvHandler(LPVOID recver);
+   #endif
 
 private: // congestion control 
    void rateControl();
@@ -1294,6 +1375,25 @@ private: // congestion control
 private: // Generation and processing of control packet
    void sendCtrl(const __int32& pkttype, void* lparam = NULL, void* rparam = NULL);
    void processCtrl(CPacket& ctrlpkt);
+
+#ifdef TRACE
+private: // Trace
+   bool m_bTraceEnabled;			// flag: if trace() has been called previously
+   __int32 m_iTraceInterval;			// trace interval, in microseconds
+   FILE* m_TraceOutput;				// trace output file
+
+   __int32 m_iTraceSend;			// total number of pakctes sent in the last trace interval
+   __int32 m_iTraceRecv;			// total number of pakctes received in the last trace interval
+   __int32 m_iSentACK;				// total number of ACKs sent in the last trace interval
+   __int32 m_iRecvACK;				// total number of ACKs received in the last trace interval
+   __int32 m_iSentNAK;				// total number of NAKs sent in the last trace interval
+   __int32 m_iRecvNAK;				// total number of NAKs received in the last trace interval
+   __int32 m_iTraceLoss;			// total number of lost packets in the last trace interval
+
+   timeval m_LastSampleTime;			// last trace output time
+
+   void sample();
+#endif
 };
 
 #endif

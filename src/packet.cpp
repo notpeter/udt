@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2003, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT)
@@ -45,7 +45,7 @@ A UDT packet is a 2-dimension vector of packet header and data.
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 09/16/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 12/16/2003
 *****************************************************************************/
 
 
@@ -95,7 +95,9 @@ written by
 //      100: Congestion Warning
 //              bits 16-31:   Undefined
 //              Control Info: None
-//      101: Unused
+//      101: Shutdown
+//              bits 16-31:   Undefined
+//              Control Info: None
 //      110: Acknowledgement of Acknowledement (ACK-square)
 //              bits 16-31:   The ACK sequence number with which the ACK packet is received.
 //              Control Info: None
@@ -219,7 +221,12 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam)
 
       break;
 
-   case 5: //101 - Unused
+   case 5: //101 - Shutdown
+      // control info field should be none
+      // but "writev" does not allow this
+      m_PacketVector[1].iov_base = (char *)lparam; //NULL;
+      m_PacketVector[1].iov_len = sizeof(__int32); //0
+
       break;
 
    case 7: //111 - Resevered for future use

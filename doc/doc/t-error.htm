@@ -17,13 +17,13 @@
   </tr>
 </table>
 <h1><font face="Verdana" size="4">Error Handling</font></h1>
-<p><font face="Verdana" size="2">Checking return value is never the right way to 
+<p><font face="Verdana" size="2">Checking return value is not the right way to 
 detect errors in UDT. Instead, the only error detection method is to catch 
 exceptions. The <a href="cudtexception.htm">CUDTException</a> class is used to 
 record and provide error information.</font></p>
-<p><font face="Verdana" size="2">To read the detail descriptions of the errors 
+<p><font face="Verdana" size="2">To read the detailed descriptions of the errors 
 or exceptions, <a href="getErrorMsg.htm">getErrorMessage</a> should be used. UDT 
-also records the system <u>errno</u> for application to processing the 
+also records the system <u>errno</u> for the application to process the 
 exceptions.</font></p>
 <p><font face="Verdana" size="2">There are 6 major categories of exceptions, and 
 some minor categories in each major category. The major categories are:<br>

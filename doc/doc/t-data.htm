@@ -18,8 +18,8 @@
 </table>
 <h1><font face="Verdana" size="4">Transfer Data</font></h1>
 <p><font face="Verdana" size="2">After the UDT connection is built up, 
-transferring data is much easier than socket <u>send</u> or <u>recv</u>. In this 
-section we will introduce the blocking and non-blocking mode data transfer.</font></p>
+transferring data is much easier than using sockets <u>send</u> or <u>recv</u>. In this 
+section we will introduce the blocking and non-blocking methods of data transfer.</font></p>
 <h4><font face="Verdana" size="2">Blocking Sending</font></h4>
 <p><font face="Verdana" size="2">Blocking is the simplest mode, a UDT
 <a href="send.htm">send</a> call will be blocked until the buffer is 
@@ -29,23 +29,23 @@ released one by one as the buffers in the waiting queue are sent out. However, t
 release order is NOT guaranteed by UDT, but depends on the thread mechanism on 
 specific operating systems.</font></p>
 <p><font face="Verdana" size="2">The default sending mode of UDT is 
-non-blocking for performance purpose (to eliminate the waiting time between two 
-buffer sending).</font></p>
+non-blocking for performance purposes (to eliminate the waiting time between two 
+buffers' sending).</font></p>
 <h4><font face="Verdana" size="2">Blocking Receiving</font></h4>
 <p><font face="Verdana" size="2">Receiving is in blocking mode by default. The 
-situation is similar as block sending. Unlike socket, UDT <a href="recv.htm">
-recv</a> will not return until it receives exactly the same amount of data as it 
-requires.</font></p>
+situation is similar to block sending. Unlike sockets, UDT <a href="recv.htm">
+recv</a> will not return until it receives exactly the amount of data it is 
+required by the application, except when the connection is broken. Overlapped IO 
+is used in this mode.</font></p>
 <h4><font face="Verdana" size="2">Non-Blocking Sending</font></h4>
-<p><font face="Verdana" size="2">What a non-blocking sending call does is to put 
-the buffer into the sending queue and returns. Note that the semantics is not 
-the same as socket non-blocking call. It is simple but there are two issues 
-should be taken enough care of.</font></p>
-<p><font face="Verdana" size="2">The first is that the application need to care 
+<p><font face="Verdana" size="2">What a non-blocking sending call does is simply to put 
+the buffer into the sending queue. Note that the semantics is not 
+the same as the sockets non-blocking call. There are two issues that must be considered.</font></p>
+<p><font face="Verdana" size="2">The first is that the application needs to care 
 about the sending queue size. Since it is unknown to the application if the 
 previous buffers have been sent out, a careless application may crash the host 
 by using up the physical memory. A better way is to check the sending buffer size 
-by <a href="getCurrSndBufSize.htm">getCurrSndBufSize</a> method before a 
+by the <a href="getCurrSndBufSize.htm">getCurrSndBufSize</a> method before a 
 non-blocking <a href="send.htm">send</a> is called.</font></p>
 <p><font face="Verdana" size="2">The following example demonstrates the idea:</font></p>
 <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
@@ -73,17 +73,17 @@ non-blocking <a href="send.htm">send</a> is called.</font></p>
 </table>
 <p><font face="Verdana" size="2">If the application sends out raw data and does 
 not need them any more after they are sent, the <a href="opt.htm">UDT_MFLAG</a> 
-can be set to let the allocated memory released automatically by UDT.</font></p>
+can be set to let the allocated memory be released automatically by UDT.</font></p>
 <p><font face="Verdana" size="2">The second problem occurs after data sending. 
 When applications are to exit or close UDT connection, they should use <a href="getCurrSndBufSize.htm">getCurrSndBufSize</a> 
 to check if all the data in the buffer has been sent out.</font></p>
 <h4><font face="Verdana" size="2">Non-Blocking Receiving</font></h4>
 <p><font face="Verdana" size="2">Non-blocking receiving is much simpler than 
-sending. It checks the size of received data in UDT buffer. If there is enough 
+sending. It checks the size of received data in the UDT buffer. If there is enough 
 data to fulfill the buffer, the <a href="recv.htm">recv</a> call returns 
 successfully, otherwise it throws an exception with the buffer untouched.</font></p>
-<p><font face="Verdana" size="2">Non-blocking receiving is not encouraged to use because it has lower performance than blocking receiving, especially when 
-the buffer is large.</font></p>
+<p><font face="Verdana" size="2">We do not encourage the use of non-blocking receiving because it has lower performance than blocking 
+receiving, especially when the buffer is large.</font></p>
 
 </body>
 

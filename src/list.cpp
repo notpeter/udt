@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2003, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Lilbrary (UDT)
@@ -46,7 +46,7 @@ All the lists are static linked lists in ascending order of sequence numbers.
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 07/02/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/23/2004
 *****************************************************************************/
 
 
@@ -132,7 +132,11 @@ m_iSize(size)
    m_iHead = -1;
 
    // sender list needs mutex protection
-   pthread_mutex_init(&m_ListLock, 0);
+   #ifndef WIN32
+      pthread_mutex_init(&m_ListLock, 0);
+   #else
+      m_ListLock = CreateMutex(NULL, false, "SndLossListLock");
+   #endif
 }
 
 CSndLossList::~CSndLossList()
@@ -194,18 +198,20 @@ __int32 CSndLossList::insert(const __int32& seqno1, const __int32& seqno2)
       if (seqno1 == m_piData1[loc])
       {
          // first seqno is equivlent, compare the second
-         if ((seqno2 != seqno1) && greaterthan(seqno2, m_piData2[loc]))
+         if (-1 == m_piData2[loc])
+         {
+            m_iLength += getLength(seqno1, seqno2) - 1;
+            m_piData2[loc] = seqno2;
+         }
+         else if (greaterthan(seqno2, m_piData2[loc]))
          {
             // new seq pair is longer than old pair, e.g., insert [3, 7] to [3, 5], becomes [3, 7]
-            if (-1 == m_piData2[loc])
-               m_iLength += getLength(seqno1, seqno2) - 1;
-            else
-               m_iLength += getLength(m_piData2[loc], seqno2) - 1;
+            m_iLength += getLength(m_piData2[loc], seqno2) - 1;
             m_piData2[loc] = seqno2;
          }
          else
             // Do nothing if it is already there
-            return m_iLength - origlen;
+            return 0;
       }
       else
       {
@@ -214,20 +220,7 @@ __int32 CSndLossList::insert(const __int32& seqno1, const __int32& seqno2)
          while (-1 == m_piData1[i])
             i = (i - 1 + m_iSize) % m_iSize;
 
-         if (notlessthan(m_piData2[i], seqno1))
-         {
-            // overlap, coalesce with prior node, insert(3, 7) to [2, 5], ... becomes [2, 7]
-            if (lessthan(m_piData2[i], seqno2))
-            {
-               m_iLength += getLength(m_piData2[i], seqno2) - 1;
-               m_piData2[i] = seqno2;
-
-               loc = i;
-            }
-            else
-               return m_iLength - origlen;
-         }
-         else
+         if ((-1 == m_piData2[i]) || lessthan(m_piData2[i], seqno1))
          {
             // no overlap, create new node
             m_piData1[loc] = seqno1;
@@ -239,22 +232,41 @@ __int32 CSndLossList::insert(const __int32& seqno1, const __int32& seqno2)
 
             m_iLength += getLength(seqno1, seqno2);
          }
+         else
+         {
+            // overlap, coalesce with prior node, insert(3, 7) to [2, 5], ... becomes [2, 7]
+            if (lessthan(m_piData2[i], seqno2))
+            {
+               m_iLength += getLength(m_piData2[i], seqno2) - 1;
+               m_piData2[i] = seqno2;
+
+               loc = i;
+            }
+            else
+               return 0;
+         }
       }
    }
    else
    {
       // insert to head node
-      if ((seqno2 != seqno1) && greaterthan(seqno2, m_piData2[loc]))
+      if (seqno2 != seqno1)
       {
          if (-1 == m_piData2[loc])
+         {
             m_iLength += getLength(seqno1, seqno2) - 1;
-         else
+            m_piData2[loc] = seqno2;
+         }
+         else if (greaterthan(seqno2, m_piData2[loc]))
+         {
             m_iLength += getLength(m_piData2[loc], seqno2) - 1;
-
-         m_piData2[loc] = seqno2;
+            m_piData2[loc] = seqno2;
+         }
+         else 
+            return 0;
       }
       else
-         return m_iLength - origlen;
+         return 0;
    }
 
    // coalesce with next node. E.g., [3, 7], ..., [6, 9] becomes [3, 9] 
@@ -315,22 +327,23 @@ void CSndLossList::remove(const __int32& seqno)
    if (0 == offset)
    {
       // It is the head. Remove the head and point to the next node
-
       loc = (loc + 1) % m_iSize;
 
+      if (-1 == m_piData2[m_iHead])
+      {
+         loc = m_piNext[m_iHead];
+      }
       if (greaterthan(m_piData2[m_iHead], incSeqNo(seqno)))
       {
          m_piData1[loc] = incSeqNo(seqno);
          m_piData2[loc] = m_piData2[m_iHead];
          m_piNext[loc] = m_piNext[m_iHead];
       }
-      else if (m_piData2[m_iHead] == incSeqNo(seqno))
+      else
       {
          m_piData1[loc] = incSeqNo(seqno);
          m_piNext[loc] = m_piNext[m_iHead];
       }
-      else
-         loc = m_piNext[m_iHead];
 
       m_piData1[m_iHead] = -1;
       m_piData2[m_iHead] = -1;
@@ -341,13 +354,12 @@ void CSndLossList::remove(const __int32& seqno)
    }
    else if (offset > 0)
    {
-      // find the prior node
-
+      //locate prior node
       __int32 i = (loc - 1 + m_iSize) % m_iSize;
       while (-1 == m_piData1[i])
          i = (i - 1 + m_iSize) % m_iSize;
 
-      __int32 j = m_iHead;
+      __int32 h = m_iHead;
 
       if (seqno == m_piData1[loc])
       {
@@ -355,7 +367,11 @@ void CSndLossList::remove(const __int32& seqno)
          __int32 temp = loc;
          loc = (loc + 1) % m_iSize;         
 
-         if (greaterthan(m_piData2[temp], incSeqNo(seqno)))
+         if (-1 == m_piData2[temp])
+         {
+            m_iHead = m_piNext[temp];
+         }
+         else if (greaterthan(m_piData2[temp], incSeqNo(seqno)))
          {
             // remove part, e.g., [3, 7] becomes [], [5, 7] after remove(4)
             m_piData1[loc] = incSeqNo(seqno);
@@ -363,16 +379,13 @@ void CSndLossList::remove(const __int32& seqno)
             m_iHead = loc;
             m_piNext[loc] = m_piNext[temp];
          }
-         else if (m_piData2[temp] == incSeqNo(seqno))
+         else
          {
             // [3, 7] becomes [], [7, -1] after remove(6)
             m_piData1[loc] = incSeqNo(seqno);
             m_iHead = loc;
             m_piNext[loc] = m_piNext[temp];
          }
-         else
-            // remove all
-            m_iHead = m_piNext[temp];
 
          m_piData1[temp] = -1;
          m_piData2[temp] = -1;
@@ -386,7 +399,11 @@ void CSndLossList::remove(const __int32& seqno)
          // targe node is empty, check prior node
          loc = (loc + 1) % m_iSize;
 
-         if (greaterthan(m_piData2[i], seqno))
+         if (-1 == m_piData2[i])
+         {
+            m_iHead = m_piNext[i];
+         }
+         else if (greaterthan(m_piData2[i], seqno))
          {
             // remove part/all seqno in the prior node
             m_piData1[loc] = incSeqNo(seqno);
@@ -403,22 +420,20 @@ void CSndLossList::remove(const __int32& seqno)
 
             m_iHead = loc;
          }
-         else
-            m_iHead = m_piNext[i];
       }
 
       // Remove all nodes prior to the new head
-      while (j != m_iHead)
+      while (h != m_iHead)
       {
-         if (m_piData2[j] != -1)
-            m_iLength -= getLength(m_piData1[j], m_piData2[j]);
+         if (m_piData2[h] != -1)
+            m_iLength -= getLength(m_piData1[h], m_piData2[h]);
          else
             m_iLength --;
 
-         m_piData1[j] = -1;
-         m_piData2[j] = -1;
+         m_piData1[h] = -1;
+         m_piData2[h] = -1;
 
-         j = m_piNext[j];
+         h = m_piNext[h];
       }
    }
 }
@@ -444,19 +459,21 @@ __int32 CSndLossList::getLostSeq()
    __int32 loc = (m_iHead + 1) % m_iSize;
 
    // shift to next node, e.g., [3, 7] becomes [], [4, 7]
-   if (greaterthan(m_piData2[m_iHead], incSeqNo(seqno)))
+   if (-1 == m_piData2[m_iHead])
+   {
+      loc = m_piNext[m_iHead];
+   }
+   else if (greaterthan(m_piData2[m_iHead], incSeqNo(seqno)))
    {
       m_piData1[loc] = incSeqNo(seqno);
       m_piData2[loc] = m_piData2[m_iHead];
       m_piNext[loc] = m_piNext[m_iHead];
    }
-   else if (m_piData2[m_iHead] == incSeqNo(seqno))
+   else
    {
       m_piData1[loc] = incSeqNo(seqno);
       m_piNext[loc] = m_piNext[m_iHead];
    }
-   else
-      loc = m_piNext[m_iHead];
 
    // remove old head
    m_piData1[m_iHead] = -1;
@@ -502,6 +519,9 @@ CRcvLossList::~CRcvLossList()
 
 void CRcvLossList::insert(const __int32& seqno1, const __int32& seqno2)
 {
+   // Data to be inserted must be larger than all those in the list
+   // guaranteed by the UDT receiver
+
    if (0 == m_iLength)
    {
       // insert data into an empty list
@@ -534,29 +554,27 @@ void CRcvLossList::insert(const __int32& seqno1, const __int32& seqno2)
    while (-1 == m_piData1[i])
       i = (i - 1 + m_iSize) % m_iSize;
 
-   if (incSeqNo(m_piData2[i]) == seqno1)
+   if ((-1 != m_piData2[i]) && (incSeqNo(m_piData2[i]) == seqno1))
    {
       // coalesce with prior node, e.g., [2, 5], [6, 7] becomes [2, 7]
       loc = i;
-      m_piData2[loc] = seqno1;
+      m_piData2[loc] = seqno2;
    }
    else
+   {
       // create new node
       m_piData1[loc] = seqno1;
 
-   if (seqno2 != seqno1)
-      m_piData2[loc] = seqno2;
+      if (seqno2 != seqno1)
+         m_piData2[loc] = seqno2;
+
+      m_piNext[i] = loc;
+      m_piNext[loc] = -1;
+   }
 
    // Initilize time stamp
    gettimeofday(m_pLastFeedbackTime + loc, 0);
    m_piCount[loc] = 2;
-
-   // Data to be inserted must be larger than all those in the list
-   // guaranteed by the UDT receiver
-   m_piNext[loc] = -1;
-
-   if (i != loc)
-      m_piNext[i] = loc;
 
    m_iLength += getLength(seqno1, seqno2);
 }
@@ -637,13 +655,13 @@ void CRcvLossList::remove(const __int32& seqno)
 
       return;
    }
-   else
+   else if (offset > 0)
    {
       // There is no loss sequence in the current position
       // the "seqno" may not be in the list, or it is contained in a previous node
 
       // no loss at all, return
-      if (0 ==  m_iLength)
+      if (0 == m_iLength)
           return;
 
       // searching previous node
@@ -652,7 +670,7 @@ void CRcvLossList::remove(const __int32& seqno)
          i = (i - 1 + m_iSize) % m_iSize;
 
       // not contained in this node, return
-      if (lessthan(seqno, m_piData1[i]) || greaterthan(seqno, m_piData2[i]))
+      if ((-1 == m_piData2[i]) || greaterthan(seqno, m_piData2[i]))
           return;
 
       if (seqno == m_piData2[i])

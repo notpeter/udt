@@ -1,39 +1,36 @@
 Please read the COPYRIGHT information in the current directory carefully.
 
-Please always check CVS of sourceforge for most recent update (if you have
-downloaded a tarball release, it may not be updated in time).
+
+Tarball releases on SourceForge will have the most recent, thoroughly tested 
+version of the software.  However, you may go to the SourceForge CVS area 
+for more current, but still in progress, versions. Be aware that although 
+these versions will contain the most recent bug fixes to date, they have 
+not been fully tested at this point.
 
 
 CONTENT:
-./src:	UDT source codes
+./src:	UDT source code
 ./app:	Example programs
 ./sim:	NS-2 module and simulation scripts
 ./doc:	UDT documentation
+./win:	Windows version of UDT
 
 
 To make:
 	make -e os=XXX arch=YYY
 
 XXX: [LINUX(default), BSD]
-YYY: [IA32(default), POWERPC]
+YYY: [IA32(default), POWERPC, IA64]
 
-For example, on OS X, you need to do:
+For example, on OS X, you need to:
 	make -e os=BSD arch=POWERPC
 
-To make UDT on UNIX system, use make -f Makefile.unix
-
-To make UDT on some platforms other than those listed above:
-This library has been tested on those platforms but not on any other. It may 
-or may NOT work on other systems. You can try to make it. If it does not 
-work, you can try to modify the source codes according to the migration 
-guide in the documentation.
+On UNIX systems, use: make -f Makefile.unix
+On Windows systems, use the Visual Studio .NET project files in ./win 
+directory.
 
 
 To use UDT in your application:
-Read index.htm in ./doc.
-
-
-To migrate UDT to other language or platforms:
 Read index.htm in ./doc.
 
 
@@ -47,8 +44,3 @@ http://lists.sourceforge.net/lists/listinfo/dataspace-sabul
 
 To query technical/research issues about the protocol:
 write to: Yunhong Gu [gu@lac.uic.edu]
-
-
-Thanks for using UDT. It is appreciated, but not obligated, that 
-you can share with us the performance results of your applications 
-using UDT and/or any improvement or modifications you make to it.

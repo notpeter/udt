@@ -39,13 +39,11 @@ sending queue to be sent.</font></p>
 or the connection has been broken.</font></p>
 <H4><font face="Verdana" size="2">Description</font></H4>
 <P><font face="Verdana" size="2">The <b>getCurrSndBufSize </b>method returns the 
-total buffer size in the sending queue. The return value is not exactly the size 
-of the data that has not been acknowledged, but the aggregate size of the 
-application buffer in the queue, even part of one buffer has been acknowledged.</font></P>
+total buffer size in the sending queue.</font></P>
 <P><font face="Verdana" size="2">It is specially useful when the application 
-need to check if all the data has been sent out (<font color="#008000">0</font> 
-is returned), or a non-blocking sender want to check how many data has been in 
-the queue (so it is will not use up the physical memory).</font></P>
+needs to check if all the data has been sent out (<font color="#008000">0</font> 
+is returned), or a non-blocking sender wants to check how many data has been in 
+the queue (so that it will not use up the physical memory).</font></P>
 <H4><font face="Verdana" size="2">See Also</font></H4>
 <P><a href="send.htm"><b><font face="Verdana" size="2">send</font></b></a></P>
 
