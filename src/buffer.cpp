@@ -47,7 +47,7 @@ The receiving buffer is a logically circular memeory block.
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 04/10/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 09/03/2003
 *****************************************************************************/
 
 
@@ -263,7 +263,7 @@ bool CRcvBuffer::nextDataPos(char** data, __int32 offset, const __int32& len)
    // Remember the position of the furthest "dirty" data
    __int32 origoff = m_iMaxOffset;
    if (offset + len > m_iMaxOffset)
-      m_iMaxOffset = offset+len;
+      m_iMaxOffset = offset + len;
 
    if (m_iLastAckPos >= m_iStartPos)
       if (m_iLastAckPos + offset + len <= m_iSize)
@@ -357,11 +357,46 @@ void CRcvBuffer::moveData(__int32 offset, const __int32& len)
       {
          // move data in user buffer
          memmove(m_pcUserBuf + m_iUserBufAck + offset, m_pcUserBuf + m_iUserBufAck + offset + len, m_iUserBufSize - (m_iUserBufAck + offset + len));
+
+         // move data from protocol buffer
+         if (m_iMaxOffset > 0)
+         {
+            __int32 reallen = len;
+            if (m_iMaxOffset < len)
+               reallen = m_iMaxOffset;
+
+            if (m_iSize < m_iLastAckPos + reallen)
+            {
+               memcpy(m_pcUserBuf + m_iUserBufSize - len, m_pcData + m_iLastAckPos, m_iSize - m_iLastAckPos);
+               memcpy(m_pcUserBuf + m_iUserBufSize - len + m_iSize - m_iLastAckPos, m_pcData, m_iLastAckPos + reallen - m_iSize);
+            }
+            else
+               memcpy(m_pcUserBuf + m_iUserBufSize - len, m_pcData + m_iLastAckPos, reallen);
+         }
+
          offset = 0; 
       }
       else if (m_iUserBufAck + offset < m_iUserBufSize)
       {
-         memcpy(m_pcUserBuf + m_iUserBufAck + offset, m_pcData + m_iLastAckPos, m_iUserBufSize - (m_iUserBufAck + offset));
+         if (m_iMaxOffset > m_iUserBufAck + offset + len - m_iUserBufSize)
+         {
+            __int32 reallen = m_iUserBufSize - (m_iUserBufAck + offset);
+            __int32 startpos = m_iLastAckPos + len - reallen;
+            if (m_iMaxOffset < len)
+               reallen -= len - m_iMaxOffset;
+
+            // Be sure that the m_iSize is at least 1 packet size, whereas len cannot be greater than this value, checked in setOpt().
+            if (m_iSize < startpos)
+               memcpy(m_pcUserBuf + m_iUserBufAck + offset, m_pcData + startpos - m_iSize, reallen);
+            else if (m_iSize < startpos + reallen)
+            {
+               memcpy(m_pcUserBuf + m_iUserBufAck + offset, m_pcData + startpos, m_iSize - startpos);
+               memcpy(m_pcUserBuf + m_iUserBufAck + offset + m_iSize - startpos, m_pcData, startpos + reallen - m_iSize);
+            }
+            else
+               memcpy(m_pcUserBuf + m_iUserBufAck + offset, m_pcData + startpos, reallen);
+         }
+
          offset = 0;
       }
       else
@@ -371,9 +406,12 @@ void CRcvBuffer::moveData(__int32 offset, const __int32& len)
 
    // No data to move
    if (m_iMaxOffset - offset < len)
+   {
+      m_iMaxOffset = offset;
       return;
+   }
 
-   // Oops, memory move is too complicated.
+   // Move data in protocol buffer.
    if (m_iLastAckPos + m_iMaxOffset <= m_iSize)
       memmove(m_pcData + m_iLastAckPos + offset, m_pcData + m_iLastAckPos + offset + len, m_iMaxOffset - offset - len);
    else if (m_iLastAckPos + offset > m_iSize)
@@ -454,6 +492,7 @@ __int32 CRcvBuffer::ackData(const __int32& len)
       m_iLastAckPos += len;
       m_iMaxOffset -= len;
    }
+
    m_iLastAckPos %= m_iSize;
 
    return ret;

@@ -34,18 +34,19 @@ all: libudt.so libudt.a udt
 
 libudt.so: $(OBJS)
 ifneq ($(os), BSD)
-	gcc -shared $^ -o $@
+	$(C++) -shared -o $@ $^
+else
+	libtool -dynamic -o libudt.dylib -lgcc -lstdc++ -lpthread -lm $^
 endif
-	
 
 libudt.a: $(OBJS)
-	ar -rus $@ $^
+	ar -rcs $@ $^
 
 udt:
 	cp udt.h udt
 
 clean:
-	rm -f *.o *.so *.a udt
+	rm -f *.o *.so *.dylib *.a udt
 
 install:
 	export LD_LIBRARY_PATH=$(DIR):$$LD_LIBRARY_PATH

@@ -2,6 +2,7 @@
 // Author: Yunhong Gu, ygu@cs.uic.edu
 //
 // Descrition: the program is used to simulate UDT on NS-2
+//             see ../doc/index.htm for how to install it to NS-2
 //
 // Last Update: 05/21/03
 // 
@@ -244,10 +245,13 @@ protected:
    int local_recv_;
    int last_dec_seq_;
    double last_delay_time_;
+   double last_dec_int_;
 
    bool slow_start_;
 
    bool freeze_;
+
+   bool firstloss_;
 
 protected:
    void rateControl();

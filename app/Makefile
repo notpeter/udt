@@ -1,6 +1,14 @@
 C++ = g++
 
-CCFLAGS = -Wall -I../src -O2 -finline-functions
+ifndef os
+   os = LINUX
+endif
+
+ifndef arch
+   arch = IA32
+endif
+
+CCFLAGS = -Wall -D$(os) -I../src -O2 -finline-functions
 
 ifeq ($(arch), IA32)
    CCFLAGS += -mcpu=pentiumpro -march=pentiumpro -mmmx -msse -DIA32
@@ -26,17 +34,17 @@ all: appserver appclient sendfile recvfile
 	$(C++) $(CCFLAGS) $< -c
 
 appserver: appserver.o
-	$(C++) $(LDFLAGS) $^ -o $@
+	$(C++) $^ -o $@ $(LDFLAGS)
 appclient: appclient.o
-	$(C++) $(LDFLAGS) $^ -o $@
+	$(C++) $^ -o $@ $(LDFLAGS)
 sendfile: sendfile.o
-	$(C++) $(LDFLAGS) $^ -o $@
+	$(C++) $^ -o $@ $(LDFLAGS)
 recvfile: recvfile.o
-	$(C++) $(LDFLAGS) $^ -o $@
+	$(C++) $^ -o $@ $(LDFLAGS)
 
 clean:
 	rm -f *.o
-	rm appserver appclient sendfile recvfile
+	rm -f appserver appclient sendfile recvfile
 
 install:
 	export PATH=$(DIR):$$PATH

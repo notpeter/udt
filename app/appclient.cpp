@@ -1,3 +1,7 @@
+// This program receives and then sends 734MB data
+// work with appserver.cpp
+// Usage: appclient server_ip server_port
+
 #include <iostream>
 #include <unistd.h>
 #include <stdlib.h>
@@ -13,36 +17,8 @@ int main(int argc, char* argv[])
 
    CUDT* client = new CUDT;
 
-   int intval;
-   bool boolval;
-   int vallen;
-
-
-   boolval = false;
-   client->setOpt(UDT_SNDSYN, &boolval, sizeof(bool));
-   boolval = true;
-   client->setOpt(UDT_RCVSYN, &boolval, sizeof(bool));
-   intval = 1;
-   client->setOpt(UDT_MFLAG, &intval, sizeof(int));
-   
-   intval = 1;
-   //client->setOpt(UDT_TF, &intval, sizeof(int));
-
-   intval = 25600;
-   //client->setOpt(UDT_FC, &intval, sizeof(int));
-
-   intval = 40960000;
-   client->setOpt(UDT_BUF, &intval, sizeof(int));
-
-   intval = 256000;
-//   client->setOpt(UDT_USB, &intval, sizeof(int));
-//   client->setOpt(UDT_URB, &intval, sizeof(int));
-
-   intval = 4;
-   client->setOpt(UDT_IPV, &intval, sizeof(int));
-
 //   char* ip = "206.220.241.13";
-//   server->setOpt(UDT_ADDR, ip, 16);
+//   client->setOpt(UDT_ADDR, ip, 16);
 
    try
    {
@@ -57,10 +33,10 @@ int main(int argc, char* argv[])
 
 
    timeval time0, time1, time2;
-
+   int intval, vallen;
    char* data;
-   int size = 7340000;
 
+   int size = 7340000;
 
    data = new char[size];
 
@@ -96,7 +72,7 @@ int main(int argc, char* argv[])
       try
       {
          while (client->getCurrSndBufSize() > 40960000)
-            usleep(100);
+            usleep(10);
          client->send(data, size);
 
          client->getOpt(UDT_MFLAG, &intval, vallen);
@@ -112,22 +88,12 @@ int main(int argc, char* argv[])
       }
    }
 
-   try
-   {
-      while (client->getCurrSndBufSize())
-         usleep(10);
-   }
-   catch(CUDTException e)
-   {
-      cout << "error msg: " << e.getErrorMessage();
-      return 0;
-   }
+   client->close(CUDT::WAIT_SEND);
 
    gettimeofday(&time2, 0);
    cout << "speed = " << 60000.0 / double(time2.tv_sec - time1.tv_sec + (time2.tv_usec - time1.tv_usec) / 1000000.0) << "Mbits/sec" << endl;
 
-
-   client->close();
+   delete client;
 
    return 1;
 }

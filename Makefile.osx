@@ -1,0 +1,2 @@
+all:
+	make -e os=BSD arch=POWERPC

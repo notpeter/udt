@@ -56,8 +56,8 @@ $nb1 color "tan"
 #
 # Major Link, queue, and queue monitor
 #
-$ns duplex-link $na $nb 100Mb 50ms RED
-$ns queue-limit $na $nb 20000
+$ns duplex-link $na $nb 100Mb 5ms DropTail
+$ns queue-limit $na $nb 100
 $ns duplex-link-op $na $nb orient right
 $ns duplex-link-op $na $nb color "green"
 $ns duplex-link-op $na $nb queuePos 0.5
@@ -70,29 +70,29 @@ $ns duplex-link-op $na $nb queuePos 0.5
 #
 set em [new ErrorModel]
 $em unit pkt
-$em set rate_ 0.01
+$em set rate_ 0.0000001
 $em ranvar [new RandomVariable/Uniform]
 $em drop-target [new Agent/Null]
-$ns link-lossmodel $em $na $nb
+#$ns link-lossmodel $em $na $nb
 
 #
 # Supportive link
 #
-$ns duplex-link $na0 $na 100Mb 10ms DropTail
-$ns queue-limit $na0 $na 1000
-$ns duplex-link-op $na0 $na orient 60deg
+$ns duplex-link $na0 $na1 100Mb 5ms RED
+$ns queue-limit $na0 $na1 1000
+$ns duplex-link-op $na0 $na1 orient 60deg
 
-$ns duplex-link $na1 $na 100Mb 10ms DropTail
+$ns duplex-link $na1 $na 200Mb 5ms DropTail
 $ns queue-limit $na1 $na 1000
 $ns duplex-link-op $na1 $na orient 360deg
 
-$ns duplex-link $nb $nb0 100Mb 10ms DropTail
-$ns queue-limit $nb $nb0 1000
-$ns duplex-link-op $nb $nb0 orient 0deg
+$ns duplex-link $na $nb0 180Mb 5ms DropTail
+$ns queue-limit $na $nb0 1000
+$ns duplex-link-op $na $nb0 orient 0deg
 
-$ns duplex-link $nb $nb1 100Mb 10ms DropTail
-$ns queue-limit $nb $nb1 1000
-$ns duplex-link-op $nb $nb1 orient 60deg
+$ns duplex-link $nb0 $nb1 100Mb 5ms RED
+$ns queue-limit $nb0 $nb1 1000
+$ns duplex-link-op $nb0 $nb1 orient 60deg
 
 
 #
@@ -104,17 +104,16 @@ source proc.tcl
 #
 # Testing cases
 #
-build-tcp Sack $na $nb 1460 10240000 0 0
-#build-tcp Sack $na1 $nb0 1460 10240000 1 0
-#build-udt $na $nb 1500 10000 1 0
-#build-udt $na $nb 1500 10000 2 0
+#build-tcp Sack $na $nb 1460 1000000000 0 0
+build-udt $na $nb 1500 100000 1 0
+
 
 #for {set i 100} {$i < 101} {incr i} {
 #   build-on-off $na $nb 1500 1.0 2.0 100000k $i 0
 #}
 
 #for {set i 0} {$i < 10} {incr i} {
-#   build-udt $na1 $nb0 1500 25600 $i 0
+#   build-udt $na $nb 1500 10000 $i 0
 #}
 
 #for {set i 0} {$i < 10} {incr i} {
@@ -127,6 +126,6 @@ build-tcp Sack $na $nb 1460 10240000 0 0
 #
 # End here
 #
-$ns at 100 finish
+$ns at 50 finish
 
 $ns run

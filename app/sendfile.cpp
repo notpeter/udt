@@ -1,3 +1,6 @@
+// This program sends a file using UDT
+// Usage: sendfile filename
+
 #include <iostream>
 #include <udt.h>
 
@@ -33,7 +36,7 @@ int main(int argc, char* argv[])
    ifstream ifs(argv[1]);
 
    ifs.seekg(0, ios::end);
-   int size = ifs.tellg();
+   long long size = ifs.tellg();
    ifs.seekg(0, ios::beg);
 
    try
@@ -47,6 +50,7 @@ int main(int argc, char* argv[])
    }
 
    sender->close();
+   delete sender;
 
    gettimeofday(&t2, 0);
 

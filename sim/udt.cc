@@ -1,7 +1,7 @@
 //
 // Author: Yunhong Gu, ygu@cs.uic.edu
 //
-// Description: 
+// Description: UDT ns-2 simulation module
 //
 // Assumption: This code does NOT process sequence number wrap, which will overflow after 2^31 packets.
 //             But I assume that you won't run NS for that long time :)
@@ -78,9 +78,11 @@ max_flow_window_(25600)
    local_recv_ = 0;
    last_dec_seq_ = -1;
    last_delay_time_ = Scheduler::instance().clock();
+   last_dec_int_ = 1.0;
 
    slow_start_ = true;
    freeze_ = false;
+   firstloss_ = false;
 
    syn_timer_.resched(0);
    ack_timer_.resched(0);
@@ -146,6 +148,7 @@ void UdtAgent::recv(Packet *pkt, Handler*)
             flow_window_size_ = max_flow_window_;
          }
 
+         //bandwidth_ = bandwidth_ * 0.875 + udth->bandwidth() * 0.125;
          bandwidth_ = udth->bandwidth();
 
          //printf("window: %d %d %d %d\n", flow_window_size_, udth->lrecv(), udth->rtt(), bandwidth_);
@@ -160,6 +163,15 @@ void UdtAgent::recv(Packet *pkt, Handler*)
 
          if (udth->loss()[0] > last_dec_seq_)
          {
+            if ((!firstloss_) && (udth->losslen() < 2))
+            {
+               firstloss_ = true;
+               break;
+            }
+            firstloss_ = false;
+
+            last_dec_int_ = snd_interval_;
+
             snd_interval_ = snd_interval_ * 1.125;
             //printf("dec -- %f %d\n", snd_interval_, flow_window_size_);
 
@@ -190,11 +202,15 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          break;
      
       case 4:
+         if (slow_start_)
+            slow_start_ = false;
+
+         last_dec_int_ = snd_interval_;
+
          snd_interval_ = snd_interval_ * 1.125;
          //printf("delay ------ %f %d \n", snd_interval_, flow_window_size_);
 
          last_dec_seq_ = snd_curr_seqno_;
-
          nak_count_ = -16;
          dec_count_ = 1;
 
@@ -498,11 +514,18 @@ void UdtAgent::rateControl()
       {
          double inc;
 
-         if (bandwidth_ < 1.0 / snd_interval_)
+         if (snd_interval_ > last_dec_int_)
+         {
+            inc = pow(10, ceil(log10(bandwidth_ / 9.0 * mtu_ * 8))) * 0.0000015 / mtu_;
+
+            if (inc < 1.0/mtu_)
+               inc = 1.0/mtu_;
+         }
+         else if (bandwidth_ < 1.0 / snd_interval_)
             inc = 1.0/mtu_;
          else
          {
-            inc = pow(10, ceil(log10(bandwidth_ - 1.0 / snd_interval_))) * syn_interval_ / 1000.0;
+            inc = pow(10, ceil(log10((bandwidth_ - 1.0 / snd_interval_) * mtu_ * 8))) * 0.000015 / mtu_;
 
             if (inc < 1.0/mtu_)
                inc = 1.0/mtu_;
@@ -510,7 +533,7 @@ void UdtAgent::rateControl()
 
          snd_interval_ = (snd_interval_ * syn_interval_) / (snd_interval_ * inc + syn_interval_);
 
-         //printf("inc ++ %f\n", snd_interval_);
+         printf("inc ++ %f %f\n", snd_interval_, inc);
       }
    }
    else

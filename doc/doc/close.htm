@@ -22,13 +22,22 @@
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">enum CUDT::CL_STATUS {WAIT_NONE, WAIT_SEND, 
+    WAIT_RECV, WAIT_ALL};</font><p style="margin-top: 0; margin-bottom: 0">
     <font face="Courier New" size="1">void close(</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp;&nbsp; CUDT::CL_STATUS wait = 
+    WAIT_NONE</font></p>
     <p style="margin-top: 0; margin-bottom: 0">
     <font size="1" face="Courier New">);</font></td>
   </tr>
 </table>
 <h4><font face="Verdana" size="2">Parameters</font></h4>
-<p><font face="Verdana" size="2">NONE.</font></p>
+<dl>
+  <dt><font face="Verdana" size="2"><i>wait</i></font></dt>
+  <dt><font face="Verdana" size="2"><i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  </i>[in] Option to tell UDT if ongoing data transfer should be waited.</font></dt>
+</dl>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
 <p><font face="Verdana" size="2">NONE.</font></p>
 <h4><font face="Verdana" size="2">Exceptions</font></h4>
@@ -38,6 +47,11 @@
 It disconnects the connection, stops the sending and receiving thread and 
 destroys&nbsp; all data structures. It SHOULD be called before a UDT entity is 
 to be destroyed.</font></P>
+<P><font face="Verdana" size="2">The method will return immediately with default 
+WAIT_NONE parameter. If WAIT_SEND is set, all data in the sending buffer will be 
+sent before UDT is closed. If WAIT_RECV is set, all data are still in transfer 
+will be finished before UDT is closed. The option of WAIT_ALL is the combination 
+of WAIT_SEND and WAIT_RECV.</font></P>
 <P><font face="Verdana" size="2">A closed UDT entity can be opened again by a
 <a href="open.htm">open</a> method.</font></P>
 <P><font face="Verdana" size="2">Nothing happens if the UDT entity was not 

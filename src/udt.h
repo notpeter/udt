@@ -73,7 +73,7 @@ CUDT: UDT
 
 /*****************************************************************************
 written by:
-   Yunhong Gu [ygu@cs.uic.edu], last updated 06/03/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 09/11/2003
 *****************************************************************************/
 
 
@@ -327,8 +327,6 @@ private:
    timeval m_LastArrTime;	// last packet arrival time
    timeval m_CurrArrTime;	// current packet arrival time
    timeval m_ProbeTime;		// arrival time of the first probing packet
-
-   bool m_bFirstRound;		// first round phase (less than "size" packets arrived) flag
 };
 
 
@@ -365,7 +363,7 @@ private:
 // 2: network connection broken
 // 3: memory exception
 // 4: file exception
-// 5: mehtod not supported
+// 5: method not supported
 // 6+: undefined error
 
    __int32 m_iMinor;	// for specific error reasons
@@ -1095,11 +1093,13 @@ public:
       // Functionality:
       //    Close the opened UDT entity. Closed UDT entity can be opened again.
       // Parameters:
-      //    None.
+      //    0) [in] wait: close immediately (WAIT_NONE, default), do not close until all data are sent (WAIT_SEND),
+      //                  do not close until all data are received (WAIT_RECV), or mix of WAIT_SEND and WAIT_RECV (WAIT_ALL).
       // Returned value:
       //    None.
 
-   void close();
+   enum CL_STATUS {WAIT_NONE, WAIT_SEND, WAIT_RECV, WAIT_ALL};
+   void close(const CL_STATUS& wait = WAIT_NONE);
 
       // Functionality:
       //    Request UDT to send out a data block "data" with size of "len".
@@ -1220,6 +1220,7 @@ private: // Status
    bool m_bOpened;				// If the UDT entity has been opened
    bool m_bInitiator;				// If the UDT entity initilize the connection
    bool m_bSlowStart;				// If UDT is during slow start phase
+   bool m_bFreeze;				// freeze the data sending
    __int32 m_iEXPCount;				// Expiration counter
    __int32 m_iBandwidth;			// Estimated bandwidth
 
@@ -1235,10 +1236,10 @@ private: // Sending related data
 
    pthread_mutex_t m_AckLock;
 
-   unsigned __int64 m_ullInterval;		// Inter-packet time, in CPU clock cycles
+   volatile unsigned __int64 m_ullInterval;	// Inter-packet time, in CPU clock cycles
 
    __int32 m_iNAKCount;				// Number of NAK received since last SYN
-   __int32 m_iSndLastAck;			// Last ACK received
+   volatile __int32 m_iSndLastAck;		// Last ACK received
    __int32 m_iLocalSend;			// Number of packets sent since last SYN
    __int32 m_iLocalLoss;			// Number of packet loss since last SYN
    __int32 m_iSndCurrSeqNo;			// The largest sequence number that has been sent
@@ -1249,8 +1250,6 @@ private: // Sending related data
 
    __int32 m_iLastDecSeq;			// Sequence number sent last decrease occurs
    __int32 m_iDecCount;				// Number of sending rate decrease
-
-   bool m_bFreeze;				// freeze the data sending
 
 private: // Receiving related data
    CRcvBuffer* m_pRcvBuffer;			// Receiver buffer

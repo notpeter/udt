@@ -42,11 +42,32 @@ proc build-tcp { type src dest pktSize window class startTime } {
    return $tcp
 }
 
-
-proc build-udp { src dest pktSize interval random id startTime } {
+proc build-cbr { src dest rate id startTime stopTime } {
    global ns
 
-   set udp [new Agent/CBR]
+   set udp [new Agent/UDP]
+   $ns attach-agent $src $udp
+
+   set cbr [new Application/Traffic/CBR]
+   $cbr attach-agent $udp
+
+   set null [new Agent/Null]
+   $ns attach-agent $dest $null
+
+   $ns connect $udp $null
+
+   $cbr set rate_ $rate
+
+   $ns at $startTime "$cbr start"
+   $ns at $stopTime "$cbr stop"
+
+   return $cbr
+}
+
+proc build-on-off { src dest pktSize burstTime idleTime rate id startTime } {
+   global ns
+
+   set udp [new Agent/CBR/UDP]
    $ns attach-agent $src $udp
 
    set null [new Agent/Null]
@@ -54,39 +75,17 @@ proc build-udp { src dest pktSize interval random id startTime } {
 
    $ns connect $udp $null
 
-   if {$pktSize > 0} {  
-        $udp set packetSize_ $pktSize
-   }
+   set exp [new Traffic/Expoo]
+   $exp set packet-size $pktSize
+   $exp set burst-time $burstTime
+   $exp set idle-time $idleTime
+   $exp set rate $rate
+   $udp attach-traffic $exp
 
-   $udp set fid_ $id
-   $udp set interval_ $interval
-   $udp set random_ $random
    $ns at $startTime "$udp start"
+   $udp set fid_ $id
 
    return $udp
-}
-
-proc build-on-off { src dest pktSize burstTime idleTime rate id startTime } {
-   global ns
-
-   set cbr [new Agent/CBR/UDP]
-   $ns attach-agent $src $cbr
-
-   set null [new Agent/Null]
-   $ns attach-agent $dest $null
-
-   $ns connect $cbr $null
-
-   set exp1 [new Traffic/Expoo]
-   $exp1 set packet-size $pktSize
-   $exp1 set burst-time $burstTime
-   $exp1 set idle-time $idleTime
-   $exp1 set rate $rate
-   $cbr  attach-traffic $exp1
-
-   $ns at $startTime "$cbr start"
-   $cbr set fid_ $id
-   return $cbr
 }
 
 proc build-udt { src dest mtu window id startTime } {

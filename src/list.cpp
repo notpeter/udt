@@ -87,6 +87,7 @@ inline const bool CList::notgreaterthan(const __int32& seqno1, const __int32& se
    return lessthan(seqno1, seqno2);
 }
 
+// return the distance between two sequence numbers, parameters are pre-checked
 inline const __int32 CList::getLength(const __int32& seqno1, const __int32& seqno2) const
 {
    if (seqno2 >= seqno1)
@@ -121,7 +122,7 @@ m_iSize(size)
    m_piNext = new __int32 [m_iSize];
 
    // -1 means there is no data in the node
-   for (__int32 i = 0; i < m_iSize; i ++)
+   for (__int32 i = 0; i < size; i ++)
    {
       m_piData1[i] = -1;
       m_piData2[i] = -1;
@@ -192,7 +193,7 @@ __int32 CSndLossList::insert(const __int32& seqno1, const __int32& seqno2)
    {
       if (seqno1 == m_piData1[loc])
       {
-         // first seqno is equivlent, comparte the second
+         // first seqno is equivlent, compare the second
          if ((seqno2 != seqno1) && greaterthan(seqno2, m_piData2[loc]))
          {
             // new seq pair is longer than old pair, e.g., insert [3, 7] to [3, 5], becomes [3, 7]
@@ -208,7 +209,7 @@ __int32 CSndLossList::insert(const __int32& seqno1, const __int32& seqno2)
       }
       else
       {
-         // searching the prior and the next nodes
+         // searching the prior node
          __int32 i = (loc - 1 + m_iSize) % m_iSize;
          while (-1 == m_piData1[i])
             i = (i - 1 + m_iSize) % m_iSize;
@@ -256,7 +257,7 @@ __int32 CSndLossList::insert(const __int32& seqno1, const __int32& seqno2)
          return m_iLength - origlen;
    }
 
-   // coalecse with next node. E.g., [3, 7], ..., [6, 9] becomes [3, 9] 
+   // coalesce with next node. E.g., [3, 7], ..., [6, 9] becomes [3, 9] 
    if ((-1 != m_piNext[loc]) && (-1 != m_piData2[loc]))
    {
       __int32 i = m_piNext[loc];
@@ -481,7 +482,7 @@ m_iSize(size)
    m_piNext = new __int32 [m_iSize];
 
    // -1 means there is no data in the node
-   for (__int32 i = 0; i < m_iSize; i ++)
+   for (__int32 i = 0; i < size; i ++)
    {
       m_piData1[i] = -1;
       m_piData2[i] = -1;
@@ -681,7 +682,7 @@ void CRcvLossList::remove(const __int32& seqno)
          else
             m_piData2[i] = decSeqNo(seqno);
 
-         // report the time stamp and report counter
+         // replicate the time stamp and report counter
          m_pLastFeedbackTime[loc] = m_pLastFeedbackTime[i];
          m_piCount[loc] = m_piCount[i];
 
@@ -734,14 +735,14 @@ void CRcvLossList::getLossArray(__int32* array, __int32* len, const __int32& lim
             len[0] += getLength(m_piData1[i], m_piData2[i]);
          }
          else
-            // there is only 1 loss in the seqeunce
+            // there is only 1 loss in the current node
             len[0] ++;
 
          len[1] ++;
 
          // update the timestamp
          gettimeofday(m_pLastFeedbackTime + i, 0);
-         // update "k"
+         // update how many times this loss has been fed back, the "k" in UDT paper
          m_piCount[i] ++;
       }
 
@@ -762,7 +763,7 @@ m_iSize(size)
    m_piNext = new __int32 [m_iSize];
 
    // -1 means there is no data in the node
-   for (__int32 i = 0; i < m_iSize; i ++)
+   for (__int32 i = 0; i < size; i ++)
       m_piData[i] = -1;
 
    m_iCurrErrSize = 0;

@@ -52,7 +52,7 @@ method to catch and handle UDT errors and exceptions.
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 06/11/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 09/11/2003
 *****************************************************************************/
 
 
@@ -201,7 +201,7 @@ __int32 CACKWindow::acknowledge(const __int32& seq, __int32& ack)
    {
       // Head has not exceeded the physical boundary of the window
 
-      for (__int32 i = m_iTail; i <= m_iHead; i ++)
+      for (__int32 i = m_iTail, n = m_iHead; i <= n; i ++)
          // looking for indentical ACK Seq. No.
          if (seq == m_piACKSeqNo[i])
          {
@@ -227,8 +227,8 @@ __int32 CACKWindow::acknowledge(const __int32& seq, __int32& ack)
       return -1;
    }
 
-   // head has exceeded the physical window boundary, so it is behind to tail
-   for (__int32 i = m_iTail; i <= m_iHead + m_iSize; i ++)
+   // Head has exceeded the physical window boundary, so it is behind tail
+   for (__int32 i = m_iTail, n = m_iHead + m_iSize; i <= n; i ++)
       // looking for indentical ACK seq. no.
       if (seq == m_piACKSeqNo[i % m_iSize])
       {
@@ -269,13 +269,14 @@ m_iSize(16)
    m_iRTTWindowPtr = 0;
    m_iProbeWindowPtr = 0;
 
-   m_bFirstRound = true;
-
    gettimeofday(&m_LastArrTime, 0);
 
    // initialize RTT/PCT/PDT values
-   for (__int32 i = 0; i < m_iSize; i ++)
+   for (__int32 i = 0; i < m_iSize; ++ i)
+   {
+      m_piPktWindow[i] = 1;
       m_piProbeWindow[i] = m_piRTTWindow[i] = m_piPCTWindow[i] = m_piPDTWindow[i] = 0;
+   }
 }
 
 CPktTimeWindow::CPktTimeWindow(const __int32& size):
@@ -291,13 +292,14 @@ m_iSize(size)
    m_iRTTWindowPtr = 0;
    m_iProbeWindowPtr = 0;
 
-   m_bFirstRound = true;
-
    gettimeofday(&m_LastArrTime, 0);
 
    // initialize RTT/PCT/PDT values
-   for (__int32 i = 0; i < m_iSize; i ++)
+   for (__int32 i = 0; i < m_iSize; ++ i)
+   {
+      m_piPktWindow[i] = 1;
       m_piProbeWindow[i] = m_piRTTWindow[i] = m_piPCTWindow[i] = m_piPDTWindow[i] = 0;
+   }
 }
 
 CPktTimeWindow::~CPktTimeWindow()
@@ -311,20 +313,10 @@ CPktTimeWindow::~CPktTimeWindow()
 
 __int32 CPktTimeWindow::getPktSpeed() const
 {
-   // during slow start phase, there is not enough data in history window
-   // measure the latest two packets arrival times
-   if (m_bFirstRound)
-   {
-      if ((m_iPktWindowPtr > 1) && (m_piPktWindow[m_iPktWindowPtr - 1] < m_piPktWindow[m_iPktWindowPtr - 2] * 2))
-         return (__int32)ceil(1000000.0 / m_piPktWindow[m_iPktWindowPtr - 1]);
-
-      return 0;
-   }
-
    // sorting
    __int32 temp;
-   for (__int32 i = 0; i < ((m_iSize >> 1) + 1); ++ i)
-      for (__int32 j = i; j < m_iSize; ++ j)
+   for (__int32 i = 0, n = (m_iSize >> 1) + 1; i < n; ++ i)
+      for (__int32 j = i, m = m_iSize; j < m; ++ j)
          if (m_piPktWindow[i] > m_piPktWindow[j])
          {
             temp = m_piPktWindow[i];
@@ -338,7 +330,7 @@ __int32 CPktTimeWindow::getPktSpeed() const
    __int32 sum = 0;
 
    // median filtering
-   for (__int32 i = 0; i < m_iSize; ++ i)
+   for (__int32 i = 0, n = m_iSize; i < n; ++ i)
       if ((m_piPktWindow[i] < (median << 3)) && (m_piPktWindow[i] > (median >> 3)))
       {
          ++ count;
@@ -357,7 +349,7 @@ bool CPktTimeWindow::getDelayTrend() const
    double pct = 0.0;
    double pdt = 0.0;
 
-   for (__int32 i = 0; i < m_iSize; ++i)
+   for (__int32 i = 0, n = m_iSize; i < n; ++ i)
       if (i != m_iRTTWindowPtr)
       {
          pct += m_piPCTWindow[i];
@@ -378,8 +370,8 @@ __int32 CPktTimeWindow::getBandwidth() const
 {
    // sorting
    __int32 temp;
-   for (__int32 i = 0; i < ((m_iSize >> 1) + 1); ++ i)
-      for (__int32 j = i; j < m_iSize; ++ j)
+   for (__int32 i = 0, n = (m_iSize >> 1) + 1; i < n; ++ i)
+      for (__int32 j = i, m = m_iSize; j < m; ++ j)
          if (m_piProbeWindow[i] > m_piProbeWindow[j])
          {
             temp = m_piProbeWindow[i];
@@ -405,10 +397,6 @@ void CPktTimeWindow::pktArrival()
 
    // the window is logically circular
    m_iPktWindowPtr = (m_iPktWindowPtr + 1) % m_iSize;
-
-   // slow start stops after the window is fulfilled
-   if (0 == m_iPktWindowPtr)
-      m_bFirstRound = false;
 
    // remember last packet arrival time 
    m_LastArrTime = m_CurrArrTime;
@@ -439,9 +427,6 @@ void CPktTimeWindow::probe2Arrival()
 
    // the window is logically circular
    m_iProbeWindowPtr = (m_iProbeWindowPtr + 1) % m_iSize;
-
-   // remember last packet arrival time
-   m_LastArrTime = m_CurrArrTime;
 }
 
 
@@ -459,7 +444,7 @@ CUDTException::~CUDTException()
 
 const char* CUDTException::getErrorMessage()
 {
-   // translate "Major" code into text message, "Minor" code is omitted.
+   // translate "Major:Minor" code into text message.
 
    switch (m_iMajor)
    {
@@ -469,6 +454,20 @@ const char* CUDTException::getErrorMessage()
 
       case 1:
         strcpy(m_pcMsg, "Couldn't set up network connection");
+
+        switch (m_iMinor)
+        {
+        case 5:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "connection time out");
+
+           break;
+        
+        default:
+           break;
+
+        }
+
         break;
 
       case 2:
@@ -481,10 +480,66 @@ const char* CUDTException::getErrorMessage()
 
       case 4:
         strcpy(m_pcMsg, "File exceptions occurs");
+
+        switch (m_iMinor)
+        {
+        case 1:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "cannot seek read position");
+
+           break;
+
+        case 2:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "failure in read");
+
+           break;
+
+        case 3:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "cannot seek write position");
+
+           break;
+
+        case 4:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "failure in write");
+
+           break;
+
+        default:
+           break;
+        }
+
         break;
 
       case 5:
         strcpy(m_pcMsg, "Operation not supported");
+ 
+        switch (m_iMinor)
+        {
+        case 1:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on OPENED UDT entity");
+
+           break;
+
+        case 2:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on CONNECTED UDT entity");
+
+           break;
+
+        case 3:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Bad parameters");
+
+           break;
+
+        default:
+           break;
+        }
+
         break;
 
       default:

@@ -161,9 +161,9 @@ int main(int argv, char** argc)
    ifstream trace;
 
    trace.open("out.tr");
-   cout << parse(&trace, atoi(argc[1]), atoi(argc[2])) << endl;
+//   cout << parse(&trace, atoi(argc[1]), atoi(argc[2])) << endl;
 
-//   parseall(&trace, atoi(argc[1]), atoi(argc[2]));
+   parseall(&trace, atoi(argc[1]), atoi(argc[2]));
 
 /*   
    for (int i = 0; i < 20; i++)

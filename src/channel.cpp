@@ -51,7 +51,7 @@ UDT packet definition: packet.h
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 04/14/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 09/16/2003
 *****************************************************************************/
 
 #include <sys/types.h>
@@ -266,14 +266,14 @@ const CChannel& CChannel::operator<<(CPacket& packet) const
 {
    // convert control information into network order
    if (packet.getFlag())
-      for (__int32 i = 0; i < packet.getLength() / 4; i ++)
+      for (__int32 i = 0, n = packet.getLength() / sizeof(__int32); i < n; i ++)
          *((__int32 *)packet.m_pcData + i) = htonl(*((__int32 *)packet.m_pcData + i));
 
    // convert packet header into network order
    packet.m_nHeader = htonl(packet.m_nHeader);
 
    #ifdef UNIX
-      while (0 == writev(m_iSocket, packet.getPacketVector(), 2))
+      while (0 == writev(m_iSocket, packet.getPacketVector(), 2)) {}
    #else
       writev(m_iSocket, packet.getPacketVector(), 2);
    #endif
@@ -281,7 +281,7 @@ const CChannel& CChannel::operator<<(CPacket& packet) const
    // convert back into local host order
    packet.m_nHeader = ntohl(packet.m_nHeader);
    if (packet.getFlag())
-      for (__int32 i = 0; i < packet.getLength() / 4; i ++)
+      for (__int32 i = 0, n = packet.getLength() / sizeof(__int32); i < n; i ++)
          *((__int32 *)packet.m_pcData + i) = ntohl(*((__int32 *)packet.m_pcData + i));
 
    return *this;
@@ -292,6 +292,15 @@ const CChannel& CChannel::operator>>(CPacket& packet) const
    // Packet length indicates if the packet is successfully received
    packet.setLength(readv(m_iSocket, packet.getPacketVector(), 2) - sizeof(__int32));
 
+   #ifdef UNIX
+      //simulating RCV_TIMEO
+      if (packet.getLength() <= 0)
+      {
+         usleep(10);
+         packet.setLength(readv(m_iSocket, packet.getPacketVector(), 2) - sizeof(__int32));
+      }
+   #endif
+
    if (packet.getLength() <= 0)
       return *this;
 
@@ -300,7 +309,7 @@ const CChannel& CChannel::operator>>(CPacket& packet) const
 
    // convert control information into local host order
    if (packet.getFlag())
-      for (__int32 i = 0; i < packet.getLength() / 4; i ++)
+      for (__int32 i = 0, n = packet.getLength() / sizeof(__int32); i < n; i ++)
          *((__int32 *)packet.m_pcData + i) = ntohl(*((__int32 *)packet.m_pcData + i));
 
    return *this;
@@ -381,7 +390,7 @@ void CChannel::setChannelOpt()
    timeval tv;
    tv.tv_sec = 0;
    #ifdef BSD
-      // Known BSD bug as if the day I wrote these codes.
+      // Known BSD bug as the day I wrote these codes.
       // A small time out value will cause the socket to block forever.
       tv.tv_usec = 10000;
    #else
@@ -395,7 +404,7 @@ void CChannel::setChannelOpt()
       if (-1 == fcntl(m_iSocket, F_SETFL, opts | O_NONBLOCK))
          throw CUDTException(1, 2, errno);
    #else
-      // Set receiving timer out value
+      // Set receiving time-out value
       if (setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(timeval)) < 0)
          throw CUDTException(1, 2, errno);
    #endif

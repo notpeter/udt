@@ -1,9 +1,12 @@
 Please read the COPYRIGHT information in the current directory carefully.
 
+Please always check CVS of sourceforge for most recent update (if you have
+downloaded a tarball release, it may not be updated in time).
+
 
 CONTENT:
 ./src:	UDT source codes
-./app:	Example applications
+./app:	Example programs
 ./sim:	NS-2 module and simulation scripts
 ./doc:	UDT documentation
 
@@ -11,18 +14,19 @@ CONTENT:
 To make:
 	make -e os=XXX arch=YYY
 
-XXX: [LINUX(default), UNIX, BSD]
-YYY: [IA32(default), POWERPC, SPARC]
+XXX: [LINUX(default), BSD]
+YYY: [IA32(default), POWERPC]
 
 For example, on OS X, you need to do:
 	make -e os=BSD arch=POWERPC
 
+To make UDT on UNIX system, use make -f Makefile.unix
 
 To make UDT on some platforms other than those listed above:
-UDT has been tested on those platforms but not on any other. It may 
-or may NOT work on other systems. You can try to make it. If it 
-does not work, you can try to modify the source codes according to the 
-migration guide in the documentation.
+This library has been tested on those platforms but not on any other. It may 
+or may NOT work on other systems. You can try to make it. If it does not 
+work, you can try to modify the source codes according to the migration 
+guide in the documentation.
 
 
 To use UDT in your application:
@@ -37,7 +41,7 @@ To report bugs, request new features, or make a contribution to the software:
 visit http://sourceforge.net/projects/dataspace/
 
 
-Join the discussion mailling list:
+Join the discussion mailing list:
 http://lists.sourceforge.net/lists/listinfo/dataspace-sabul
 
 

@@ -45,7 +45,7 @@ A UDT packet is a 2-dimension vector of packet header and data.
 
 /*****************************************************************************
 written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 05/21/2003
+   Yunhong Gu [ygu@cs.uic.edu], last updated 09/16/2003
 *****************************************************************************/
 
 
@@ -125,12 +125,8 @@ written by
 
 // Set up the aliases in the constructure
 CPacket::CPacket():
-m_iSeqNo(__int32(m_nHeader)),
-#ifdef BSD
-   m_pcData(m_PacketVector[1].iov_base)
-#else
-   m_pcData((char *)(m_PacketVector[1].iov_base))
-#endif
+m_iSeqNo((__int32&)(m_nHeader)),
+m_pcData((char*&)(m_PacketVector[1].iov_base))
 {
    m_PacketVector[0].iov_base = (char *)&m_nHeader;
    m_PacketVector[0].iov_len = sizeof(__int32);
@@ -156,7 +152,7 @@ void CPacket::pack(const __int32& seqno, const char* data, const __int32& size)
    m_iSeqNo = seqno;
 
    // point the second demension to the payload
-   m_PacketVector[1].iov_base = (void *)data;
+   m_PacketVector[1].iov_base = const_cast<char *>(data);
    m_PacketVector[1].iov_len = size;
 }
 
@@ -168,50 +164,13 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam)
    // Set bit-16~31 and control information field
    switch (pkttype)
    {
-   case 0: //000 - Handshake
-      // control info filed is handshake info
-      m_PacketVector[1].iov_base = lparam;
-      m_PacketVector[1].iov_len = sizeof(CHandShake);
-
-      break;
-
-   case 1: //001 - Keep-alive
-      // control info field should be none
-      // but "writev" does not allow this
-      m_PacketVector[1].iov_base = lparam; //NULL
-      m_PacketVector[1].iov_len = sizeof(__int32); //0
-
-      break;
-
    case 2: //010 - Acknowledgement (ACK)
       // ACK packet seq. no.
       m_nHeader |= *(__int32 *)lparam;
 
       // data ACK seq. no., RTT, data receiving rate (packets per second), and estimated link capacity (packets per second)
-      m_PacketVector[1].iov_base = rparam;
+      m_PacketVector[1].iov_base = (char *)rparam;
       m_PacketVector[1].iov_len = sizeof(__int32) * 4;
-
-      break;
-
-   case 3: //011 - Loss Report (NAK)
-      // loss length
-      m_nHeader |= *(__int32 *)lparam;
-
-      // loss list
-      m_PacketVector[1].iov_base = rparam;
-      m_PacketVector[1].iov_len = *((__int32 *)lparam + 1) * sizeof(__int32);
-
-      break;
-   case 4: //100 - Congestion Warning
-      // Header only, no control information
-      // control info field should be none
-      // but "writev" does not allow this
-      m_PacketVector[1].iov_base = lparam; //NULL
-      m_PacketVector[1].iov_len = sizeof(__int32); //0
-  
-      break;
-
-   case 5: //101 - Unused
 
       break;
 
@@ -221,9 +180,46 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam)
 
       // control info field should be none
       // but "writev" does not allow this
-      m_PacketVector[1].iov_base = lparam; //NULL;
+      m_PacketVector[1].iov_base = (char *)lparam; //NULL;
       m_PacketVector[1].iov_len = sizeof(__int32); //0;
 
+      break;
+
+   case 3: //011 - Loss Report (NAK)
+      // loss length
+      m_nHeader |= *(__int32 *)lparam;
+
+      // loss list
+      m_PacketVector[1].iov_base = (char *)rparam;
+      m_PacketVector[1].iov_len = *((__int32 *)lparam + 1) * sizeof(__int32);
+
+      break;
+
+   case 4: //100 - Congestion Warning
+      // Header only, no control information
+      // control info field should be none
+      // but "writev" does not allow this
+      m_PacketVector[1].iov_base = (char *)lparam; //NULL;
+      m_PacketVector[1].iov_len = sizeof(__int32); //0
+  
+      break;
+
+   case 1: //001 - Keep-alive
+      // control info field should be none
+      // but "writev" does not allow this
+      m_PacketVector[1].iov_base = (char *)lparam; //NULL;
+      m_PacketVector[1].iov_len = sizeof(__int32); //0
+
+      break;
+
+   case 0: //000 - Handshake
+      // control info filed is handshake info
+      m_PacketVector[1].iov_base = (char *)lparam;
+      m_PacketVector[1].iov_len = sizeof(CHandShake);
+
+      break;
+
+   case 5: //101 - Unused
       break;
 
    case 7: //111 - Resevered for future use
