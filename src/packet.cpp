@@ -1,40 +1,27 @@
 /*****************************************************************************
-Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-UDP-based Data Transfer Library (UDT)
+UDP-based Data Transfer Library (UDT) version 2
 
 Laboratory for Advanced Computing (LAC)
 National Center for Data Mining (NCDM)
 University of Illinois at Chicago
 http://www.lac.uic.edu/
 
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software (UDT) and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to the
-following conditions:
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or (at
+your option) any later version.
 
-Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimers.
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+General Public License for more details.
 
-Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimers in the documentation
-and/or other materials provided with the distribution.
-
-Neither the names of the University of Illinois, LAC/NCDM, nor the names
-of its contributors may be used to endorse or promote products derived
-from this Software without specific prior written permission.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 *****************************************************************************/
 
 /*****************************************************************************
@@ -44,8 +31,12 @@ A UDT packet is a 2-dimension vector of packet header and data.
 *****************************************************************************/
 
 /*****************************************************************************
-written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 12/16/2003
+written by
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/10/2005
+
+modified by
+   <programmer's name, programmer's email, last updated mm/dd/yyyy>
+   <descrition of changes>
 *****************************************************************************/
 
 
@@ -73,7 +64,7 @@ written by
 //    0                   1                   2                   3
 //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |1|type |        Reserved       |   Loss Length / ACK Seq. No.  |
+//   |1|type |        Reserved       |           ACK Seq. No.        |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
 //   bit 1-3:
@@ -84,13 +75,14 @@ written by
 //              bits 16-31:   Undefined
 //              Control Info: None
 //      010: Acknowledgement (ACK)
-//              bits 16-31:   Sequence number of the ACK
+//              bits 16-31:   The ACK sequence number
 //              Control Info: The sequence number to which (but not include) all the previous packets have beed received
-//                            RTT
-//                            the packets receving rate
-//                            estimated bandwidth
+//              Optional:     RTT
+//                            RTT Variance
+//                            advertised flow window size (number of packets)
+//                            estimated bandwidth (number of packets per second)
 //      011: Negative Acknowledgement (NAK)
-//              bits 16-31:   Number of the loss carried in the packet
+//              bits 16-31:   Undefined
 //              Control Info: Loss list (see loss list coding below)
 //      100: Congestion Warning
 //              bits 16-31:   Undefined
@@ -99,9 +91,16 @@ written by
 //              bits 16-31:   Undefined
 //              Control Info: None
 //      110: Acknowledgement of Acknowledement (ACK-square)
-//              bits 16-31:   The ACK sequence number with which the ACK packet is received.
+//              bits 16-31:   The ACK sequence number
 //              Control Info: None
-//      111: Explained by bits 4 - 15, reserved for future use
+//      111: Explained by bits 4 - 15
+//              
+//   bit 4 - 15:
+//      This space is used for future expansion or user defined control packets. 
+//      Although a user defined packets can use this space freely, it is highly
+//      recommended that lower bit is chosen first, i.e., starting from 0xFFFF
+//      for bits 0 - 15. For example, if a customized protocol need to add two 
+//      new types of packets, 0xFFFF and 0xFFFE is recommended.
 //
 //    0                   1                   2                   3
 //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -121,9 +120,7 @@ written by
 //      For any single loss or consectutive loss less than 2 packets, use
 //      the original sequence numbers in the field.
 
-
 #include "udt.h"
-
 
 // Set up the aliases in the constructure
 CPacket::CPacket():
@@ -131,7 +128,7 @@ m_iSeqNo((__int32&)(m_nHeader)),
 m_pcData((char*&)(m_PacketVector[1].iov_base))
 {
    m_PacketVector[0].iov_base = (char *)&m_nHeader;
-   m_PacketVector[0].iov_len = sizeof(__int32);
+   m_PacketVector[0].iov_len = CPacket::m_iPktHdrSize;
 }
 
 CPacket::~CPacket()
@@ -158,7 +155,7 @@ void CPacket::pack(const __int32& seqno, const char* data, const __int32& size)
    m_PacketVector[1].iov_len = size;
 }
 
-void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam)
+void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __int32& size)
 {
    // Set (bit-0 = 1) and (bit-1~3 = type)
    m_nHeader = 0x80000000 | (pkttype << 28);
@@ -168,11 +165,17 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam)
    {
    case 2: //010 - Acknowledgement (ACK)
       // ACK packet seq. no.
-      m_nHeader |= *(__int32 *)lparam;
+      #ifndef CUSTOM_CC
+         m_nHeader |= *(__int32 *)lparam;
+      #else
+         if (NULL != lparam)
+            m_nHeader |= *(__int32 *)lparam;
+      #endif
 
-      // data ACK seq. no., RTT, data receiving rate (packets per second), and estimated link capacity (packets per second)
+      // data ACK seq. no. 
+      // optional: RTT (microsends), RTT variance (microseconds) advertised flow window size (packets), and estimated link capacity (packets per second)
       m_PacketVector[1].iov_base = (char *)rparam;
-      m_PacketVector[1].iov_len = sizeof(__int32) * 4;
+      m_PacketVector[1].iov_len = size;
 
       break;
 
@@ -182,26 +185,22 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam)
 
       // control info field should be none
       // but "writev" does not allow this
-      m_PacketVector[1].iov_base = (char *)lparam; //NULL;
+      m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
       m_PacketVector[1].iov_len = sizeof(__int32); //0;
 
       break;
 
    case 3: //011 - Loss Report (NAK)
-      // loss length
-      m_nHeader |= *(__int32 *)lparam;
-
       // loss list
       m_PacketVector[1].iov_base = (char *)rparam;
-      m_PacketVector[1].iov_len = *((__int32 *)lparam + 1) * sizeof(__int32);
+      m_PacketVector[1].iov_len = size;
 
       break;
 
    case 4: //100 - Congestion Warning
-      // Header only, no control information
       // control info field should be none
       // but "writev" does not allow this
-      m_PacketVector[1].iov_base = (char *)lparam; //NULL;
+      m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
       m_PacketVector[1].iov_len = sizeof(__int32); //0
   
       break;
@@ -209,27 +208,34 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam)
    case 1: //001 - Keep-alive
       // control info field should be none
       // but "writev" does not allow this
-      m_PacketVector[1].iov_base = (char *)lparam; //NULL;
+      m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
       m_PacketVector[1].iov_len = sizeof(__int32); //0
 
       break;
 
    case 0: //000 - Handshake
       // control info filed is handshake info
-      m_PacketVector[1].iov_base = (char *)lparam;
-      m_PacketVector[1].iov_len = sizeof(CHandShake);
+      m_PacketVector[1].iov_base = (char *)rparam;
+      m_PacketVector[1].iov_len = size; //sizeof(CHandShake);
 
       break;
 
    case 5: //101 - Shutdown
       // control info field should be none
       // but "writev" does not allow this
-      m_PacketVector[1].iov_base = (char *)lparam; //NULL;
+      m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
       m_PacketVector[1].iov_len = sizeof(__int32); //0
 
       break;
 
-   case 7: //111 - Resevered for future use
+   case 7: //111 - Reserved and user defined control packets
+      #ifdef CUSTOM_CC
+         // add user defined packet processing here
+         // "lparam" can be used to store the rest type information for bit 4 - 15
+         // a new class can also be inherited from CPacket
+         // Type 0 - 6 packets SHOULD NOT be modified for other usage 
+      #endif
+
       break;
 
    default:
@@ -252,12 +258,6 @@ __int32 CPacket::getType() const
 {
    // read bit 1~3
    return (m_nHeader >> 28) & 0x00000007;
-}
-
-__int32 CPacket::getLossLength() const
-{
-   // read bit 16~31
-   return m_nHeader & 0x0000FFFF;
 }
 
 __int32 CPacket::getAckSeqNo() const

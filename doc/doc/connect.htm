@@ -2,7 +2,7 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
 <meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
@@ -12,8 +12,8 @@
 
 <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
   <tr>
-    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: CUDT 
-    Methods</i></font></td>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT 
+	Functions</i></font></td>
   </tr>
 </table>
 <h1><font size="4" face="Verdana">connect</font></h1>
@@ -23,56 +23,89 @@ UDT entity and constructs a UDT connection.</font></p>
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
-    <font size="1" face="Courier New">void connect(<br>
-&nbsp;&nbsp; const char* <font color="#FFFFFF"><i>ip</i></font>,</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp;&nbsp; const int&amp;
-    <font color="#FFFFFF"><i>port,</i></font></font><p style="margin-top: 0; margin-bottom: 0">
-    <i><font face="Courier New" size="1" color="#FFFFFF">&nbsp;&nbsp; </font>
-    </i><font face="Courier New" size="1">const int&amp;</font><font face="Courier New" size="1" color="#FFFFFF"><i> 
-    timeo </i></font><font face="Courier New" size="1">= <font color="#008000">0</font><br>
-    );</font></td>
+    <font face="Courier New" size="1">int connect(<br>
+&nbsp; UDTSOCKET <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">u</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<br>
+&nbsp; const struct sockaddr *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">name</a></font>,&nbsp;
+	<br>
+&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">namelen</a></font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<br>
+	);</font></td>
   </tr>
 </table>
 <h4><font face="Verdana" size="2">Parameters</font></h4>
 <dl>
-  <dt><font face="Verdana" size="2"><i>ip</i> </font></dt>
-  <dd><font face="Verdana" size="2">[in] The server IP address or domain name.</font></dd>
-  <dt>&nbsp;</dt>
-  <dt><font face="Verdana" size="2"><i>port</i> </font></dt>
-  <dd><font face="Verdana" size="2">[in] The port number that the is listening.</font></dd>
-  <dt>&nbsp;</dt>
-  <dt><i><font face="Verdana" size="2">timeo</font></i></dt>
-  <dd><font face="Verdana" size="2">[in] The time (in microseconds) to wait 
-  before a successful connection.&nbsp; </font></dd>
+	<dt><font face="Verdana"><i><font size="2">u</font></i><font size="2">
+	</font></font> </dt>
+	<dd><font face="Verdana" size="2">[in] Descriptor identifying an unconnected 
+	socket. </font></dd>
+	<dt><font face="Verdana"><i><font size="2">name</font></i><font size="2">
+	</font></font> </dt>
+	<dd><font face="Verdana" size="2">[in] Name of the socket to which the 
+	connection should be established. </font></dd>
+	<dt><font face="Verdana"><i><font size="2">namelen</font></i><font size="2">
+	</font></font> </dt>
+	<dd><font face="Verdana" size="2">[in] Length of the name. </font></dd>
 </dl>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">NONE.</font></p>
-<h4><font face="Verdana" size="2">Exceptions</font></h4>
-<p><font face="Verdana" size="2">Exception will be threw out if no server is 
-ready to be connected at the given <i>ip</i> and <i>port</i> address before timer expires (if <i>timeo</i> is greater than 0).</font></p>
+<p><font face="Verdana" size="2">On success, 0 is returned. Otherwise, UDT_ERROR 
+is returned and the specific error information can be retrieved using
+<a href="error.htm">getlasterror</a>.</font></p>
+  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table1" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
+    <tr>
+      <th align="center" bgcolor="#C0C0C0" width="133">
+		<font face="Verdana" size="2">Error Code</font></th>
+      <th align="center" bgcolor="#C0C0C0" width="812"><b>
+      <font face="Verdana" size="2">Comment</font></b></th>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		5004</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		<i>u</i> 
+		is an invalid UDT socket.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		1001</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		server does not exist.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		1002</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		the connection request is rejected by the server.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		5002</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		the socket is not allowed to do a connect call: it is either in 
+		listening state or has been already connected.</font></td>
+    </tr>
+    </table>
 <H4><font face="Verdana" size="2">Description</font></H4>
 <P><font face="Verdana" size="2">The 
-<A><b>connect</b></A> method tries to connect to the UDT server at <i>ip</i>:<i>port</i>, 
-even there is no such a server. A UDT server is NOT necessarily to be started 
-earlier than the client side. The <b>connect</b> method keeps querying the UDP
-<i>port</i> at <i>ip</i> until it receives a handshake packet from the server, 
-which has called <a href="listen.htm">listen</a> at that time.</font></P>
-<P><font face="Verdana" size="2">The client side sends handshake packets to the 
-server with its own initial maximum flow window size and MTU. 
-Once it receives feedback from the server, these values are updated with the 
-values in the returned handshake packet.</font></P>
-<P><font face="Verdana" size="2">The sending and receiving threads are started 
-after <b>connect</b>, and the UDT entity is ready for data transfer.</font></P>
-<P><font face="Verdana" size="2">If the <i>timeo</i> is not greater than
-<font color="#008000">0</font>,&nbsp; the method will be indefinitely blocked 
-until the connection is successfully brought up. Otherwise, it will exit with an 
-exception if connection is not built before timer expires.</font></P>
+<A><b>connect</b></A> method tries to connect to the UDT server at <i>name</i>. 
+Since UDT is connection-oriented, the connection set up process will need at 
+least 1 round trip time to finish.</font></P>
+<P><font face="Verdana" size="2">The blocking manner does not affect the <b>connect</b> 
+call. The <b>connect</b> process is always blocked until the connection is set up or 
+rejected.</font></P>
 <p></p>
 <p></p>
 <H4><font face="Verdana" size="2">See Also</font></H4>
 <P>
-<b><font face="Verdana" size="2"><a href="open.htm">open</a></font></b><font face="Verdana" size="2"><b>,
+<b><font face="Verdana" size="2"><a href="bind.htm">bind</a></font></b><font face="Verdana" size="2"><b>,
 <a href="listen.htm">listen</a></b></font></P>
 
 </body>

@@ -1,46 +1,65 @@
-Please read the COPYRIGHT information in the current directory carefully.
+Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
+All Rights Reserved.
 
+Please read the COPYRIGHT information in the current directory carefully. 
+
+------------------------------------------------------------------------------- 
+NOTE to UDT 1.x user: 
+UDT 2.0 has exactly the same internal mechanisms as that of most recent UDT 1.x 
+release. However, the UDT 2.0 API is modified and is NOT compatible with UDT 
+1.x.
+------------------------------------------------------------------------------- 
+
+------------------------------------------------------------------------------- 
+NOTE for performance testing: 
+If you want to test UDT's performance, please read carefully the documentation 
+of UDT::setsockopt, UDT::perfmon, and the tutorial on how to tune UDT's 
+performance (in ./doc directory). The example program of appserver and 
+appclient may be ready for your testing (or with simple modification). 
+------------------------------------------------------------------------------- 
 
 Tarball releases on SourceForge will have the most recent, thoroughly tested 
-version of the software.  However, you may go to the SourceForge CVS area 
-for more current, but still in progress, versions. Be aware that although 
-these versions will contain the most recent bug fixes to date, they have 
-not been fully tested at this point.
+version of the software. However, you may go to the SourceForge CVS area for 
+more current, but still in progress, versions. Be aware that although these 
+versions will contain the most recent bug fixes to date, they have not been 
+fully tested at this point. 
 
 
-CONTENT:
-./src:	UDT source code
-./app:	Example programs
-./sim:	NS-2 module and simulation scripts
-./doc:	UDT documentation
-./win:	Windows version of UDT
+CONTENT: 
+./src:     UDT source code 
+./app:     Example programs 
+./sim:     NS-2 module and simulation scripts 
+./doc:     UDT documentation (HTML) and Internet Draft 
+./win:     VS.Net project files for the Windows version of UDT 
 
 
-To make:
-	make -e os=XXX arch=YYY
+To make: 
+     make -e os=XXX arch=YYY 
 
-XXX: [LINUX(default), BSD]
-YYY: [IA32(default), POWERPC, IA64]
+XXX: [LINUX(default), BSD] 
+YYY: [IA32(default), POWERPC, IA64, AMD64] 
 
-For example, on OS X, you need to:
-	make -e os=BSD arch=POWERPC
+For example, on OS X, you need to do "make -e os=BSD arch=POWERPC"; on 32-bit 
+Linux system, simply use "make".
 
-On UNIX systems, use: make -f Makefile.unix
-On Windows systems, use the Visual Studio .NET project files in ./win 
-directory.
+On UNIX systems, use: make -f Makefile.unix 
+On Windows systems, use the Visual Studio .NET project files in ./win directory. 
 
-
-To use UDT in your application:
-Read index.htm in ./doc.
+For more compile options, please see UDT documenation: Installation.
 
 
-To report bugs, request new features, or make a contribution to the software:
-visit http://sourceforge.net/projects/dataspace/
+To use UDT in your application: 
+Read index.htm in ./doc. The documentation is in HTML format and requires your
+browser to support JavaScript.
 
 
-Join the discussion mailing list:
-http://lists.sourceforge.net/lists/listinfo/dataspace-sabul
+To report bugs, request new features, or make a contribution to the software: 
+visit http://sourceforge.net/projects/udt/ 
 
 
-To query technical/research issues about the protocol:
-write to: Yunhong Gu [gu@lac.uic.edu]
+Join the discussion mailing list: 
+http://lists.sourceforge.net/lists/listinfo/udt-general 
+
+
+To query technical/research issues about the protocol: 
+write to: Yunhong Gu [gu@lac.uic.edu] 

@@ -1,0 +1,141 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: 
+	Congestion Control Class</i></font></td>
+  </tr>
+</table>
+<h1><font face="Verdana" size="4">Base Congestion Control Class Structure</font></h1>
+<p><font face="Verdana" size="2">The following class <b>CCC</b>  (some details
+are omitted) is the base 
+class that a 3rd party congestion control algorithm should inherit from and 
+overload the proper functions.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table1" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">class CCC<br>
+	{<br>
+	<b><font color="#5f9ea0">public</font></b>:<br>
+&nbsp;&nbsp; CCC();<br>
+&nbsp;&nbsp; virtual ~CCC() {}<br>
+	<br>
+	<b><font color="#5f9ea0">public</font></b>:<br>
+&nbsp;&nbsp; virtual <b><font color="#228b22">void</font></b> <a href="#1">init</a>()
+    {}<br>
+&nbsp;&nbsp; virtual <b><font color="#228b22">void</font></b> <a href="#2">onACK</a>(<b><font color="#228b22">const</font></b> 
+	__int32&amp; ackno) {}<br>
+&nbsp;&nbsp; virtual <b><font color="#228b22">void</font></b> <a href="#3">
+	onLoss</a>(<b><font color="#228b22">const</font></b> __int32* losslist, <b>
+	<font color="#228b22">const</font></b> __int32&amp; size) {}</font></p>
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">&nbsp;&nbsp; virtual void <a href="#13">onTimeout</a>()
+    {}<br>
+&nbsp;&nbsp; virtual <b><font color="#228b22">void</font></b> <a href="#4">
+	onPktSent</a>(<b><font color="#228b22">const</font></b> __int32&amp; seqno, <b>
+	<font color="#228b22">const</font></b> __int32&amp; size) {}<br>
+&nbsp;&nbsp; virtual <b><font color="#228b22">void</font></b> <a href="#5">
+	onPktReceived</a>(<b><font color="#228b22">const</font></b> __int32&amp; seqno,
+	<b><font color="#228b22">const</font></b> __int32&amp; size) {}<br>
+&nbsp;&nbsp; virtual <b><font color="#228b22">void</font></b> <a href="#6">
+	processCustomMsg</a>(<b><font color="#228b22">const</font></b> CPacket&amp; pkt) 
+	{}<br>
+	<br>
+	<b><font color="#5f9ea0">protected</font></b>:<br>
+&nbsp;&nbsp; <b><font color="#228b22">void</font></b> <a href="#7">setACKTimer</a>(<b><font color="#228b22">const</font></b> 
+	__int32&amp; msINT = 10);<br>
+&nbsp;&nbsp; <b><font color="#228b22">void</font></b> <a href="#8">
+	setACKInterval</a>(<b><font color="#228b22">const</font></b> __int32&amp; pktINT 
+	= 1);<br>
+&nbsp;&nbsp; <b><font color="#228b22">void</font></b> <a href="#9">sendCustomMsg</a>(CPacket&amp; 
+	pkt) <b><font color="#228b22">const</font></b>;<br>
+	<br>
+	<b><font color="#5f9ea0">protected</font></b>:<br>
+&nbsp;&nbsp; UDTSOCKET <a href="#10">m_UDT</a>;<i><font color="#b22222"><br>
+	</font></i>&nbsp;&nbsp; <b><font color="#228b22">double</font></b>
+	<a href="#11">m_dPktSndPeriod</a>;<i><font color="#b22222"><br>
+	</font></i>&nbsp;&nbsp; <b><font color="#228b22">double</font></b>
+	<a href="#12">m_dCWndSize</a>;<i><font color="#b22222"><br>
+	</font></i>};</font></p>
+	</td>
+  </tr>
+</table>
+<p><font face="Verdana" size="2"><a name="1"></a>void <b>init</b>()</font></p>
+<p><font face="Verdana" size="2">This is the callback function to be called at 
+the start of a UDT connection. It can be used to initialize the packet sending 
+period, initial sending rate, etc. It can also be used to start timer thread.</font></p>
+<p><font face="Verdana" size="2"><a name="2"></a>void <b>onACK</b>(<i>ackno</i>)</font></p>
+<p><font face="Verdana" size="2">This is the callback function to be called when 
+an ACK is received. The parameter of <i>ackno</i> is the acknowledged packet 
+sequence number.</font></p>
+<p><font face="Verdana" size="2"><a name="3"></a>void <b>onLoss</b>(<i>losslist</i>,
+<i>size</i>)</font></p>
+<p><font face="Verdana" size="2">This callback function is called when the 
+sender detects a loss event, e.g., by duplicate ACK or explicit loss report. <i>
+losslist</i> is the packet sequence numbers of the lost packets and <i>size</i> 
+the length of the loss list.</font></p>
+<p><font face="Verdana" size="2"><a name="13"></a>void <b>onTimeout</b>()</font></p>
+<p><font face="Verdana" size="2">This callback function is called when a timeout
+event occurs if there is unacknowledged data in the sender side.</font></p>
+<p><font face="Verdana" size="2"><a name="4"></a>void <b>onPktSent</b>(<i>seqno</i>,
+<i>size</i>)</font></p>
+<p><font face="Verdana" size="2">This callback function is called when a data 
+packet is sent. <i>seqno</i> is the sequence number of this packet, and <i>size</i> 
+records its payload size. This callback function is useful to record the packet 
+timestamp in a delay-based approach and compute RTT in onACK(), because UDT does 
+not compute RTT for all packets.</font></p>
+<p><font face="Verdana" size="2"><a name="5"></a>void <b>onPktReceived</b>(<i>seqno</i>,
+<i>size</i>)</font></p>
+<p><font face="Verdana" size="2">This callback function is called when a data 
+packet is sent. <i>seqno</i> is the sequence number of this packet, and <i>size</i> 
+records its payload size. This function is seldom used.</font></p>
+<p><font face="Verdana" size="2"><a name="6"></a>void <b>processCustomMsg</b>(<i>pkt</i>)</font></p>
+<p><font face="Verdana" size="2">This callback function tells UDT how to process 
+user defined control message (<i>pkt</i>).</font></p>
+<p><font face="Verdana" size="2"><a name="7"></a>void <b>setACKTimer</b>(<i>msINT</i>)</font></p>
+<p><font face="Verdana" size="2">This method is used to enable timer-based 
+acknowledging and set the ACK timer. It should be called by an inherited class 
+(for example, in init()) if the new congestion control need timer-based 
+acknowledging. <i>msINT</i> is the ACK timer in millisecond. Note that the 
+highest precision of the ACK timer depends on the specific platform, and cannot 
+exceed 1 millisecond.</font></p>
+<p><font face="Verdana" size="2"><a name="8"></a>void <b>setACKInterval</b>(<i>pktINT</i>)</font></p>
+<p><font face="Verdana" size="2">This method is used to configure the number of 
+packets to be received before an ACK is sent. This is the default acknowledging 
+method and by default every packet will be acknowledged. Packet-based and 
+timer-based acknowledging are exclusive. <i>pktINT</i> is the packet interval.</font></p>
+<p><font face="Verdana" size="2"><a name="9"></a>void <b>senCustomMsg</b>(<i>pkt</i>)</font></p>
+<p><font face="Verdana" size="2">The method can be used to send a user defined 
+control message. The control message <i>pkt</i> must conform to the packet 
+format defined in ./src/packet.cpp.</font></p>
+<p><font face="Verdana" size="2"><a name="10"></a>UDTSOCKET <b>m_UDT</b></font></p>
+<p><font face="Verdana" size="2">This is the UDT socket that utilizes this 
+congestion control algorithm. It will be assigned when <a href="opt.htm">setsockopt</a> is
+called. This can be used to do performance monitoring (<a href="trace.htm">perfmon</a>).</font></p>
+<p><font face="Verdana" size="2"><a name="11"></a>double <b>m_dPktSndPeriod</b></font></p>
+<p><font face="Verdana" size="2">This is the packet sending period that should 
+be updated by a rate control algorithm. If a pure window based algorithm is 
+used, fix this variable to 0. It is measured by microsecond.</font></p>
+<p><font face="Verdana" size="2"><a name="12"></a>double <b>m_dCWndSize</b></font></p>
+<p><font face="Verdana" size="2">This is the congestion window size that should 
+updated by window control algorithm. If a pure rate control algorithm is used, 
+fix this variable to infinite.</font></p>
+<H4><font face="Verdana" size="2">See Also</font></H4>
+<P>
+<b><font face="Verdana" size="2"><a href="t-cc.htm">Add 3rd party congestion 
+controls</a></font></b></P>
+
+</body>
+
+</html>

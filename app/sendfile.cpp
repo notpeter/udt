@@ -1,70 +1,75 @@
-// This program sends a file using UDT
-// Usage: sendfile filename
-
 #include <iostream>
 #include <udt.h>
 
 using namespace std;
+using namespace UDT;
 
 int main(int argc, char* argv[])
 {
    //usage: sendfile "filename"
-
    if (2 != argc)
    {
       cout << "usage: sendfile filename" << endl;
       return 0;
    }
 
-   CUDT* sender = new CUDT;
+   UDTSOCKET serv = UDT::socket(AF_INET, SOCK_STREAM, 0);
 
-   #ifdef WIN32
-      intval = 1052;
-      client->setOpt(UDT_MTU, &intval, sizeof(int));
-   #endif
+#ifdef WIN32
+   int mss = 1052;
+   UDT::setsockopt(serv, 0, UDT_MSS, &mss, sizeof(int));
+#endif
 
-   try
+   short port = 9000;
+
+   sockaddr_in my_addr;
+   my_addr.sin_family = AF_INET;
+   my_addr.sin_port = htons(port);
+   my_addr.sin_addr.s_addr = INADDR_ANY;
+   memset(&(my_addr.sin_zero), '\0', 8);
+
+   if (UDT_ERROR == UDT::bind(serv, (sockaddr*)&my_addr, sizeof(my_addr)))
    {
-      int port = sender->open(9000);
-      cout << "sendfile is ready at port: " << port << endl;
-
-      sender->listen();
-   }
-   catch(CUDTException e)
-   {
-      cout << "error message: " << e.getErrorMessage();
+      cout << "bind: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
 
-   #ifdef TRACE
-      sender->trace();
-   #endif
+   cout << "server is ready at port: " << port << endl;
 
-   timeval t1, t2;
-   gettimeofday(&t1, 0);
+   CUDT::listen(serv, 1);
+
+   int namelen;
+   sockaddr_in their_addr;
+
+   UDTSOCKET fhandle;
+
+   if (INVALID_UDTSOCK == (fhandle = UDT::accept(serv, (sockaddr*)&their_addr, &namelen)))
+   {
+      cout << "accept: " << UDT::getlasterror().getErrorMessage() << endl;
+      return 0;
+   }
+
+   UDT::close(serv);
 
    ifstream ifs(argv[1]);
 
    ifs.seekg(0, ios::end);
-   streamsize size = ifs.tellg();
+   streampos size = ifs.tellg();
    ifs.seekg(0, ios::beg);
 
-   try
+   TRACEINFO trace;
+   UDT::perfmon(fhandle, &trace);
+
+   if (UDT_ERROR == UDT::sendfile(fhandle, ifs, 0, size))
    {
-      sender->sendfile(ifs, 0, size);
-   }
-   catch (CUDTException e)
-   {
-      cout << "error message: " << e.getErrorMessage();
+      cout << "sendfile: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
 
-   sender->close();
-   delete sender;
+   UDT::perfmon(fhandle, &trace);
+   cout << "speed = " << trace.mbpsSendRate << endl;
 
-   gettimeofday(&t2, 0);
-
-   cout << "speed = " << (double(size) * 8. / 1000000.) / (t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec) / 1000000.) << endl;
+   UDT::close(fhandle);
 
    return 1;
 }

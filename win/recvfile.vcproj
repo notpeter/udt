@@ -20,7 +20,10 @@
 				AdditionalIncludeDirectories="../src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="TRUE"
-				RuntimeLibrary="5"
+				BasicRuntimeChecks="3"
+				SmallerTypeCheck="TRUE"
+				RuntimeLibrary="1"
+				BufferSecurityCheck="TRUE"
 				UsePrecompiledHeader="0"
 				BrowseInformation="1"
 				WarningLevel="4"
@@ -36,7 +39,7 @@
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="../src"
-				DelayLoadDLLs="udt.dll"
+				DelayLoadDLLs=""
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(outdir)/recvfile.pdb"
 				SubSystem="1"/>
@@ -68,7 +71,7 @@
 				AdditionalIncludeDirectories="../src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				MinimalRebuild="FALSE"
-				RuntimeLibrary="4"
+				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
@@ -78,7 +81,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="kernel32.lib user32.lib udt.lib $(NOINHERIT)"
+				AdditionalDependencies="kernel32.lib user32.lib ws2_32.lib udt.lib $(NOINHERIT)"
 				OutputFile="$(outdir)/recvfile.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"

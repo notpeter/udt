@@ -1,12 +1,12 @@
 //
 // Author: Yunhong Gu, ygu@cs.uic.edu
 //
-// Description: UDT ns-2 simulation module
+// Description: 
 //
 // Assumption: This code does NOT process sequence number wrap, which will overflow after 2^31 packets.
 //             But I assume that you won't run NS for that long time :)
 //
-// Last Update: 05/21/2003
+// Last Update: 03/31/2004
 //
 
 #include <stdlib.h>
@@ -61,8 +61,11 @@ max_flow_window_(25600)
    snd_last_ack_ = 0;
    local_send_ = 0;
    local_loss_ = 0;
+   local_ack_ = 0;
    snd_curr_seqno_ = -1;
    curr_max_seqno_ = 0;
+   avg_nak_num_ = 2;
+   dec_random_ = 2;
 
    loss_rate_limit_ = 0.01;
    loss_rate_ = 0;
@@ -82,7 +85,6 @@ max_flow_window_(25600)
 
    slow_start_ = true;
    freeze_ = false;
-   firstloss_ = false;
 
    syn_timer_.resched(0);
    ack_timer_.resched(0);
@@ -126,24 +128,13 @@ void UdtAgent::recv(Packet *pkt, Handler*)
             rtt_ = rtt_ * 0.875 + udth->rtt() / 1000000.0 * 0.125;
 
          if (slow_start_)
-         {
             flow_window_size_ = snd_last_ack_;
-
-            if (udth->lrecv() > 0)
-            {
-               if (0.000001 == snd_interval_)
-                  snd_interval_ = 1.0 / udth->lrecv();
-               else
-                  snd_interval_ = snd_interval_ * 0.875 + 1.0 / udth->lrecv() * 0.125;
-            }
-         }
          else if (udth->lrecv() > 0)
             flow_window_size_ = int(ceil(flow_window_size_ * 0.875 + udth->lrecv() * (rtt_ + syn_interval_) * 0.125));
 
          if (flow_window_size_ > max_flow_window_)
          {
-            if (slow_start_)
-               slow_start_ = false;
+            slow_start_ = false;
 
             flow_window_size_ = max_flow_window_;
          }
@@ -155,41 +146,42 @@ void UdtAgent::recv(Packet *pkt, Handler*)
 
          exp_timer_.resched(exp_interval_);
 
+         ++ local_ack_;
+
+         if (snd_interval_ > rtt_)
+         {
+            snd_interval_ = rtt_;
+            snd_timer_.resched(0);
+         }
+
          break;
 
       case 3:
-         if (slow_start_)
-            slow_start_ = false;
+         slow_start_ = false;
+
+         last_dec_int_ = snd_interval_;
 
          if (udth->loss()[0] > last_dec_seq_)
          {
-            if ((!firstloss_) && (udth->losslen() < 2))
-            {
-               firstloss_ = true;
-               break;
-            }
-            firstloss_ = false;
-
-            last_dec_int_ = snd_interval_;
-
-            snd_interval_ = snd_interval_ * 1.125;
-            //printf("dec -- %f %d\n", snd_interval_, flow_window_size_);
-
             freeze_ = true;
+            snd_interval_ = snd_interval_ * 1.125;
+
+            nak_count_ = 1;
+
+            avg_nak_num_ = 1 + int(ceil(avg_nak_num_ * 0.875 + nak_count_ * 0.125));
+
+            dec_random_ = int(rand() * double(avg_nak_num_) / (RAND_MAX + 1.0)) + 1;
 
             last_dec_seq_ = snd_curr_seqno_;
-
-            nak_count_ = -16;
-            dec_count_ = 1;
          }
-         else if (++ nak_count_ >= pow(2.0, dec_count_))
+         else if (0 == (++ nak_count_ % dec_random_))
          {
-            dec_count_ ++;
-            nak_count_ = 0;
-
             snd_interval_ = snd_interval_ * 1.125;
-            //printf("dec -- %f\n", snd_interval_);
+
+            last_dec_seq_ = snd_curr_seqno_;
          }
+
+ 	 //printf("loss %f %d %d %d\n", snd_interval_, nak_count_, dec_random_, last_dec_seq_);
 
          local_loss_ += udth->losslen();
 
@@ -198,6 +190,8 @@ void UdtAgent::recv(Packet *pkt, Handler*)
                snd_loss_list_.insert(udth->loss()[i]);
 
          exp_timer_.resched(exp_interval_);
+
+         snd_timer_.resched(0);
 
          break;
      
@@ -224,8 +218,8 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          {
             time_window_.ack2arrival(rtt);
 
-            if ((time_window_.getdelaytrend()) && (Scheduler::instance().clock() - last_delay_time_ > 2 * rtt_))
-               sendCtrl(4);
+//            if ((time_window_.getdelaytrend()) && (Scheduler::instance().clock() - last_delay_time_ > 2 * rtt_))
+//               sendCtrl(4);
 
             if (rtt_ == syn_interval_)
                rtt_ = rtt;
@@ -281,6 +275,7 @@ void UdtAgent::recv(Packet *pkt, Handler*)
       }
 
       sendCtrl(3, c, loss);
+//      printf("%d\n", c);
    }
 
    if (udth->seqno() > rcv_curr_seqno_)
@@ -494,18 +489,11 @@ void UdtAgent::rateControl()
 {
    if ((local_send_ > 0) && (!slow_start_))
    {
-      double currlossrate = local_loss_ / local_send_;
 
-      local_loss_ = 0;
-      local_send_ = 0;
-
-      if (currlossrate > 1.0)
-         currlossrate = 1.0;
-
-      loss_rate_ = loss_rate_ * 0.0 + currlossrate * 1.0;
-
-      if (loss_rate_ > loss_rate_limit_)
+      if ((local_loss_ > 0) || (local_ack_ == 0))
       {
+         local_loss_ = 0;
+
          syn_timer_.resched(syn_interval_);
 
          return; 
@@ -514,18 +502,18 @@ void UdtAgent::rateControl()
       {
          double inc;
 
-         if (snd_interval_ > last_dec_int_)
+         if (bandwidth_ < 1.0 / snd_interval_)
+            inc = 1.0/mtu_;
+         else if ((snd_interval_ > last_dec_int_) && (bandwidth_ / 9.0 < (bandwidth_ - 1.0 / snd_interval_)))
          {
             inc = pow(10, ceil(log10(bandwidth_ / 9.0 * mtu_ * 8))) * 0.0000015 / mtu_;
 
             if (inc < 1.0/mtu_)
                inc = 1.0/mtu_;
          }
-         else if (bandwidth_ < 1.0 / snd_interval_)
-            inc = 1.0/mtu_;
          else
          {
-            inc = pow(10, ceil(log10((bandwidth_ - 1.0 / snd_interval_) * mtu_ * 8))) * 0.000015 / mtu_;
+            inc = pow(10, ceil(log10((bandwidth_ - 1.0 / snd_interval_) * mtu_ * 8))) * 0.0000015 / mtu_;
 
             if (inc < 1.0/mtu_)
                inc = 1.0/mtu_;
@@ -533,7 +521,7 @@ void UdtAgent::rateControl()
 
          snd_interval_ = (snd_interval_ * syn_interval_) / (snd_interval_ * inc + syn_interval_);
 
-         printf("inc ++ %f %f\n", snd_interval_, inc);
+         //printf("inc ++ %f %f\n", snd_interval_, inc);
       }
    }
    else
@@ -541,6 +529,10 @@ void UdtAgent::rateControl()
 
    if (snd_interval_ < 0.000001)
       snd_interval_ = 0.000001;
+
+   //printf("snd_interval_ %f\n", snd_interval_);
+
+   local_ack_ = 0;
 
    syn_timer_.resched(syn_interval_);
 }

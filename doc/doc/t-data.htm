@@ -2,7 +2,7 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
 <meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
@@ -10,80 +10,86 @@
 
 <body>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#99CCFF" bordercolor="#99CCFF">
   <tr>
-    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Tutorial: 
-    Transfer Data</i></font></td>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT </i></font><i>
+	<font face="Verdana" size="2">Tutorial</font></i></td>
   </tr>
 </table>
-<h1><font face="Verdana" size="4">Transfer Data</font></h1>
-<p><font face="Verdana" size="2">After the UDT connection is built up, 
-transferring data is much easier than using sockets <u>send</u> or <u>recv</u>. In this 
-section we will introduce the blocking and non-blocking methods of data transfer.</font></p>
+<h1><font face="Verdana" size="4">Transfer Data using UDT</font></h1>
+<p><font face="Verdana" size="2">UDT supports both blocking and non-blocking IO, 
+in traditional (same as socket API) or overlapped way.</font></p>
 <h4><font face="Verdana" size="2">Blocking Sending</font></h4>
-<p><font face="Verdana" size="2">Blocking is the simplest mode, a UDT
-<a href="send.htm">send</a> call will be blocked until the buffer is 
-successfully received by the peer side. If multiple <a href="send.htm">send</a> 
+<p><font face="Verdana" size="2">A blocking UDT
+<a href="send.htm">send</a> call will be blocked until there is enough buffer in 
+the sending queue. The user buffer is copied into the protocol buffer. If multiple <a href="send.htm">send</a> 
 calls are used in multi-thread applications, all calls will be blocked and 
 released one by one as the buffers in the waiting queue are sent out. However, the 
 release order is NOT guaranteed by UDT, but depends on the thread mechanism on 
 specific operating systems.</font></p>
-<p><font face="Verdana" size="2">The default sending mode of UDT is 
-non-blocking for performance purposes (to eliminate the waiting time between two 
-buffers' sending).</font></p>
-<h4><font face="Verdana" size="2">Blocking Receiving</font></h4>
-<p><font face="Verdana" size="2">Receiving is in blocking mode by default. The 
-situation is similar to block sending. Unlike sockets, UDT <a href="recv.htm">
-recv</a> will not return until it receives exactly the amount of data it is 
-required by the application, except when the connection is broken. Overlapped IO 
-is used in this mode.</font></p>
-<h4><font face="Verdana" size="2">Non-Blocking Sending</font></h4>
-<p><font face="Verdana" size="2">What a non-blocking sending call does is simply to put 
-the buffer into the sending queue. Note that the semantics is not 
-the same as the sockets non-blocking call. There are two issues that must be considered.</font></p>
-<p><font face="Verdana" size="2">The first is that the application needs to care 
-about the sending queue size. Since it is unknown to the application if the 
-previous buffers have been sent out, a careless application may crash the host 
-by using up the physical memory. A better way is to check the sending buffer size 
-by the <a href="getCurrSndBufSize.htm">getCurrSndBufSize</a> method before a 
-non-blocking <a href="send.htm">send</a> is called.</font></p>
-<p><font face="Verdana" size="2">The following example demonstrates the idea:</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+<p><font face="Verdana" size="2">In overlapped sending, UDT does NOT copy the 
+user data into the memory, but send the data directly into the network. The 
+sending will not return until all data has been successfully received.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table1" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">while (true)</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">{</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp;&nbsp; // Produce data here...</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp;&nbsp; ...</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp;&nbsp; while (udt.getCurrSndBufSize() 
-    &gt; 100000000) //Using a large value here, but not too large for the system 
-    memory</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; usleep(10);</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp;&nbsp; udt.send(data, len)</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">};</font></td>
+	<font face="Courier New" size="1">void DeleteBuf(char* buf, int) {delete [] 
+	buf;}</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+	<font face="Courier New" size="1">...</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+	<p style="margin-top: 0; margin-bottom: 0">
+	<font face="Courier New" size="1">// blocking sending</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+	<font face="Courier New" size="1">if (UDT_ERROR == UDT::send(usock, buffer, 
+	size, 0))<br>
+	{<br>
+&nbsp;&nbsp; cout &lt;&lt; &quot;send: &quot; &lt;&lt; UDT::getlasterror().getErrorMessage();<br>
+&nbsp;&nbsp; return 0;<br>
+	}</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+	<p style="margin-top: 0; margin-bottom: 0">
+	<font face="Courier New" size="1">// blocking overlapped sending</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+	<font face="Courier New" size="1">if (UDT_ERROR == UDT::send(usock, buffer, 
+	size, 0, &amp;handle, DeleteBuf))<br>
+	{<br>
+&nbsp;&nbsp; cout &lt;&lt; &quot;send: &quot; &lt;&lt; UDT::getlasterror().getErrorMessage();<br>
+&nbsp;&nbsp; return 0;<br>
+	}</font></p></td>
   </tr>
 </table>
-<p><font face="Verdana" size="2">If the application sends out raw data and does 
-not need them any more after they are sent, the <a href="opt.htm">UDT_MFLAG</a> 
-can be set to let the allocated memory be released automatically by UDT.</font></p>
-<p><font face="Verdana" size="2">The second problem occurs after data sending. 
-When applications are to exit or close UDT connection, they should use <a href="getCurrSndBufSize.htm">getCurrSndBufSize</a> 
-to check if all the data in the buffer has been sent out.</font></p>
+<h4><font face="Verdana" size="2">Blocking Receiving</font></h4>
+<p><font size="2" face="Verdana">In the traditional blocking receiving, a UDT 
+<a href="recv.htm">recv</a> call is blocked until there is any data available for reading in the UDT 
+protocol buffer. The data is copied from the protocol buffer into the user 
+buffer.</font></p>
+<p><font size="2" face="Verdana">In overlapped receiving, the user buffer is 
+linked onto the protocol buffer and new data will be written directly into the 
+user buffer. Thus, the <a href="recv.htm">recv</a> call will not return until the buffer is fulfilled. 
+Note that this receiving mode may block infinitely until the desired amount of 
+data is received or the connection is broken.</font></p>
+<h4><font face="Verdana" size="2">Non-Blocking Sending</font></h4>
+<p><font size="2" face="Verdana">Non-blocking sending will return immediately no 
+matter if the sending succeed or not. A successful sending copies the user data 
+into the protocol buffer, which will be sent out in background.</font></p>
+<p><font face="Verdana" size="2">Overlapped non-blocking sending does not copy user buffer into the protocol buffer, and does not 
+wait the sending to complete. A function pointer may be passed as parameter so 
+that the user parameter can be automatically processed (e.g., release). In this 
+mode, the buffer cannot be touched until the sending is completed. To test if a 
+certain non-blocking sending is completed, use <a href="overlap.htm">
+getoverlappedresult</a>.</font></p>
+<p><font face="Verdana" size="2">It may be necessary to use non-blocking sending together with 
+<a href="select.htm">select</a> call.</font></p>
 <h4><font face="Verdana" size="2">Non-Blocking Receiving</font></h4>
-<p><font face="Verdana" size="2">Non-blocking receiving is much simpler than 
-sending. It checks the size of received data in the UDT buffer. If there is enough 
-data to fulfill the buffer, the <a href="recv.htm">recv</a> call returns 
-successfully, otherwise it throws an exception with the buffer untouched.</font></p>
-<p><font face="Verdana" size="2">We do not encourage the use of non-blocking receiving because it has lower performance than blocking 
-receiving, especially when the buffer is large.</font></p>
+<p><font face="Verdana" size="2">Non-blocking receiving will return immediately 
+with any available data no more than the size appointed in the parameter.</font></p>
+<p><font face="Verdana" size="2">In overlapped mode, non-blocking receiving will 
+not return any data to the user, instead, it process the user buffer using the 
+function in the parameter after the user buffer is fulfilled.</font></p>
+<p><font face="Verdana" size="2">Note that at most one non-blocking overlapped 
+receiving is allowed in the current implementation.</font></p>
 
 </body>
 

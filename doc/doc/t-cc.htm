@@ -1,0 +1,130 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>UDT Reference</title>
+</head>
+
+<body>
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table3" bgcolor="#99CCFF" bordercolor="#99CCFF">
+  <tr>
+    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT </i></font><i>
+	<font face="Verdana" size="2">Tutorial</font></i></td>
+  </tr>
+</table>
+<h1><font face="Verdana" size="4">Add New Congestion Control Algorithm</font></h1>
+<p><font face="Verdana" size="2"><font color="#800000">STOP</font>: Make sure
+that you have uncommented the -DCUSTOM_CC compile option in ./src/Makefile.
+Otherwise your control algorithm will NOT be used.</font></p>
+<p><font face="Verdana" size="2">You can add your own congestion control 
+algorithm into UDT. It is as simple as to define several callback functions that 
+will be triggered on certain events, e.g, when an ACK is received.</font></p>
+<p><font face="Verdana" size="2">All the congestion control callback functions 
+are collected in a C++ class <b><a href="ccc.htm">CCC</a></b>. You have to inherit this class to define your 
+own congestion control algorithm.</font></p>
+<p><font face="Verdana" size="2">The CCC class contains two control variables: 
+<a href="ccc.htm#11">m_dPktSndPeriod</a>, and <a href="ccc.htm#12">m_dCWndSize</a>. 
+<a href="ccc.htm#11">m_dPktSndPeriod</a> is a double number 
+representing the packet sending period (as to be used in rate control), in 
+microseconds. <a href="ccc.htm#12">m_dCWndSize</a> is a double number representing the size of the 
+congestion window (cwnd), in number of packets. The congestion control algorithm 
+will need to update at least one of them. For example, for pure window based 
+approach, <a href="ccc.htm#11">m_dPktSndPeriod</a> should always be zero.</font></p>
+<p><font face="Verdana" size="2">Note that UDT only allow congestion control 
+algorithm to be configured. The flow control algorithm cannot be changed. It is 
+not necessary in most cases.</font></p>
+<p><font face="Verdana" size="2">The initial values should be set in 
+<a href="ccc.htm#1">CCC::init</a>.</font></p>
+<p><b><font face="Verdana" size="2">1. Implement loss based window congestion 
+control</font></b></p>
+<p><font face="Verdana" size="2">Generally most loss based window congestion 
+control only update the cwnd size when an ACK or a loss report (NAK) is 
+received. In this case, two methods <a href="ccc.htm#2">CCC::onACK</a> and 
+<a href="ccc.htm#3">CCC::onLoss</a> should be 
+overloaded.</font></p>
+<p><font face="Verdana" size="2">For example, the following CScalableTCP class 
+implements a simple Scalable TCP control algorithm (no slow start). It overloads 
+<a href="ccc.htm#1">CCC::init</a>, <a href="ccc.htm#2">CCC::onACK</a>, and 
+<a href="ccc.htm#3">CCC::onLoss</a>.</font></p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table4" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+  <tr>
+    <td width="100%">
+    <p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">class CScalableTCP: public CCC<br>
+	{<br>
+	public:<br>
+&nbsp;&nbsp; virtual void init()<br>
+&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // initial value of sending rate and congestion 
+	window size<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_dPktSndPeriod = 1.0;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_dCWndSize = 16.0;<br>
+	<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // acknowledge every data packets<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; setACKInterval(1);<br>
+&nbsp;&nbsp; }<br>
+	<br>
+&nbsp;&nbsp; virtual void onACK(const __int32&amp;)<br>
+&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (m_dCWndSize &lt;= 38.0)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_dCWndSize += 1.0/m_dCWndSize;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_dCWndSize += 0.01 * 
+	m_dCWndSize;<br>
+	<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (m_dCWndSize &gt; m_iMaxCWndSize)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_dCWndSize = m_iMaxCWndSize;<br>
+&nbsp;&nbsp; }<br>
+	<br>
+&nbsp;&nbsp; virtual void onLoss(const __int32*, const __int32&amp;)<br>
+&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (m_dCWndSize &lt;= 38.0)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_dCWndSize *= 0.5;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_dCWndSize *= 0.875;<br>
+	<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (m_dCWndSize &lt; m_iMinCWndSize)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; m_dCWndSize = m_iMinCWndSize;<br>
+&nbsp;&nbsp; }<br>
+	<br>
+	private:<br>
+&nbsp;&nbsp; static const __int32 m_iMinCWndSize = 16;<br>
+&nbsp;&nbsp; static const __int32 m_iMaxCWndSize = 100000;<br>
+	};</font></p>
+	</td>
+  </tr>
+</table>
+<p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
+<p style="margin-top: 0; margin-bottom: 0"><b><font face="Verdana" size="2">2. 
+Implement timer-based congestion control</font></b></p>
+<p><font face="Verdana" size="2">Some control algorithms are timer based. That 
+is, the update of control variables are (at least partially) based on a timer. 
+Such a timer should be implemented by the derived class itself. For example, in 
+<a href="ccc.htm#1">CCC::init</a>, the derived class can start a timing thread that will update the 
+control variables periodically.</font></p>
+<p><b><font face="Verdana" size="2">3. Implement delay-based congestion control</font></b></p>
+<p><font face="Verdana" size="2">Due to the performance concerns, UDT does not 
+compute RTT for every sent data packets. Instead, it only compute RTT 
+periodically. To implement a delay-based approach, the derived class can compute 
+RTT by itself. To do so, overload <a href="ccc.htm#4">CCC::onPktSent</a> and 
+<a href="ccc.htm#2">CCC::onACK</a> to compute RTT 
+for each data packets.</font></p>
+<p><b><font face="Verdana" size="2">4. User defined packets</font></b></p>
+<p><font face="Verdana" size="2">Certain control algorithms may need to send 
+special control packets. To do so, the derived class can call 
+<a href="ccc.htm#9">CCC::sendCustomCtrl</a> to send its own packets, and overload 
+<a href="ccc.htm#6">CCC::processCustomCtrl</a> 
+to tell UDT how to process these packets. The user defined packet must conform 
+to the rules defined in ./src/packet.cpp.</font></p>
+
+<H4><font face="Verdana" size="2">See Also</font></H4>
+<P>
+<b><font face="Verdana" size="2"><a href="ccc.htm">Congestion Control Class</a></font></b></P>
+
+</body>
+
+</html>

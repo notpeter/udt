@@ -57,7 +57,7 @@ $nb1 color "tan"
 # Major Link, queue, and queue monitor
 #
 $ns duplex-link $na $nb 100Mb 5ms DropTail
-$ns queue-limit $na $nb 100
+$ns queue-limit $na $nb 10
 $ns duplex-link-op $na $nb orient right
 $ns duplex-link-op $na $nb color "green"
 $ns duplex-link-op $na $nb queuePos 0.5

@@ -2,7 +2,10 @@ C++ = g++
 
 #WARNING: Optimization option may decrease the performance!
 CCFLAGS = -fPIC -Wall -DUNIX -finline-functions
-LDFLAGS = -lstdc++ -lpthread -lm -lsocket -L../src -ludt
+#CCFLAGS += -DTRACE
+#CCFLAGS += -DNO_BUSY_WAITING
+#CCFLAGS += -DCUSTOM_CC
+LDFLAGS = -lstdc++ -lpthread -lm -lsocket -lnsl -L../src -ludt
 
 all: libudt udtex
 
@@ -13,8 +16,9 @@ libudt:
 	cd src; $(C++) $(CCFLAGS) packet.cpp -c
 	cd src; $(C++) $(CCFLAGS) channel.cpp -c
 	cd src; $(C++) $(CCFLAGS) udt.cpp -c
-	cd src; $(C++) -shared -o libudt.so common.o list.o buffer.o packet.o channel.o udt.o
-	cd src; ar -rcs libudt.a common.o list.o buffer.o packet.o channel.o udt.o
+	cd src; $(C++) $(CCFLAGS) api.cpp -c
+	cd src; $(C++) -shared -o libudt.so common.o list.o buffer.o packet.o channel.o udt.o api.o
+	cd src; ar -rcs libudt.a common.o list.o buffer.o packet.o channel.o udt.o api.o
 
 udtex:
 	cd app; $(C++) $(CCFLAGS) -I../src appserver.cpp -o appserver $(LDFLAGS)

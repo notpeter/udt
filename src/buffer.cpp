@@ -1,40 +1,27 @@
 /*****************************************************************************
-Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-UDP-based Data Transfer Library (UDT)
+UDP-based Data Transfer Library (UDT) version 2
 
 Laboratory for Advanced Computing (LAC)
 National Center for Data Mining (NCDM)
 University of Illinois at Chicago
 http://www.lac.uic.edu/
 
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software (UDT) and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to the
-following conditions:
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or (at
+your option) any later version.
 
-Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimers.
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+General Public License for more details.
 
-Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimers in the documentation
-and/or other materials provided with the distribution.
-
-Neither the names of the University of Illinois, LAC/NCDM, nor the names
-of its contributors may be used to endorse or promote products derived
-from this Software without specific prior written permission.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 *****************************************************************************/
 
 /*****************************************************************************
@@ -46,14 +33,19 @@ The receiving buffer is a logically circular memeory block.
 *****************************************************************************/
 
 /*****************************************************************************
-written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 12/16/2003
+written by
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/10/2005
+
+modified by
+   <programmer's name, programmer's email, last updated mm/dd/yyyy>
+   <descrition of changes>
 *****************************************************************************/
 
 
-#include <string.h>
+#include <cstring>
 #include "udt.h"
 
+using namespace std;
 
 CSndBuffer::CSndBuffer():
 m_pBlock(NULL),
@@ -67,7 +59,7 @@ m_iCurrAckPnt(0)
    #ifndef WIN32
       pthread_mutex_init(&m_BufLock, NULL);
    #else
-      m_BufLock = CreateMutex(NULL, false, "SndBufferLock");
+      m_BufLock = CreateMutex(NULL, false, NULL);
    #endif
 }
 
@@ -80,16 +72,22 @@ CSndBuffer::~CSndBuffer()
    {
       pb = pb->m_next;
 
-      // Process the user data according to the flag
-      if (1 == m_pBlock->m_iFlag)
-         delete [] m_pBlock->m_pcData;
+      // process user data according with the routine provided by applications
+      if (NULL != m_pBlock->m_pMemRoutine)
+         m_pBlock->m_pMemRoutine(m_pBlock->m_pcData, m_pBlock->m_iLength);
 
       delete m_pBlock;
       m_pBlock = pb;
    }
+
+   #ifndef WIN32
+      pthread_mutex_destroy(&m_BufLock);
+   #else
+      CloseHandle(m_BufLock);
+   #endif
 }
 
-void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& flag)
+void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& handle, const UDT_MEM_ROUTINE func)
 {
    CGuard bufferguard(m_BufLock);
 
@@ -100,7 +98,8 @@ void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& 
       m_pBlock = new Block;
       m_pBlock->m_pcData = const_cast<char *>(data);
       m_pBlock->m_iLength = len;
-      m_pBlock->m_iFlag = flag;
+      m_pBlock->m_iHandle = handle;
+      m_pBlock->m_pMemRoutine = func;
       m_pBlock->m_next = NULL;
       m_pLastBlock = m_pBlock;
       m_pCurrSendBlk = m_pBlock;
@@ -116,7 +115,8 @@ void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& 
       m_pLastBlock = m_pLastBlock->m_next;
       m_pLastBlock->m_pcData = const_cast<char *>(data);
       m_pLastBlock->m_iLength = len;
-      m_pLastBlock->m_iFlag = flag;
+      m_pLastBlock->m_iHandle = handle;
+      m_pLastBlock->m_pMemRoutine = func;
       m_pLastBlock->m_next = NULL;
       if (NULL == m_pCurrSendBlk)
          m_pCurrSendBlk = m_pLastBlock;
@@ -127,6 +127,8 @@ void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& 
 
 __int32 CSndBuffer::readData(char** data, const __int32& len)
 {
+   CGuard bufferguard(m_BufLock);
+
    // No data to read
    if (NULL == m_pCurrSendBlk)
       return 0;
@@ -201,9 +203,9 @@ void CSndBuffer::ackData(const __int32& len, const __int32& payloadsize)
       m_iCurrBufSize -= m_pCurrAckBlk->m_iLength;
       m_pCurrAckBlk = m_pCurrAckBlk->m_next;
 
-      // process user data according to the flag
-      if (1 == m_pBlock->m_iFlag)
-         delete [] m_pBlock->m_pcData;
+      // process user data according with the routine provided by applications
+      if (NULL != m_pBlock->m_pMemRoutine)
+         m_pBlock->m_pMemRoutine(m_pBlock->m_pcData, m_pBlock->m_iLength);
 
       delete m_pBlock;
       m_pBlock = m_pCurrAckBlk;
@@ -218,13 +220,51 @@ __int32 CSndBuffer::getCurrBufSize() const
    return m_iCurrBufSize - m_iCurrAckPnt;
 }
 
+bool CSndBuffer::getOverlappedResult(const int& handle, __int32& progress)
+{
+   CGuard bufferguard(m_BufLock);
 
+   if (NULL != m_pCurrAckBlk)
+   {
+      if (handle == m_pCurrAckBlk->m_iHandle)
+      {
+         progress = m_iCurrAckPnt;
+         return false;
+      }
+      else 
+      {
+         __int32 end = (m_pLastBlock->m_iHandle >= m_pCurrAckBlk->m_iHandle) ? m_pLastBlock->m_iHandle : m_pLastBlock->m_iHandle + (1 << 30);
+         __int32 h = (handle >= m_pCurrAckBlk->m_iHandle) ? handle : handle + (1 << 30);
+
+         if ((h > m_pCurrAckBlk->m_iHandle) && (h <= end))
+         {
+            progress = 0;
+            return false;
+         }
+      }
+   }
+
+   progress = 0;
+   return true;
+}
+
+void CSndBuffer::releaseBuffer(char* buf, int)
+{
+   delete [] buf;
+}
+
+
+//
 CRcvBuffer::CRcvBuffer():
 m_iSize(40960000),
 m_iStartPos(0),
 m_iLastAckPos(0),
 m_iMaxOffset(0),
-m_pcUserBuf(NULL)
+m_pcUserBuf(NULL),
+m_iUserBufSize(0),
+m_pPendingBlock(NULL),
+m_pLastBlock(NULL),
+m_iPendingSize(0)
 {
    m_pcData = new char [m_iSize];
 }
@@ -234,7 +274,11 @@ m_iSize(bufsize),
 m_iStartPos(0),
 m_iLastAckPos(0),
 m_iMaxOffset(0),
-m_pcUserBuf(NULL)
+m_pcUserBuf(NULL),
+m_iUserBufSize(0),
+m_pPendingBlock(NULL),
+m_pLastBlock(NULL),
+m_iPendingSize(0)
 {
    m_pcData = new char [m_iSize];
 }
@@ -242,6 +286,15 @@ m_pcUserBuf(NULL)
 CRcvBuffer::~CRcvBuffer()
 {
    delete [] m_pcData;
+
+   Block* p = m_pPendingBlock;
+
+   while (NULL != p)
+   {
+     m_pPendingBlock = m_pPendingBlock->m_next;
+     delete p;
+     p = m_pPendingBlock;
+   }
 }
 
 bool CRcvBuffer::nextDataPos(char** data, __int32 offset, const __int32& len)
@@ -326,7 +379,7 @@ bool CRcvBuffer::addData(char* data, __int32 offset, __int32 len)
    if (m_iLastAckPos >= m_iStartPos)
       if (m_iLastAckPos + offset + len <= m_iSize)
       {
-        memcpy(m_pcData + m_iLastAckPos + offset, data, len);
+         memcpy(m_pcData + m_iLastAckPos + offset, data, len);
          return true;
       }
       else if ((m_iLastAckPos + offset < m_iSize) && (len - (m_iSize - m_iLastAckPos - offset) <= m_iStartPos))
@@ -478,7 +531,7 @@ __int32 CRcvBuffer::ackData(const __int32& len)
       {
          // update user buffer ACK pointer
          m_iUserBufAck += len;
-         return ret;
+         return 0;
       }
       else
       {
@@ -486,7 +539,18 @@ __int32 CRcvBuffer::ackData(const __int32& len)
          // update protocol ACK pointer
          m_iLastAckPos += m_iUserBufAck + len - m_iUserBufSize;
          m_iMaxOffset -= m_iUserBufAck + len - m_iUserBufSize;
+
+         // the overlapped IO is completed, a pending buffer should be activated
          m_pcUserBuf = NULL;
+         m_iUserBufSize = 0;
+         if (NULL != m_pPendingBlock)
+         {
+            registerUserBuf(m_pPendingBlock->m_pcData, m_pPendingBlock->m_iLength, m_pPendingBlock->m_iHandle, m_pPendingBlock->m_pMemRoutine);
+            m_iPendingSize -= m_pPendingBlock->m_iLength;
+            m_pPendingBlock = m_pPendingBlock->m_next;
+            if (NULL == m_pPendingBlock)
+               m_pLastBlock = NULL;
+         }
 
          // returned value is 1 means user buffer is fulfilled
          ret = 1;
@@ -503,11 +567,33 @@ __int32 CRcvBuffer::ackData(const __int32& len)
    return ret;
 }
 
-__int32 CRcvBuffer::registerUserBuf(char* buf, const __int32& len)
+__int32 CRcvBuffer::registerUserBuf(char* buf, const __int32& len, const __int32& handle, const UDT_MEM_ROUTINE func)
 {
+   if (NULL != m_pcUserBuf)
+   {
+      // there is ongoing recv, new buffer is put into pending list.
+
+      Block *nb = new Block;
+      nb->m_pcData = buf;
+      nb->m_iLength = len;
+      nb->m_iHandle = handle;
+      nb->m_pMemRoutine = func;
+      nb->m_next = NULL;
+
+      if (NULL == m_pPendingBlock)
+         m_pLastBlock = m_pPendingBlock = nb;
+      else
+         m_pLastBlock->m_next = nb;
+
+      m_iPendingSize += len;
+
+      return 0;
+   }
+
    m_iUserBufAck = 0;
    m_iUserBufSize = len;
    m_pcUserBuf = buf;
+   m_iHandle = handle;
 
    // find the furthest "dirty" data that need to be copied
    __int32 currwritepos = (m_iLastAckPos + m_iMaxOffset) % m_iSize;
@@ -556,10 +642,55 @@ __int32 CRcvBuffer::registerUserBuf(char* buf, const __int32& len)
    return m_iUserBufAck;
 }
 
-__int32 CRcvBuffer::getCurUserBufSize() const
+void CRcvBuffer::removeUserBuf()
 {
-   if (NULL == m_pcUserBuf)
-      return 0;
+   m_pcUserBuf = NULL;
+   m_iUserBufAck = 0;
+}
 
-   return m_iUserBufAck;
+__int32 CRcvBuffer::getAvailBufSize() const
+{
+   __int32 bs = m_iSize;
+
+   bs -= m_iLastAckPos - m_iStartPos;
+
+   if (m_iLastAckPos < m_iStartPos)
+      bs -= m_iSize;
+
+   if (NULL != m_pcUserBuf)
+      bs += m_iUserBufSize - m_iUserBufAck;
+
+   return bs;
+}
+
+__int32 CRcvBuffer::getRcvDataSize() const
+{
+   return (m_iLastAckPos - m_iStartPos + m_iSize) % m_iSize;
+}
+
+bool CRcvBuffer::getOverlappedResult(const int& handle, __int32& progress)
+{
+   if ((NULL != m_pcUserBuf) && (handle == m_iHandle))
+   {
+      progress = m_iUserBufAck;
+      return false;
+   }
+
+   progress = 0;
+
+   if (NULL != m_pPendingBlock)
+   {
+      __int32 end = (m_pLastBlock->m_iHandle >= m_pPendingBlock->m_iHandle) ? m_pLastBlock->m_iHandle : m_pLastBlock->m_iHandle + (1 << 30);
+      __int32 h = (h >= m_pPendingBlock->m_iHandle) ? h : h + (1 << 30);
+
+      if ((h >= m_pPendingBlock->m_iHandle) && (h <= end))
+         return false;
+   }
+
+   return true;
+}
+
+__int32 CRcvBuffer::getPendingQueueSize() const
+{
+   return m_iPendingSize + m_iUserBufSize;
 }

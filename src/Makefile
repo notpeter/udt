@@ -9,8 +9,11 @@ ifndef arch
 endif
 
 #WARNING: Optimization option may decrease the performance!
+CCFLAGS = -fPIC -Wall -D$(os) -finline-functions
 
-CCFLAGS = -fPIC -Wall -D$(os) -finline-functions #-DTRACE
+CCFLAGS += -DTRACE
+#CCFLAGS += -DNO_BUSY_WAITING
+#CCFLAGS += -DCUSTOM_CC
 
 ifeq ($(arch), IA32)
    CCFLAGS += -DIA32 #-mcpu=pentiumpro -march=pentiumpro -mmmx -msse
@@ -28,12 +31,16 @@ ifeq ($(arch), IA64)
    CCFLAGS += -DIA64
 endif
 
-OBJS = common.o list.o buffer.o packet.o channel.o udt.o
+ifeq ($(arch), AMD64)
+   CCFLAGS += -DAMD64
+endif
+
+OBJS = common.o list.o buffer.o packet.o channel.o udt.o api.o
 DIR = $(shell pwd)
 
 all: libudt.so libudt.a udt
 
-%.o: %.cpp
+%.o: %.cpp udt.h
 	$(C++) $(CCFLAGS) $< -c
 
 libudt.so: $(OBJS)

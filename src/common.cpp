@@ -1,76 +1,71 @@
 /*****************************************************************************
-Copyright © 2001 - 2004, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-UDP-based Data Transfer Library (UDT)
+UDP-based Data Transfer Library (UDT) version 2
 
 Laboratory for Advanced Computing (LAC)
 National Center for Data Mining (NCDM)
 University of Illinois at Chicago
 http://www.lac.uic.edu/
 
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software (UDT) and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to the
-following conditions:
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or (at
+your option) any later version.
 
-Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimers.
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+General Public License for more details.
 
-Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimers in the documentation
-and/or other materials provided with the distribution.
-
-Neither the names of the University of Illinois, LAC/NCDM, nor the names
-of its contributors may be used to endorse or promote products derived
-from this Software without specific prior written permission.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 *****************************************************************************/
 
 /*****************************************************************************
-This file contains implementation of UDT common routines of timer, 
-mutex facility, ACK window, and exception processing.
+This file contains implementation of UDT common routines of timer,
+mutex facility, ACK window, packet time window, and exception processing.
 
-CTimer is a high precision timing facility, which uses the CPU clock cycle 
+CTimer is a high precision timing facility, which uses the CPU clock cycle
 as the minimum time unit.
 CGuard is mutex facility that can automatically lock a method.
 CACKWindow is the window management of UDT ACK packet.
 (reference: UDT header definition: packet.h)
-CUDTException is used for UDT exception processing, which is the only 
+CPktTimeWindow is used to record and process packet sending and arrival
+timing information.
+CUDTException is used for UDT exception processing, which is the only
 method to catch and handle UDT errors and exceptions.
 *****************************************************************************/
 
 /*****************************************************************************
-written by 
-   Yunhong Gu [ygu@cs.uic.edu], last updated 12/07/2003
+written by
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/13/2005
+
+modified by
+   <programmer's name, programmer's email, last updated mm/dd/yyyy>
+   <descrition of changes>
 *****************************************************************************/
 
 
 #ifndef WIN32
    #include <unistd.h>
-   #include <string.h>
-   #include <stdlib.h>
-   #include <errno.h>
+   #include <cstring>
+   #include <cstdlib>
+   #include <cerrno>
 #else
    #include <winsock2.h>
    #include <ws2tcpip.h>
 #endif
 
-#include <math.h>
+#include <cmath>
 #include "udt.h"
 
+using namespace std;
+
 #ifdef WIN32
-   int UDT_API gettimeofday(timeval *tv, void*)
+   int gettimeofday(timeval *tv, void*)
    {
       LARGE_INTEGER ccf;
       if (QueryPerformanceFrequency(&ccf))
@@ -111,7 +106,9 @@ written by
    }
 #endif
 
-void CTimer::rdtsc(unsigned __int64 &x) const
+unsigned __int64 CTimer::s_ullCPUFrequency = CTimer::readCPUFrequency();
+
+void CTimer::rdtsc(unsigned __int64 &x)
 {
    #ifdef WIN32
       if (!QueryPerformanceCounter((LARGE_INTEGER *)&x))
@@ -124,8 +121,8 @@ void CTimer::rdtsc(unsigned __int64 &x) const
       // read CPU clock with RDTSC instruction on IA32 acrh
       __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
 
-     // on Windows
-     /*
+      // on Windows
+      /*
          unsigned __int32 a, b;
          __asm 
          {
@@ -140,6 +137,11 @@ void CTimer::rdtsc(unsigned __int64 &x) const
 
    #elif IA64
       __asm__ volatile ("mov %0=ar.itc" : "=r"(x) :: "memory");
+   #elif AMD64
+      unsigned __int32 lval, hval;
+      __asm__ volatile ("rdtsc" : "=a" (lval), "=d" (hval));
+      x = hval;
+      x = (x << 32) | lval;
    #else
       // use system call to read time clock for other archs
       timeval t;
@@ -150,7 +152,7 @@ void CTimer::rdtsc(unsigned __int64 &x) const
    //TODO: add machine instrcutions for different archs
 }
 
-unsigned __int64 CTimer::getCPUFrequency() const
+unsigned __int64 CTimer::readCPUFrequency()
 {
    #ifdef WIN32
       __int64 ccf;
@@ -158,8 +160,7 @@ unsigned __int64 CTimer::getCPUFrequency() const
          return ccf / 1000000;
       else
          return 1;
-   #elif IA32
-   {
+   #elif IA32 || IA64 || AMD64
       // alternative: read /proc/cpuinfo
 
       unsigned __int64 t1, t2;
@@ -170,20 +171,14 @@ unsigned __int64 CTimer::getCPUFrequency() const
 
       // CPU clocks per microsecond
       return (t2 - t1) / 100000;
-   }
-   #elif IA64
-   {
-      unsigned __int64 t1, t2;
-
-      rdtsc(t1);
-      usleep(100000);
-      rdtsc(t2);
-
-      return (t2 - t1) / 100000;
-   }
    #else
       return 1;
    #endif
+}
+
+unsigned __int64 CTimer::getCPUFrequency()
+{
+   return s_ullCPUFrequency;
 }
 
 void CTimer::sleep(const unsigned __int64& interval)
@@ -202,13 +197,31 @@ void CTimer::sleepto(const unsigned __int64& nexttime)
 
    unsigned __int64 t;
    rdtsc(t);
+/*
+   while ((__int64)(m_ullSchedTime - t) > 10 * 2400 * 1000)
+   {
+      int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
+      timeval tv;
+      tv.tv_sec = 0;
+      tv.tv_usec = 1;
+      setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(timeval));
+
+      char buf[4];
+      recv(sock, buf, 1, 0);
+
+      rdtsc(t);
+   }
+*/
    while (t < m_ullSchedTime)
    {
       #ifdef IA32
-         __asm__ volatile ("nop; nop; nop; nop; nop;");
+         //__asm__ volatile ("nop; nop; nop; nop; nop;");
+         __asm__ volatile ("pause; rep; nop; nop; nop; nop; nop;");
       #elif IA64
          __asm__ volatile ("nop 0; nop 0; nop 0; nop 0; nop 0;");
+      #elif AMD64
+         __asm__ volatile ("nop; nop; nop; nop; nop;");
       #endif
 
       // TODO: use high precision timer if it is available
@@ -224,7 +237,7 @@ void CTimer::interrupt()
 }
 
 //
-// Automatically lock in constructure
+// Automatically lock in constructor
 CGuard::CGuard(pthread_mutex_t& lock):
 m_Mutex(lock)
 {
@@ -235,7 +248,7 @@ m_Mutex(lock)
    #endif
 }
 
-// Automatically unlock in destructure
+// Automatically unlock in destructor
 CGuard::~CGuard()
 {
    #ifndef WIN32
@@ -299,7 +312,7 @@ __int32 CACKWindow::acknowledge(const __int32& seq, __int32& ack)
    {
       // Head has not exceeded the physical boundary of the window
 
-      for (__int32 i = m_iTail, n = m_iHead; i <= n; i ++)
+      for (__int32 i = m_iTail, n = m_iHead; i <= n; ++ i)
          // looking for indentical ACK Seq. No.
          if (seq == m_piACKSeqNo[i])
          {
@@ -326,7 +339,7 @@ __int32 CACKWindow::acknowledge(const __int32& seq, __int32& ack)
    }
 
    // Head has exceeded the physical window boundary, so it is behind tail
-   for (__int32 i = m_iTail, n = m_iHead + m_iSize; i <= n; i ++)
+   for (__int32 i = m_iTail, n = m_iHead + m_iSize; i <= n; ++ i)
       // looking for indentical ACK seq. no.
       if (seq == m_piACKSeqNo[i % m_iSize])
       {
@@ -355,13 +368,15 @@ __int32 CACKWindow::acknowledge(const __int32& seq, __int32& ack)
 
 //
 CPktTimeWindow::CPktTimeWindow():
-m_iSize(16)
+m_iAWSize(16),
+m_iRWSize(16),
+m_iPWSize(16)
 {
-   m_piPktWindow = new __int32[m_iSize];
-   m_piRTTWindow = new __int32[m_iSize];
-   m_piPCTWindow = new __int32[m_iSize];
-   m_piPDTWindow = new __int32[m_iSize];
-   m_piProbeWindow = new __int32[m_iSize];
+   m_piPktWindow = new __int32[m_iAWSize];
+   m_piRTTWindow = new __int32[m_iRWSize];
+   m_piPCTWindow = new __int32[m_iRWSize];
+   m_piPDTWindow = new __int32[m_iRWSize];
+   m_piProbeWindow = new __int32[m_iPWSize];
 
    m_iPktWindowPtr = 0;
    m_iRTTWindowPtr = 0;
@@ -369,22 +384,26 @@ m_iSize(16)
 
    gettimeofday(&m_LastArrTime, 0);
 
-   // initialize RTT/PCT/PDT values
-   for (__int32 i = 0; i < m_iSize; ++ i)
-   {
+   for (__int32 i = 0; i < m_iAWSize; ++ i)
       m_piPktWindow[i] = 1;
-      m_piProbeWindow[i] = m_piRTTWindow[i] = m_piPCTWindow[i] = m_piPDTWindow[i] = 0;
-   }
+
+   for (__int32 i = 0; i < m_iRWSize; ++ i)   
+      m_piRTTWindow[i] = m_piPCTWindow[i] = m_piPDTWindow[i] = 0;
+
+   for (__int32 i = 0; i < m_iPWSize; ++ i)
+      m_piProbeWindow[i] = 1000;
 }
 
-CPktTimeWindow::CPktTimeWindow(const __int32& size):
-m_iSize(size)
+CPktTimeWindow::CPktTimeWindow(const __int32& s1, const __int32& s2, const __int32& s3):
+m_iAWSize(s1),
+m_iRWSize(s2),
+m_iPWSize(s3)
 {
-   m_piPktWindow = new __int32[m_iSize];
-   m_piRTTWindow = new __int32[m_iSize];
-   m_piPCTWindow = new __int32[m_iSize];
-   m_piPDTWindow = new __int32[m_iSize];
-   m_piProbeWindow = new __int32[m_iSize];
+   m_piPktWindow = new __int32[m_iAWSize];
+   m_piRTTWindow = new __int32[m_iRWSize];
+   m_piPCTWindow = new __int32[m_iRWSize];
+   m_piPDTWindow = new __int32[m_iRWSize];
+   m_piProbeWindow = new __int32[m_iPWSize];
 
    m_iPktWindowPtr = 0;
    m_iRTTWindowPtr = 0;
@@ -392,12 +411,14 @@ m_iSize(size)
 
    gettimeofday(&m_LastArrTime, 0);
 
-   // initialize RTT/PCT/PDT values
-   for (__int32 i = 0; i < m_iSize; ++ i)
-   {
+   for (__int32 i = 0; i < m_iAWSize; ++ i)
       m_piPktWindow[i] = 1;
-      m_piProbeWindow[i] = m_piRTTWindow[i] = m_piPCTWindow[i] = m_piPDTWindow[i] = 0;
-   }
+
+   for (__int32 i = 0; i < m_iRWSize; ++ i)
+      m_piRTTWindow[i] = m_piPCTWindow[i] = m_piPDTWindow[i] = 0;
+
+   for (__int32 i = 0; i < m_iPWSize; ++ i)
+      m_piProbeWindow[i] = 1000;
 }
 
 CPktTimeWindow::~CPktTimeWindow()
@@ -409,12 +430,25 @@ CPktTimeWindow::~CPktTimeWindow()
    delete [] m_piProbeWindow;
 }
 
-__int32 CPktTimeWindow::getPktSpeed() const
+__int32 CPktTimeWindow::getPktSndSpeed()
+{
+   __int32 speed;
+   if (m_iPktSent > 64)
+      speed = __int32(m_iPktSent * 1000. / (m_iTotalSentTime / 1000.));
+   else
+      speed = 1000000;
+
+   m_bPktSndRestart = true;
+
+   return speed;
+}
+
+__int32 CPktTimeWindow::getPktRcvSpeed() const
 {
    // sorting
    __int32 temp;
-   for (__int32 i = 0, n = (m_iSize >> 1) + 1; i < n; ++ i)
-      for (__int32 j = i, m = m_iSize; j < m; ++ j)
+   for (__int32 i = 0, n = (m_iAWSize >> 1) + 1; i < n; ++ i)
+      for (__int32 j = i, m = m_iAWSize; j < m; ++ j)
          if (m_piPktWindow[i] > m_piPktWindow[j])
          {
             temp = m_piPktWindow[i];
@@ -423,20 +457,22 @@ __int32 CPktTimeWindow::getPktSpeed() const
          }
 
    // read the median value
-   __int32 median = (m_piPktWindow[(m_iSize >> 1) - 1] + m_piPktWindow[m_iSize >> 1]) >> 1;
+   __int32 median = (m_piPktWindow[(m_iAWSize >> 1) - 1] + m_piPktWindow[m_iAWSize >> 1]) >> 1;
    __int32 count = 0;
    __int32 sum = 0;
+   __int32 upper = median << 3;
+   __int32 lower = median >> 3;
 
    // median filtering
-   for (__int32 i = 0, n = m_iSize; i < n; ++ i)
-      if ((m_piPktWindow[i] < (median << 3)) && (m_piPktWindow[i] > (median >> 3)))
+   for (__int32 i = 0, n = m_iAWSize; i < n; ++ i)
+      if ((m_piPktWindow[i] < upper) && (m_piPktWindow[i] > lower))
       {
          ++ count;
          sum += m_piPktWindow[i];
       }
 
    // claculate speed, or return 0 if not enough valid value
-   if (count > (m_iSize >> 1))
+   if (count > (m_iAWSize >> 1))
       return (__int32)ceil(1000000.0 / (sum / count));
    else
       return 0;
@@ -447,7 +483,7 @@ bool CPktTimeWindow::getDelayTrend() const
    double pct = 0.0;
    double pdt = 0.0;
 
-   for (__int32 i = 0, n = m_iSize; i < n; ++ i)
+   for (__int32 i = 0, n = m_iRWSize; i < n; ++ i)
       if (i != m_iRTTWindowPtr)
       {
          pct += m_piPCTWindow[i];
@@ -455,9 +491,9 @@ bool CPktTimeWindow::getDelayTrend() const
       }
 
    // calculate PCT and PDT value
-   pct /= m_iSize - 1;
+   pct /= m_iRWSize - 1;
    if (0 != pdt)
-      pdt = (m_piRTTWindow[(m_iRTTWindowPtr - 1 + m_iSize) % m_iSize] - m_piRTTWindow[m_iRTTWindowPtr]) / pdt;
+      pdt = (m_piRTTWindow[(m_iRTTWindowPtr - 1 + m_iRWSize) % m_iRWSize] - m_piRTTWindow[m_iRTTWindowPtr]) / pdt;
 
    // PCT/PDT judgement
    // reference: M. Jain, C. Dovrolis, Pathload: a measurement tool for end-to-end available bandwidth
@@ -468,8 +504,8 @@ __int32 CPktTimeWindow::getBandwidth() const
 {
    // sorting
    __int32 temp;
-   for (__int32 i = 0, n = (m_iSize >> 1) + 1; i < n; ++ i)
-      for (__int32 j = i, m = m_iSize; j < m; ++ j)
+   for (__int32 i = 0, n = (m_iPWSize >> 1) + 1; i < n; ++ i)
+      for (__int32 j = i, m = m_iPWSize; j < m; ++ j)
          if (m_piProbeWindow[i] > m_piProbeWindow[j])
          {
             temp = m_piProbeWindow[i];
@@ -478,15 +514,56 @@ __int32 CPktTimeWindow::getBandwidth() const
          }
 
    // read the median value
-   __int32 median = (m_piProbeWindow[(m_iSize >> 1) - 1] + m_piProbeWindow[m_iSize >> 1]) >> 1;
+   __int32 median = (m_piProbeWindow[(m_iPWSize >> 1) - 1] + m_piProbeWindow[m_iPWSize >> 1]) >> 1;
+   __int32 count = 1;
+   __int32 sum = median;
+   __int32 upper = median << 3;
+   __int32 lower = median >> 3;
 
-   if (0 == median)
-      return 0;
+   // median filtering
+   for (__int32 i = 0, n = m_iPWSize; i < n; ++ i)
+      if ((m_piProbeWindow[i] < upper) && (m_piProbeWindow[i] > lower))
+      {
+         ++ count;
+         sum += m_piProbeWindow[i];
+      }
 
-   return (__int32)(1000000.0 / median);
+   return (__int32)ceil(1000000.0 / (double(sum) / double(count)));
 }
 
-void CPktTimeWindow::pktArrival()
+void CPktTimeWindow::onPktSent()
+{
+   if (m_bPktSndRestart)
+   {
+      m_bPktSndRestart = false;
+
+      m_iPktSent = 0;
+      m_iTotalSentTime = 0;
+   }
+
+   if (m_bPktSndInt)
+   {
+      m_bPktSndInt = false;
+      gettimeofday(&m_LastSentTime, 0);
+   }
+   else
+   {
+      m_iPktSent ++;
+
+      timeval currtime;
+      gettimeofday(&currtime, 0);
+      m_iTotalSentTime += (currtime.tv_sec - m_LastSentTime.tv_sec) * 1000000 + currtime.tv_usec - m_LastSentTime.tv_usec;
+
+      m_LastSentTime = currtime;
+   }
+}
+
+void CPktTimeWindow::onPktSndInt()
+{
+   m_bPktSndInt = true;
+}
+
+void CPktTimeWindow::onPktArrival()
 {
    gettimeofday(&m_CurrArrTime, 0);
    
@@ -494,7 +571,7 @@ void CPktTimeWindow::pktArrival()
    m_piPktWindow[m_iPktWindowPtr] = (m_CurrArrTime.tv_sec - m_LastArrTime.tv_sec) * 1000000 + m_CurrArrTime.tv_usec - m_LastArrTime.tv_usec;
 
    // the window is logically circular
-   m_iPktWindowPtr = (m_iPktWindowPtr + 1) % m_iSize;
+   m_iPktWindowPtr = (m_iPktWindowPtr + 1) % m_iAWSize;
 
    // remember last packet arrival time 
    m_LastArrTime = m_CurrArrTime;
@@ -504,11 +581,11 @@ void CPktTimeWindow::ack2Arrival(const __int32& rtt)
 {
    // record RTT, comparison (1 or 0), and absolute difference
    m_piRTTWindow[m_iRTTWindowPtr] = rtt;
-   m_piPCTWindow[m_iRTTWindowPtr] = (rtt > m_piRTTWindow[(m_iRTTWindowPtr - 1 + m_iSize) % m_iSize]) ? 1 : 0;
-   m_piPDTWindow[m_iRTTWindowPtr] = abs(rtt - m_piRTTWindow[(m_iRTTWindowPtr - 1 + m_iSize) % m_iSize]);
+   m_piPCTWindow[m_iRTTWindowPtr] = (rtt > m_piRTTWindow[(m_iRTTWindowPtr - 1 + m_iRWSize) % m_iRWSize]) ? 1 : 0;
+   m_piPDTWindow[m_iRTTWindowPtr] = abs(rtt - m_piRTTWindow[(m_iRTTWindowPtr - 1 + m_iRWSize) % m_iRWSize]);
 
    // the window is logically circular
-   m_iRTTWindowPtr = (m_iRTTWindowPtr + 1) % m_iSize;
+   m_iRTTWindowPtr = (m_iRTTWindowPtr + 1) % m_iRWSize;
 }
 
 void CPktTimeWindow::probe1Arrival()
@@ -524,7 +601,37 @@ void CPktTimeWindow::probe2Arrival()
    m_piProbeWindow[m_iProbeWindowPtr] = (m_CurrArrTime.tv_sec - m_ProbeTime.tv_sec) * 1000000 + m_CurrArrTime.tv_usec - m_ProbeTime.tv_usec;
 
    // the window is logically circular
-   m_iProbeWindowPtr = (m_iProbeWindowPtr + 1) % m_iSize;
+   m_iProbeWindowPtr = (m_iProbeWindowPtr + 1) % m_iPWSize;
+}
+
+
+//
+CCC::CCC():
+// By default, the customized CC uses pure window based control and the initial cwnd size is 16 packets
+m_dPktSndPeriod(1.0),
+m_dCWndSize(16.0),
+m_bPeriodicalACK(false),
+m_iACKPeriod(10),
+m_iACKInterval(1)
+{
+}
+
+void CCC::setACKTimer(const __int32& msINT)
+{
+   m_bPeriodicalACK = true;
+   m_iACKPeriod = msINT;
+}
+
+void CCC::setACKInterval(const __int32& pktINT)
+{
+   m_bPeriodicalACK = false;
+   m_iACKInterval = pktINT;
+}
+
+void CCC::sendCustomMsg(CPacket& pkt) const
+{
+   if (NULL != m_pUDT)
+      *m_pUDT->m_pChannel << pkt;
 }
 
 
@@ -541,6 +648,13 @@ m_iMinor(minor)
       #endif
    else
       m_iErrno = err;
+}
+
+CUDTException::CUDTException(const CUDTException& e):
+m_iMajor(e.m_iMajor),
+m_iMinor(e.m_iMinor),
+m_iErrno(e.m_iErrno)
+{
 }
 
 CUDTException::~CUDTException()
@@ -562,9 +676,21 @@ const char* CUDTException::getErrorMessage()
 
         switch (m_iMinor)
         {
-        case 5:
+        case 1:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
            strcpy(m_pcMsg + strlen(m_pcMsg), "connection time out");
+
+           break;
+
+        case 2:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "connection rejected");
+
+           break;
+
+        case 3:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "unable to create new threads");
 
            break;
         
@@ -575,7 +701,22 @@ const char* CUDTException::getErrorMessage()
         break;
 
       case 2:
-        strcpy(m_pcMsg, "Connection broken");
+        switch (m_iMinor)
+        {
+        case 1:
+           strcpy(m_pcMsg, "Connection broken");
+
+           break;
+
+        case 2:
+           strcpy(m_pcMsg, "Connection does not exist");
+
+           break;
+
+        default:
+           break;
+        }
+
         break;
 
       case 3:
@@ -624,19 +765,72 @@ const char* CUDTException::getErrorMessage()
         {
         case 1:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on OPENED UDT entity");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on a BOUND socket");
 
            break;
 
         case 2:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on CONNECTED UDT entity");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on a CONNECTED socket");
 
            break;
 
         case 3:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
            strcpy(m_pcMsg + strlen(m_pcMsg), "Bad parameters");
+
+           break;
+
+        case 4:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Invalid socket ID");
+
+           break;
+
+        case 5:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on an UNBOUND socket");
+
+           break;
+
+        case 6:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Socket is not in listening state");
+
+           break;
+
+        default:
+           break;
+        }
+
+        break;
+
+     case 6:
+        strcpy(m_pcMsg, "Non-blocking call failed");
+
+        switch (m_iMinor)
+        {
+        case 1:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "No buffer available for sending");
+
+           break;
+
+        case 2:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "No data available for reading");
+
+           break;
+
+        case 3:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "No buffer available for overlapped reading");
+
+           break;
+
+        case 4:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Non-blocking overlapped recv is on going");
 
            break;
 
@@ -647,7 +841,7 @@ const char* CUDTException::getErrorMessage()
         break;
 
       default:
-        strcpy(m_pcMsg, "Undefined error");
+        strcpy(m_pcMsg, "Error");
    }
 
    // Adding "errno" information
@@ -664,13 +858,15 @@ const char* CUDTException::getErrorMessage()
       #endif
    }
 
-   // Adding a CR/LF charactor
-   strcpy(m_pcMsg + strlen(m_pcMsg), ".\n");
+   // period
+   #ifndef WIN32
+      strcpy(m_pcMsg + strlen(m_pcMsg), ".");
+   #endif
 
    return m_pcMsg;
 }
 
-const __int32& CUDTException::getErrorCode() const
+const __int32 CUDTException::getErrorCode() const
 {
-   return m_iErrno;
+   return m_iMajor * 1000 + m_iMinor;
 }

@@ -2,7 +2,6 @@
 // Author: Yunhong Gu, ygu@cs.uic.edu
 //
 // Descrition: the program is used to simulate UDT on NS-2
-//             see ../doc/index.htm for how to install it to NS-2
 //
 // Last Update: 05/21/03
 // 
@@ -225,8 +224,11 @@ protected:
    int snd_last_ack_;
    int local_send_;
    int local_loss_;
+   int local_ack_;
    int snd_curr_seqno_;
    int curr_max_seqno_;
+   int dec_random_;
+   int avg_nak_num_;
 
    double loss_rate_limit_;
    double loss_rate_;
