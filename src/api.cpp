@@ -32,7 +32,7 @@ reference: UDT programming manual and socket programming reference
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/10/2005
+   Yunhong Gu [ygu@cs.uic.edu], last updated 04/09/2005
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -56,11 +56,18 @@ m_pUDT(NULL),
 m_pQueuedSockets(NULL),
 m_pAcceptSockets(NULL)
 {
+   #ifndef WIN32
+      pthread_mutex_init(&m_AcceptLock, NULL);
+      pthread_cond_init(&m_AcceptCond, NULL);
+   #else
+      m_AcceptLock = CreateMutex(NULL, false, NULL);
+      m_AcceptCond = CreateEvent(NULL, false, false, NULL);
+   #endif
 }
 
 CUDTSocket::~CUDTSocket()
 {
-   if (4 == m_iIPversion)
+   if (AF_INET == m_iIPversion)
    {
       if (m_pSelfAddr)
          delete (sockaddr_in*)m_pSelfAddr;
@@ -79,6 +86,14 @@ CUDTSocket::~CUDTSocket()
       delete m_pQueuedSockets;
    if (m_pAcceptSockets)
       delete m_pAcceptSockets;
+
+   #ifndef WIN32
+      pthread_mutex_destroy(&m_AcceptLock);
+      pthread_cond_destroy(&m_AcceptCond);
+   #else
+      CloseHandle(m_AcceptLock);
+      CloseHandle(m_AcceptCond);
+   #endif
 }
 
 
@@ -88,13 +103,9 @@ m_SocketID(1 << 30)
    #ifndef WIN32
       pthread_mutex_init(&m_ControlLock, NULL);
       pthread_mutex_init(&m_IDLock, NULL);
-      pthread_mutex_init(&m_AcceptLock, NULL);
-      pthread_cond_init(&m_AcceptCond, NULL);
    #else
       m_ControlLock = CreateMutex(NULL, false, NULL);
       m_IDLock = CreateMutex(NULL, false, NULL);
-      m_AcceptLock = CreateMutex(NULL, false, NULL);
-      m_AcceptCond = CreateEvent(NULL, false, false, NULL);
    #endif
 
    #ifndef WIN32
@@ -109,13 +120,9 @@ CUDTUnited::~CUDTUnited()
    #ifndef WIN32
       pthread_mutex_destroy(&m_ControlLock);
       pthread_mutex_destroy(&m_IDLock);
-      pthread_mutex_destroy(&m_AcceptLock);
-      pthread_cond_destroy(&m_AcceptCond);
    #else
       CloseHandle(m_ControlLock);
       CloseHandle(m_IDLock);
-      CloseHandle(m_AcceptLock);
-      CloseHandle(m_AcceptCond);
    #endif
 
    #ifndef WIN32
@@ -125,7 +132,7 @@ CUDTUnited::~CUDTUnited()
    #endif
 }
 
-UDTSOCKET CUDTUnited::newSocket(const __int32& af)
+UDTSOCKET CUDTUnited::newSocket(const __int32& af, const __int32& type)
 {
    // garbage collection before a new socket is created
    checkBrokenSockets();
@@ -149,16 +156,12 @@ UDTSOCKET CUDTUnited::newSocket(const __int32& af)
    ns->m_ListenSocket = 0;
    ns->m_pUDT = new CUDT;
    ns->m_pUDT->m_SocketID = ns->m_Socket;
+   ns->m_pUDT->m_iSockType = type;
+   ns->m_pUDT->m_iIPversion = ns->m_iIPversion = af;
    if (AF_INET == af)
-   {
-      ns->m_pUDT->m_iIPversion = ns->m_iIPversion = 4;
       ns->m_pSelfAddr = (sockaddr*)(new sockaddr_in);
-   }
    else
-   {
-      ns->m_pUDT->m_iIPversion = ns->m_iIPversion = 6;
       ns->m_pSelfAddr = (sockaddr*)(new sockaddr_in6);
-   }
 
    // protect the m_Sockets structure.
    #ifndef WIN32
@@ -235,7 +238,7 @@ void CUDTUnited::newConnection(const UDTSOCKET listen, const sockaddr* peer, CHa
    ns->m_iIPversion = ls->m_iIPversion;
    ns->m_pUDT->m_SocketID = ns->m_Socket;
 
-   if (4 == ls->m_iIPversion)
+   if (AF_INET == ls->m_iIPversion)
    {
       ns->m_pSelfAddr = (sockaddr*)(new sockaddr_in);
       ns->m_pPeerAddr = (sockaddr*)(new sockaddr_in);
@@ -285,9 +288,9 @@ void CUDTUnited::newConnection(const UDTSOCKET listen, const sockaddr* peer, CHa
 
    // wake up a waiting accept() call
    #ifndef WIN32
-      pthread_cond_signal(&m_AcceptCond);
+      pthread_cond_signal(&(ls->m_AcceptCond));
    #else
-      SetEvent(m_AcceptCond);
+      SetEvent(ls->m_AcceptCond);
    #endif
 }
 
@@ -312,14 +315,14 @@ __int32 CUDTUnited::bind(const UDTSOCKET u, const sockaddr* name, const __int32&
       throw CUDTException(5, 4, 0);
 
    // check the size of SOCKADDR structure
-   if (4 == s->m_iIPversion)
+   if (AF_INET == s->m_iIPversion)
    {
       if (namelen != sizeof(sockaddr_in))
          throw CUDTException(5, 3, 0);
    }
    else
    {
-      if (namelen != sizeof(sockaddr_in6));
+      if (namelen != sizeof(sockaddr_in6))
          throw CUDTException(5, 3, 0);
    }
 
@@ -380,16 +383,16 @@ UDTSOCKET CUDTUnited::accept(const UDTSOCKET listen, sockaddr* addr, __int32* ad
       throw CUDTException(6, 2, 0);
 
    #ifndef WIN32
-      pthread_mutex_lock(&m_AcceptLock);
+      pthread_mutex_lock(&(ls->m_AcceptLock));
       while ((ls->m_pQueuedSockets->size() == 0) && (CUDTSocket::LISTENING == ls->m_Status))
-         pthread_cond_wait(&m_AcceptCond, &m_AcceptLock);
-      pthread_mutex_unlock(&m_AcceptLock);
+         pthread_cond_wait(&(ls->m_AcceptCond), &(ls->m_AcceptLock));
+      pthread_mutex_unlock(&(ls->m_AcceptLock));
    #else
       while ((ls->m_pQueuedSockets->size() == 0) && (CUDTSocket::LISTENING == ls->m_Status))
-         WaitForSingleObject(m_AcceptCond, INFINITE);
+         WaitForSingleObject(ls->m_AcceptCond, INFINITE);
       // wake up other "accept" calls
       if (CUDTSocket::CLOSED == ls->m_Status)
-         SetEvent(m_AcceptCond);
+         SetEvent(ls->m_AcceptCond);
    #endif
 
    // !!only one conection can be set up at each time!!
@@ -405,7 +408,7 @@ UDTSOCKET CUDTUnited::accept(const UDTSOCKET listen, sockaddr* addr, __int32* ad
       if (NULL == addrlen)
          throw CUDTException(5, 3, 0);
 
-      if (4 == locate(u)->m_iIPversion)
+      if (AF_INET == locate(u)->m_iIPversion)
          *addrlen = sizeof(sockaddr_in);
       else
          *addrlen = sizeof(sockaddr_in6);
@@ -425,14 +428,14 @@ __int32 CUDTUnited::connect(const UDTSOCKET u, const sockaddr* name, const __int
       throw CUDTException(5, 4, 0);
 
    // check the size of SOCKADDR structure
-   if (4 == s->m_iIPversion)
+   if (AF_INET == s->m_iIPversion)
    {
       if (namelen != sizeof(sockaddr_in))
          throw CUDTException(5, 3, 0);
    }
    else
    {
-      if (namelen != sizeof(sockaddr_in6));
+      if (namelen != sizeof(sockaddr_in6))
          throw CUDTException(5, 3, 0);
    }
 
@@ -449,7 +452,7 @@ __int32 CUDTUnited::connect(const UDTSOCKET u, const sockaddr* name, const __int
    s->m_pUDT->m_pChannel->getSockAddr(s->m_pSelfAddr);
 
    // record peer address
-   if (4 == s->m_iIPversion)
+   if (AF_INET == s->m_iIPversion)
       s->m_pPeerAddr = (sockaddr*)(new sockaddr_in);
    else
       s->m_pPeerAddr = (sockaddr*)(new sockaddr_in6);
@@ -480,16 +483,18 @@ __int32 CUDTUnited::close(const UDTSOCKET u)
       ReleaseMutex(m_ControlLock);
    #endif
 
-   // broadcast all "accpet" waiting
+   // broadcast all "accept" waiting
    if (CUDTSocket::LISTENING == os)
       #ifndef WIN32
-         pthread_cond_broadcast(&m_AcceptCond);
+         pthread_cond_broadcast(&(s->m_AcceptCond));
       #else
-         SetEvent(m_AcceptCond);
+         SetEvent(s->m_AcceptCond);
       #endif
 
-   CUDT* udt = s->m_pUDT;
+   // garbage collection should not try to close this instance
+   s->m_TimeStamp.tv_sec = -1;
 
+   CUDT* udt = s->m_pUDT;
    udt->close();
 
    // a socket will not be immediated removed when it is closed
@@ -510,7 +515,7 @@ __int32 CUDTUnited::getpeername(const UDTSOCKET u, sockaddr* name, __int32* name
    if (!s->m_pUDT->m_bConnected)
       throw CUDTException(2, 2, 0);
 
-   if (4 == s->m_iIPversion)
+   if (AF_INET == s->m_iIPversion)
       *namelen = sizeof(sockaddr_in);
    else
       *namelen = sizeof(sockaddr_in6);
@@ -528,7 +533,7 @@ __int32 CUDTUnited::getsockname(const UDTSOCKET u, sockaddr* name, __int32* name
    if (NULL == s)
       throw CUDTException(5, 4, 0);
 
-   if (4 == s->m_iIPversion)
+   if (AF_INET == s->m_iIPversion)
       *namelen = sizeof(sockaddr_in);
    else
       *namelen = sizeof(sockaddr_in6);
@@ -554,6 +559,8 @@ __int32 CUDTUnited::select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds,
 
    __int32 count = 0;
 
+   set<UDTSOCKET> rs, ws, es;
+
    do
    {
       CUDTSocket* s;
@@ -568,7 +575,10 @@ __int32 CUDTUnited::select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds,
             if ((s->m_pUDT->m_bConnected && (s->m_pUDT->m_pRcvBuffer->getRcvDataSize() > 0))
                || (!s->m_pUDT->m_bListening && (s->m_pUDT->m_bBroken || !s->m_pUDT->m_bConnected))
                || (s->m_pUDT->m_bListening && (s->m_pQueuedSockets->size() > 0)))
+            {
+               rs.insert(*i);
                ++ count;
+            }
          }
 
       // query write sockets
@@ -579,7 +589,10 @@ __int32 CUDTUnited::select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds,
                throw CUDTException(5, 4, 0);
 
             if (s->m_pUDT->m_bConnected && (s->m_pUDT->m_pSndBuffer->getCurrBufSize() < s->m_pUDT->m_iSndQueueLimit))
-               count ++;
+            {
+               ws.insert(*i);
+               ++ count;
+            }
          }
 
       // query expections on sockets
@@ -591,7 +604,8 @@ __int32 CUDTUnited::select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds,
                throw CUDTException(5, 4, 0);
 
             // check connection request status
-               count ++;
+               es.insert(*i);
+               ++ count;
          }
       */
 
@@ -610,46 +624,14 @@ __int32 CUDTUnited::select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds,
 
    if (0 < count)
    {
-      CUDTSocket* s;
-
-      count = 0;
-
-      // query read sockets
       if (NULL != readfds)
-         for (set<UDTSOCKET>::iterator i = readfds->begin(); i != readfds->end(); ++ i)
-         {
-            if (NULL == (s = locate(*i)))
-               throw CUDTException(5, 4, 0);
+         *readfds = rs;
 
-            if ((s->m_pUDT->m_bConnected && (s->m_pUDT->m_pRcvBuffer->getRcvDataSize() > 0))
-               || (!s->m_pUDT->m_bListening && (s->m_pUDT->m_bBroken || !s->m_pUDT->m_bConnected))
-               || (s->m_pUDT->m_bListening && (s->m_pQueuedSockets->size() > 0)))
-               ++ count;
-         }
-
-      // query write sockets
       if (NULL != writefds)
-         for (set<UDTSOCKET>::iterator i = writefds->begin(); i != writefds->end(); ++ i)
-         {
-            if (NULL == (s = locate(*i)))
-               throw CUDTException(5, 4, 0);
+         *writefds = ws;
 
-            if (s->m_pUDT->m_bConnected && (s->m_pUDT->m_pSndBuffer->getCurrBufSize() < s->m_pUDT->m_iSndQueueLimit))
-               count ++;
-         }
-
-      // query expections on sockets
-      /*
       if (NULL != exceptfds)
-         for (set<UDTSOCKET>::iterator i = exceptfds->begin(); i != exceptfds->end(); ++ i)
-         {
-            if (NULL == (s = locate(*i)))
-               throw CUDTException(5, 4, 0);
-
-            // check connection request status
-               count ++;
-         }
-      */
+         *exceptfds = es;
    }
 
    return count;
@@ -678,7 +660,7 @@ CUDTSocket* CUDTUnited::locate(const UDTSOCKET u, const sockaddr* peer)
    {
       map<UDTSOCKET, CUDTSocket*>::iterator k = m_Sockets.find(*j);
 
-      if (4 == i->second->m_iIPversion)
+      if (AF_INET == i->second->m_iIPversion)
       {
          // compare IPv4 address
          if ((((sockaddr_in*)peer)->sin_port == ((sockaddr_in*)k->second->m_pPeerAddr)->sin_port) && (((sockaddr_in*)peer)->sin_addr.s_addr == ((sockaddr_in*)k->second->m_pPeerAddr)->sin_addr.s_addr))
@@ -708,7 +690,7 @@ CUDTSocket* CUDTUnited::locate(const UDTSOCKET u, const sockaddr* peer)
    {
       map<UDTSOCKET, CUDTSocket*>::iterator k = m_Sockets.find(*j);
 
-      if (4 == i->second->m_iIPversion)
+      if (AF_INET == i->second->m_iIPversion)
       {
          // compare IPv4 address
          if ((((sockaddr_in*)peer)->sin_port == ((sockaddr_in*)k->second->m_pPeerAddr)->sin_port) && (((sockaddr_in*)peer)->sin_addr.s_addr == ((sockaddr_in*)k->second->m_pPeerAddr)->sin_addr.s_addr))
@@ -762,11 +744,11 @@ void CUDTUnited::checkBrokenSockets()
       }
       else
       {
-         // timeout, delete the socket
+         // if timeout, delete the socket
          timeval currtime;
          gettimeofday(&currtime, 0);
-         // timeout 1-2 seconds to destroy a socket with broken connection
-         if (currtime.tv_sec - i->second->m_TimeStamp.tv_sec >= 2)
+         // timeout 1-2 seconds to destroy a socket
+         if ((i->second->m_TimeStamp.tv_sec >= 0) && (currtime.tv_sec - i->second->m_TimeStamp.tv_sec >= 2))
             tbr.insert(i->second->m_Socket);
 
          // sockets cannot be removed here because it will invalidate the map iterator
@@ -839,16 +821,16 @@ CUDTException* CUDTUnited::getError()
 
 
 //
-UDTSOCKET CUDT::socket(int af, int, int)
+UDTSOCKET CUDT::socket(int af, int type, int)
 {
    try
    {
-      return s_UDTUnited.newSocket(af);
+      return s_UDTUnited.newSocket(af, type);
    }
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return INVALID_UDTSOCK;
+      return INVALID_SOCK;
    }
 }
 
@@ -861,7 +843,7 @@ int CUDT::bind(UDTSOCKET u, const sockaddr* name, int namelen)
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -874,7 +856,7 @@ int CUDT::listen(UDTSOCKET u, int backlog)
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -887,7 +869,7 @@ UDTSOCKET CUDT::accept(UDTSOCKET u, sockaddr* addr, int* addrlen)
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return INVALID_UDTSOCK;
+      return INVALID_SOCK;
    }
 }
 
@@ -900,7 +882,7 @@ int CUDT::connect(UDTSOCKET u, const sockaddr* name, int namelen)
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -913,7 +895,7 @@ int CUDT::close(UDTSOCKET u)
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -926,7 +908,7 @@ int CUDT::getpeername(UDTSOCKET u, sockaddr* name, int* namelen)
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -939,7 +921,7 @@ int CUDT::getsockname(UDTSOCKET u, sockaddr* name, int* namelen)
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -956,7 +938,7 @@ int CUDT::getsockopt(UDTSOCKET u, int, UDTOpt optname, void* optval, int* optlen
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -973,11 +955,11 @@ int CUDT::setsockopt(UDTSOCKET u, int, UDTOpt optname, const void* optval, int o
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
-int CUDT::shutdown(UDTSOCKET u, int how)
+int CUDT::shutdown(UDTSOCKET, int)
 {
    try
    {
@@ -988,7 +970,7 @@ int CUDT::shutdown(UDTSOCKET u, int how)
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -1003,7 +985,7 @@ int CUDT::send(UDTSOCKET u, const char* buf, int len, int, int* handle, UDT_MEM_
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -1018,11 +1000,11 @@ int CUDT::recv(UDTSOCKET u, char* buf, int len, int, int* handle, UDT_MEM_ROUTIN
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
-streampos CUDT::sendfile(UDTSOCKET u, ifstream& ifs, const streampos& offset, streampos& size, const int& block)
+__int64 CUDT::sendfile(UDTSOCKET u, ifstream& ifs, const __int64& offset, __int64& size, const int& block)
 {
    try
    {
@@ -1033,11 +1015,11 @@ streampos CUDT::sendfile(UDTSOCKET u, ifstream& ifs, const streampos& offset, st
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
-streampos CUDT::recvfile(UDTSOCKET u, ofstream& ofs, const streampos& offset, streampos& size, const int& block)
+__int64 CUDT::recvfile(UDTSOCKET u, ofstream& ofs, const __int64& offset, __int64& size, const int& block)
 {
    try
    {
@@ -1048,7 +1030,7 @@ streampos CUDT::recvfile(UDTSOCKET u, ofstream& ofs, const streampos& offset, st
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -1075,7 +1057,7 @@ int CUDT::select(int, ud_set* readfds, ud_set* writefds, ud_set* exceptfds, cons
    if ((NULL == readfds) && (NULL == writefds) && (NULL == exceptfds))
    {
       s_UDTUnited.setError(new CUDTException(5, 3, 0));
-      return UDT_ERROR;
+      return ERROR;
    }
 
    try
@@ -1085,7 +1067,7 @@ int CUDT::select(int, ud_set* readfds, ud_set* writefds, ud_set* exceptfds, cons
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 }
 
@@ -1094,24 +1076,29 @@ CUDTException& CUDT::getlasterror()
    return *s_UDTUnited.getError();
 }
 
-int CUDT::perfmon(UDTSOCKET u, CPerfMon* perf)
+int CUDT::perfmon(UDTSOCKET u, CPerfMon* perf, bool clear)
 {
 #ifdef TRACE
    try
    {
       CUDT* udt = s_UDTUnited.lookup(u);
 
-      udt->sample(perf);
+      udt->sample(perf, clear);
 
       return 0;
    }
    catch (CUDTException e)
    {
       s_UDTUnited.setError(new CUDTException(e));
-      return UDT_ERROR;
+      return ERROR;
    }
 #else
    s_UDTUnited.setError(new CUDTException(5, 0, 0));
-   return UDT_ERROR;
+   return ERROR;
 #endif
+}
+
+bool CUDT::isUSock(UDTSOCKET u)
+{
+   return (NULL != s_UDTUnited.lookup(u));
 }

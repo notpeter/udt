@@ -8,7 +8,6 @@
 #include "cc.h"
 
 using namespace std;
-using namespace UDT;
 
 #ifndef WIN32
 void* recvdata(void*);
@@ -26,12 +25,12 @@ int main(int argc, char* argv[])
 
    UDTSOCKET serv = UDT::socket(AF_INET, SOCK_STREAM, 0);
 
-   // for testing with customized CC 
-   //UDT::setsockopt(serv, 0, UDT_CC, new CScalableTCP, sizeof(CScalableTCP));
+   // for testing with customized CC
+   //UDT::setsockopt(serv, 0, UDT_CC, new CCCFactory<CUDPBlast>, sizeof(CCCFactory<CUDPBlast>));
 
    short port;
    if (2 == argc)
-      port = atoi(argv[1]);
+      port = short(atoi(argv[1]));
    else
       port = 9000;
 
@@ -41,7 +40,7 @@ int main(int argc, char* argv[])
    my_addr.sin_addr.s_addr = INADDR_ANY;
    memset(&(my_addr.sin_zero), '\0', 8);
 
-   if (UDT_ERROR == UDT::bind(serv, (sockaddr*)&my_addr, sizeof(my_addr)))
+   if (UDT::ERROR == UDT::bind(serv, (sockaddr*)&my_addr, sizeof(my_addr)))
    {
       cout << "bind: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
@@ -49,7 +48,7 @@ int main(int argc, char* argv[])
 
    cout << "server is ready at port: " << port << endl;
 
-   if (UDT_ERROR == UDT::listen(serv, 10))
+   if (UDT::ERROR == UDT::listen(serv, 10))
    {
       cout << "listen: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
@@ -57,19 +56,18 @@ int main(int argc, char* argv[])
 
    int namelen;
    sockaddr_in their_addr;
+   UDTSOCKET recver;
 
    while (true)
    {
-      UDTSOCKET recver;
-
-      if (INVALID_UDTSOCK == (recver = UDT::accept(serv, (sockaddr*)&their_addr, &namelen)))
+      if (UDT::INVALID_SOCK == (recver = UDT::accept(serv, (sockaddr*)&their_addr, &namelen)))
       {
          cout << "accept: " << UDT::getlasterror().getErrorMessage() << endl;
          return 0;
       }
 
-      char ip[16];
 #ifndef WIN32
+      char ip[16];
       cout << "new connection: " << inet_ntop(AF_INET, &their_addr.sin_addr, ip, 16) << ":" << ntohs(their_addr.sin_port) << endl;
 #else
       cout << "new connection: " << inet_ntoa(their_addr.sin_addr) << ":" << ntohs(their_addr.sin_port) << endl;
@@ -77,10 +75,10 @@ int main(int argc, char* argv[])
 
 #ifndef WIN32
       pthread_t rcvthread;
-      pthread_create(&rcvthread, NULL, recvdata, &recver);
+      pthread_create(&rcvthread, NULL, recvdata, new UDTSOCKET(recver));
       pthread_detach(rcvthread);
 #else
-      CreateThread(NULL, 0, recvdata, &recver, 0, NULL);
+      CreateThread(NULL, 0, recvdata, new UDTSOCKET(recver), 0, NULL);
 #endif
    }
 
@@ -96,6 +94,7 @@ DWORD WINAPI recvdata(LPVOID usocket)
 #endif
 {
    UDTSOCKET recver = *(UDTSOCKET*)usocket;
+   delete (UDTSOCKET*)usocket;
 
    char* data;
    int size = 10000000;
@@ -105,7 +104,7 @@ DWORD WINAPI recvdata(LPVOID usocket)
 
    while (true)
    {
-      if (UDT_ERROR == UDT::recv(recver, data, size, 0, &handle, NULL))
+      if (UDT::ERROR == UDT::recv(recver, data, size, 0, &handle, NULL))
       {
          cout << "recv:" << UDT::getlasterror().getErrorMessage() << endl;
          break;

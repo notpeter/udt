@@ -79,8 +79,12 @@ CPU time. However, if you wish to avoid this busy waiting, enable the -DNO_BUSY_
 option in related ./src/Makefile. The latter choice will have slight performance 
 drop.</font></p>
 <p><font face="Verdana" size="2">3. If you need to configure congestion control
-algorithms, please uncomment the -DCUSTOM_CC compile option in ./src/Makefile.</font></p>
-<p>&nbsp;</p>
+algorithms, please uncomment the -DCUSTOM_CC compile option in ./src/Makefile.
+When this option is enabled, -DNO_BUSY_WAITIING is always disabled.</font></p>
+<p><font face="Verdana" size="2">4. By compiling UDT with -DCAPI option, a set 
+of standard socket API will be enclosed in libudt.so, which can be linked to 
+your application so that it can use UDT without any changes. Currently this 
+feature is only available on Linux. On other system, this option has no effects.</font></p>
 
 </body>
 

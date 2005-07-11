@@ -220,7 +220,7 @@ __int32 CSndBuffer::getCurrBufSize() const
    return m_iCurrBufSize - m_iCurrAckPnt;
 }
 
-bool CSndBuffer::getOverlappedResult(const int& handle, __int32& progress)
+bool CSndBuffer::getOverlappedResult(const __int32& handle, __int32& progress)
 {
    CGuard bufferguard(m_BufLock);
 
@@ -668,7 +668,7 @@ __int32 CRcvBuffer::getRcvDataSize() const
    return (m_iLastAckPos - m_iStartPos + m_iSize) % m_iSize;
 }
 
-bool CRcvBuffer::getOverlappedResult(const int& handle, __int32& progress)
+bool CRcvBuffer::getOverlappedResult(const __int32& handle, __int32& progress)
 {
    if ((NULL != m_pcUserBuf) && (handle == m_iHandle))
    {
@@ -681,7 +681,7 @@ bool CRcvBuffer::getOverlappedResult(const int& handle, __int32& progress)
    if (NULL != m_pPendingBlock)
    {
       __int32 end = (m_pLastBlock->m_iHandle >= m_pPendingBlock->m_iHandle) ? m_pLastBlock->m_iHandle : m_pLastBlock->m_iHandle + (1 << 30);
-      __int32 h = (h >= m_pPendingBlock->m_iHandle) ? h : h + (1 << 30);
+      __int32 h = (handle >= m_pPendingBlock->m_iHandle) ? handle : handle + (1 << 30);
 
       if ((h >= m_pPendingBlock->m_iHandle) && (h <= end))
          return false;

@@ -64,11 +64,12 @@ data into a local memory buffer.</font></p>
 	<dd><font face="Verdana" size="2">[out] Optional. An descriptor to this <b>recv</b> call.</font></dd>
 	<dt><font face="Verdana"><i><font size="2">routine</font></i><font size="2">
 	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in] Optional. Function used to process the buffer 
-	after the sending is finished. </font></dd>
+	<dd><font face="Verdana" size="2">[in] Optional. Function used to process the buffer (received data)
+	after the receving is finished. </font></dd>
 </dl>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">On success, the actual size of received data is returned; Otherwise, UDT_ERROR 
+<p><font face="Verdana" size="2">On success, the actual size of received data is returned; Otherwise,
+UDT::ERROR 
 is returned and the specific error information can be retrieved by 
 <a href="error.htm">getlasterror</a>.</font></p>
   <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table2" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">

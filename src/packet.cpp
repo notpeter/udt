@@ -32,7 +32,7 @@ A UDT packet is a 2-dimension vector of packet header and data.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/10/2005
+   Yunhong Gu [ygu@cs.uic.edu], last updated 02/06/2005
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -56,6 +56,8 @@ modified by
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //   |0|                         Sequence Number                     |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                          Time Stamp                           |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
 //   bit 0:
 //      0: Data Packet
@@ -65,6 +67,8 @@ modified by
 //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //   |1|type |        Reserved       |           ACK Seq. No.        |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                          Time Stamp                           |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
 //   bit 1-3:
@@ -98,9 +102,9 @@ modified by
 //   bit 4 - 15:
 //      This space is used for future expansion or user defined control packets. 
 //      Although a user defined packets can use this space freely, it is highly
-//      recommended that lower bit is chosen first, i.e., starting from 0xFFFF
-//      for bits 0 - 15. For example, if a customized protocol need to add two 
-//      new types of packets, 0xFFFF and 0xFFFE is recommended.
+//      recommended that lower bit is chosen first, i.e., starting from 0xFFF
+//      for bits 4 - 15. For example, if a customized protocol need to add two 
+//      new types of packets, 0xFFF and 0xFFE is recommended.
 //
 //    0                   1                   2                   3
 //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -124,10 +128,11 @@ modified by
 
 // Set up the aliases in the constructure
 CPacket::CPacket():
-m_iSeqNo((__int32&)(m_nHeader)),
+m_iSeqNo((__int32&)(m_nHeader[0])),
+m_iTimeStamp((__int32&)(m_nHeader[1])),
 m_pcData((char*&)(m_PacketVector[1].iov_base))
 {
-   m_PacketVector[0].iov_base = (char *)&m_nHeader;
+   m_PacketVector[0].iov_base = (char *)m_nHeader;
    m_PacketVector[0].iov_len = CPacket::m_iPktHdrSize;
 }
 
@@ -145,32 +150,18 @@ void CPacket::setLength(const __int32& len)
    m_PacketVector[1].iov_len = len;
 }
 
-void CPacket::pack(const __int32& seqno, const char* data, const __int32& size)
-{
-   // replicate the sequence number into header
-   m_iSeqNo = seqno;
-
-   // point the second demension to the payload
-   m_PacketVector[1].iov_base = const_cast<char *>(data);
-   m_PacketVector[1].iov_len = size;
-}
-
 void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __int32& size)
 {
    // Set (bit-0 = 1) and (bit-1~3 = type)
-   m_nHeader = 0x80000000 | (pkttype << 28);
+   m_nHeader[0] = 0x80000000 | (pkttype << 28);
 
    // Set bit-16~31 and control information field
    switch (pkttype)
    {
    case 2: //010 - Acknowledgement (ACK)
       // ACK packet seq. no.
-      #ifndef CUSTOM_CC
-         m_nHeader |= *(__int32 *)lparam;
-      #else
-         if (NULL != lparam)
-            m_nHeader |= *(__int32 *)lparam;
-      #endif
+      if (NULL != lparam)
+         m_nHeader[0] |= *(__int32 *)lparam;
 
       // data ACK seq. no. 
       // optional: RTT (microsends), RTT variance (microseconds) advertised flow window size (packets), and estimated link capacity (packets per second)
@@ -181,7 +172,7 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
 
    case 6: //110 - Acknowledgement of Acknowledgement (ACK-2)
       // ACK packet seq. no.
-      m_nHeader |= *(__int32 *)lparam;
+      m_nHeader[0] |= *(__int32 *)lparam;
 
       // control info field should be none
       // but "writev" does not allow this
@@ -228,13 +219,22 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
 
       break;
 
-   case 7: //111 - Reserved and user defined control packets
-      #ifdef CUSTOM_CC
-         // add user defined packet processing here
-         // "lparam" can be used to store the rest type information for bit 4 - 15
-         // a new class can also be inherited from CPacket
-         // Type 0 - 6 packets SHOULD NOT be modified for other usage 
-      #endif
+   case 7: //111 - Reserved for user defined control packets
+      // for extended control packet
+      // "lparam" contains the extneded type information for bit 4 - 15
+      // "rparam" is the control information
+      m_nHeader[0] |= (*(__int32 *)lparam) << 16;
+
+      if (NULL != rparam)
+      {
+         m_PacketVector[1].iov_base = (char *)rparam;
+         m_PacketVector[1].iov_len = size;
+      }
+      else
+      {
+         m_PacketVector[1].iov_base = (char *)&__pad;
+         m_PacketVector[1].iov_len = sizeof(__int32);
+      }
 
       break;
 
@@ -251,17 +251,23 @@ iovec* CPacket::getPacketVector()
 __int32 CPacket::getFlag() const
 {
    // read bit 0
-   return m_nHeader >> 31;
+   return m_nHeader[0] >> 31;
 }
 
 __int32 CPacket::getType() const
 {
    // read bit 1~3
-   return (m_nHeader >> 28) & 0x00000007;
+   return (m_nHeader[0] >> 28) & 0x00000007;
+}
+
+__int32 CPacket::getExtendedType() const
+{
+   // read bit 4~16
+   return (m_nHeader[0] >> 16) & 0x00000FFF;
 }
 
 __int32 CPacket::getAckSeqNo() const
 {
    // read bit 16~31
-   return m_nHeader & 0x0000FFFF;
+   return m_nHeader[0] & 0x0000FFFF;
 }

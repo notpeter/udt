@@ -8,7 +8,6 @@
 #include "cc.h"
 
 using namespace std;
-using namespace UDT;
 
 void DeleteBuf(char* buf, int) {delete [] buf;}
 
@@ -29,7 +28,7 @@ int main(int argc, char* argv[])
    UDTSOCKET client = UDT::socket(AF_INET, SOCK_STREAM, 0);
 
    //for testing with custmized CC
-   //UDT::setsockopt(client, 0, UDT_CC, new CScalableTCP, sizeof(CScalableTCP));
+   //UDT::setsockopt(client, 0, UDT_CC, new CCCFactory<CUDPBlast>, sizeof(CCCFactory<CUDPBlast>));
 
 #ifdef WIN32
    UDT::setsockopt(client, 0, UDT_MSS, new int(1052), sizeof(int));
@@ -37,7 +36,7 @@ int main(int argc, char* argv[])
 
    sockaddr_in serv_addr;
    serv_addr.sin_family = AF_INET;
-   serv_addr.sin_port = htons(atoi(argv[2]));
+   serv_addr.sin_port = htons(short(atoi(argv[2])));
 #ifndef WIN32
    if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0)
 #else
@@ -50,11 +49,18 @@ int main(int argc, char* argv[])
    memset(&(serv_addr.sin_zero), '\0', 8);
 
    // connect to the server, implict bind
-   if (UDT_ERROR == UDT::connect(client, (sockaddr*)&serv_addr, sizeof(serv_addr)))
+   if (UDT::ERROR == UDT::connect(client, (sockaddr*)&serv_addr, sizeof(serv_addr)))
    {
       cout << "connect: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
+
+   // using CC method
+   //CUDPBlast* cchandle = NULL;
+   //int temp;
+   //UDT::getsockopt(client, 0, UDT_CC, &cchandle, &temp);
+   //if (NULL != cchandle)
+   //   cchandle->setRate(500);
 
    int size = 10000000;
    int handle = 0;
@@ -68,8 +74,8 @@ int main(int argc, char* argv[])
 
    for (int i = 0; i < 1000; i ++)
    {
-      //if (UDT_ERROR == UDT::send(client, new char[size], size, 0, &handle, DeleteBuf))
-      if (UDT_ERROR == UDT::send(client, data, size, 0, &handle))
+      //if (UDT::ERROR == UDT::send(client, new char[size], size, 0, &handle, DeleteBuf))
+      if (UDT::ERROR == UDT::send(client, data, size, 0, &handle))
       {
          cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
          return 0;
@@ -91,7 +97,7 @@ DWORD WINAPI monitor(LPVOID s)
 {
    UDTSOCKET u = *(UDTSOCKET*)s;
 
-   TRACEINFO perf;
+   UDT::TRACEINFO perf;
 
    cout << "SendRate(Mb/s) RTT(ms) FlowWindow PktSndPeriod(us) RecvACK RecvNAK" << endl;
 
@@ -102,7 +108,7 @@ DWORD WINAPI monitor(LPVOID s)
 #else
       Sleep(1000);
 #endif
-      if (UDT_ERROR == UDT::perfmon(u, &perf))
+      if (UDT::ERROR == UDT::perfmon(u, &perf))
       {
          cout << "perfmon: " << UDT::getlasterror().getErrorMessage() << endl;
          break;

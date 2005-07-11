@@ -41,7 +41,7 @@ method to catch and handle UDT errors and exceptions.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/13/2005
+   Yunhong Gu [ygu@cs.uic.edu], last updated 04/10/2005
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -72,15 +72,15 @@ using namespace std;
       {
          LARGE_INTEGER cc;
          QueryPerformanceCounter(&cc);
-         tv->tv_sec = cc.QuadPart / ccf.QuadPart;
-         tv->tv_usec = (cc.QuadPart % ccf.QuadPart) / (ccf.QuadPart / 1000000);
+         tv->tv_sec = (long)(cc.QuadPart / ccf.QuadPart);
+         tv->tv_usec = (long)((cc.QuadPart % ccf.QuadPart) / (ccf.QuadPart / 1000000));
       }
       else
       {
          unsigned __int64 ft;
          GetSystemTimeAsFileTime((FILETIME *)&ft);
-         tv->tv_sec = ft / 10000000;
-         tv->tv_usec = (ft % 10000000) / 10;
+         tv->tv_sec = (long)(ft / 10000000);
+         tv->tv_usec = (long)((ft % 10000000) / 10);
       }
 
       return 0;
@@ -148,8 +148,6 @@ void CTimer::rdtsc(unsigned __int64 &x)
       gettimeofday(&t, 0);
       x = t.tv_sec * 1000000 + t.tv_usec;
    #endif
-
-   //TODO: add machine instrcutions for different archs
 }
 
 unsigned __int64 CTimer::readCPUFrequency()
@@ -197,22 +195,7 @@ void CTimer::sleepto(const unsigned __int64& nexttime)
 
    unsigned __int64 t;
    rdtsc(t);
-/*
-   while ((__int64)(m_ullSchedTime - t) > 10 * 2400 * 1000)
-   {
-      int sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-      timeval tv;
-      tv.tv_sec = 0;
-      tv.tv_usec = 1;
-      setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(timeval));
-
-      char buf[4];
-      recv(sock, buf, 1, 0);
-
-      rdtsc(t);
-   }
-*/
    while (t < m_ullSchedTime)
    {
       #ifdef IA32
@@ -259,7 +242,6 @@ CGuard::~CGuard()
          ReleaseMutex(m_Mutex);
    #endif
 }
-
 
 //
 CACKWindow::CACKWindow():
@@ -382,7 +364,9 @@ m_iPWSize(16)
    m_iRTTWindowPtr = 0;
    m_iProbeWindowPtr = 0;
 
+   gettimeofday(&m_LastSentTime, 0);
    gettimeofday(&m_LastArrTime, 0);
+   m_iMinPktSndInt = 1000000;
 
    for (__int32 i = 0; i < m_iAWSize; ++ i)
       m_piPktWindow[i] = 1;
@@ -409,7 +393,9 @@ m_iPWSize(s3)
    m_iRTTWindowPtr = 0;
    m_iProbeWindowPtr = 0;
 
+   gettimeofday(&m_LastSentTime, 0);
    gettimeofday(&m_LastArrTime, 0);
+   m_iMinPktSndInt = 1000000;
 
    for (__int32 i = 0; i < m_iAWSize; ++ i)
       m_piPktWindow[i] = 1;
@@ -430,17 +416,9 @@ CPktTimeWindow::~CPktTimeWindow()
    delete [] m_piProbeWindow;
 }
 
-__int32 CPktTimeWindow::getPktSndSpeed()
+__int32 CPktTimeWindow::getMinPktSndInt() const
 {
-   __int32 speed;
-   if (m_iPktSent > 64)
-      speed = __int32(m_iPktSent * 1000. / (m_iTotalSentTime / 1000.));
-   else
-      speed = 1000000;
-
-   m_bPktSndRestart = true;
-
-   return speed;
+   return m_iMinPktSndInt;
 }
 
 __int32 CPktTimeWindow::getPktRcvSpeed() const
@@ -531,36 +509,14 @@ __int32 CPktTimeWindow::getBandwidth() const
    return (__int32)ceil(1000000.0 / (double(sum) / double(count)));
 }
 
-void CPktTimeWindow::onPktSent()
+void CPktTimeWindow::onPktSent(const timeval& currtime)
 {
-   if (m_bPktSndRestart)
-   {
-      m_bPktSndRestart = false;
+   __int32 interval = (currtime.tv_sec - m_LastSentTime.tv_sec) * 1000000 + currtime.tv_usec - m_LastSentTime.tv_usec;
 
-      m_iPktSent = 0;
-      m_iTotalSentTime = 0;
-   }
+   if ((interval < m_iMinPktSndInt) && (interval > 0))
+      m_iMinPktSndInt = interval;
 
-   if (m_bPktSndInt)
-   {
-      m_bPktSndInt = false;
-      gettimeofday(&m_LastSentTime, 0);
-   }
-   else
-   {
-      m_iPktSent ++;
-
-      timeval currtime;
-      gettimeofday(&currtime, 0);
-      m_iTotalSentTime += (currtime.tv_sec - m_LastSentTime.tv_sec) * 1000000 + currtime.tv_usec - m_LastSentTime.tv_usec;
-
-      m_LastSentTime = currtime;
-   }
-}
-
-void CPktTimeWindow::onPktSndInt()
-{
-   m_bPktSndInt = true;
+   m_LastSentTime = currtime;
 }
 
 void CPktTimeWindow::onPktArrival()
@@ -604,28 +560,29 @@ void CPktTimeWindow::probe2Arrival()
    m_iProbeWindowPtr = (m_iProbeWindowPtr + 1) % m_iPWSize;
 }
 
-
 //
 CCC::CCC():
-// By default, the customized CC uses pure window based control and the initial cwnd size is 16 packets
 m_dPktSndPeriod(1.0),
 m_dCWndSize(16.0),
-m_bPeriodicalACK(false),
 m_iACKPeriod(10),
-m_iACKInterval(1)
+m_iACKInterval(0),
+m_iRTO(-1)
 {
 }
 
 void CCC::setACKTimer(const __int32& msINT)
 {
-   m_bPeriodicalACK = true;
    m_iACKPeriod = msINT;
 }
 
 void CCC::setACKInterval(const __int32& pktINT)
 {
-   m_bPeriodicalACK = false;
    m_iACKInterval = pktINT;
+}
+
+void CCC::setRTO(const __int32& usRTO)
+{
+   m_iRTO = usRTO;
 }
 
 void CCC::sendCustomMsg(CPacket& pkt) const
@@ -634,6 +591,13 @@ void CCC::sendCustomMsg(CPacket& pkt) const
       *m_pUDT->m_pChannel << pkt;
 }
 
+const CPerfMon* CCC::getPerfInfo()
+{
+   if (NULL != m_pUDT)
+      m_pUDT->sample(&m_PerfInfo, false);
+
+   return &m_PerfInfo;
+}
 
 //
 CUDTException::CUDTException(__int32 major, __int32 minor, __int32 err):

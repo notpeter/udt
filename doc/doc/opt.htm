@@ -28,7 +28,7 @@ read and set up UDT options, respectively.</font></p>
 &nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>
 &nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">level</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 	<br>
-&nbsp; UDTOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp; SOCKOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 	<br>
 &nbsp; char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optval</a></font>, <br>
 &nbsp; int *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optlen</a></font>&nbsp; <br>
@@ -41,7 +41,7 @@ read and set up UDT options, respectively.</font></p>
 	<br>
 &nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">level</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 	<br>
-&nbsp; UDTOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp; SOCKOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 	<br>
 &nbsp; const char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optval</a></font>,&nbsp;
 	<br>
@@ -126,15 +126,17 @@ read and set up UDT options, respectively.</font></p>
 			<font face="Verdana" size="1">UDT_CC</font></td>
 			<td width="133">
 			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">CCC*</font></td>
+			<font face="Verdana" size="1">CCCFactory*</font><p style="margin-top: 1; margin-bottom: 1">
+			<font face="Verdana" size="1">CCC**</font></td>
 			<td width="323">
 			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Rate control algorithm option</font></td>
+			<font face="Verdana" size="1">Congestion control algorithm option</font></td>
 			<td width="812">
 			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1"><i>optval</i> is a pointer to a user 
-			defined congestion control class. Default is <font color="#008000">
-			NULL</font>.</font></td>
+			<font face="Verdana" size="1"><i>optval</i> is a pointer to a CCC 
+			Factory class. (for setsockopt)</font><p style="margin-top: 1; margin-bottom: 1">
+			<font face="Verdana" size="1"><i>optval</i> is a pointer of pointer 
+			to a CCC class instance. (for getsockopt)</font></td>
 		</tr>
 		<tr>
 			<td width="133">
@@ -231,7 +233,7 @@ read and set up UDT options, respectively.</font></p>
   the <i>optval</i>. </font></dd>
 </dl>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">On success, 0 is returned; Otherwise, UDT_ERROR 
+<p><font face="Verdana" size="2">On success, 0 is returned; Otherwise, UDT::ERROR 
 is returned and the specific error information can be retrieved by 
 <a href="error.htm">getlasterror</a>.</font></p>
   <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table1" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">

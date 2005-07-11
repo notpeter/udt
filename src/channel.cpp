@@ -38,7 +38,7 @@ UDT packet definition: packet.h
 
 /****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/10/2005
+   Yunhong Gu [ygu@cs.uic.edu], last updated 04/12/2005
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -54,6 +54,7 @@ modified by
    #include <cstring>
    #include <cstdio>
    #include <cerrno>
+   #include <dlfcn.h>
 #else
    #include <winsock2.h>
    #include <ws2tcpip.h>
@@ -77,7 +78,7 @@ using namespace std;
 #endif
 
 CChannel::CChannel():
-m_iIPversion(4),
+m_iIPversion(AF_INET),
 m_iSndBufSize(102400),
 m_iRcvBufSize(307200)
 {
@@ -122,20 +123,26 @@ CChannel::~CChannel()
 void CChannel::open(const sockaddr* addr)
 {
    // construct an socket
-   if (4 == m_iIPversion)
-      m_iSocket = socket(AF_INET, SOCK_DGRAM, 0);
-   else
-      m_iSocket = socket(AF_INET6, SOCK_DGRAM, 0);
+   #ifndef CAPI
+      m_iSocket = socket(m_iIPversion, SOCK_DGRAM, 0);
+   #else
+      m_iSocket = (*g_SysLib.socket)(AF_INET, SOCK_DGRAM, 0);
+   #endif
 
    if (m_iSocket < 0)
       throw CUDTException(1, 0, NET_ERROR);
 
    if (NULL != addr)
    {
-      socklen_t namelen = (4 == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+      socklen_t namelen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
 
-      if (0 != bind(m_iSocket, addr, namelen))
-         throw CUDTException(1, 1, NET_ERROR);
+      #ifndef CAPI
+         if (0 != bind(m_iSocket, addr, namelen))
+            throw CUDTException(1, 1, NET_ERROR);
+      #else
+         if (0 != (*g_SysLib.bind)(m_iSocket, addr, namelen))
+            throw CUDTException(1, 1, NET_ERROR);
+      #endif
    }
 
    try
@@ -151,7 +158,11 @@ void CChannel::open(const sockaddr* addr)
 void CChannel::disconnect() const
 {
    #ifndef WIN32
-      close(m_iSocket);
+      #ifndef CAPI
+         close(m_iSocket);
+      #else
+         (*g_SysLib.close)(m_iSocket);
+      #endif
    #else
       closesocket(m_iSocket);
    #endif
@@ -159,23 +170,42 @@ void CChannel::disconnect() const
 
 void CChannel::connect(const sockaddr* addr)
 {
-   if (0 != ::connect(m_iSocket, addr, sizeof(sockaddr)))
-      throw CUDTException(1, 4, NET_ERROR);
+   const __int32 addrlen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+
+   #ifndef CAPI
+      if (0 != ::connect(m_iSocket, addr, addrlen))
+         throw CUDTException(1, 4, NET_ERROR);
+   #else
+      if (0 != (*g_SysLib.connect)(m_iSocket, addr, addrlen))
+         throw CUDTException(1, 4, NET_ERROR);
+   #endif
 }
 
 __int32 CChannel::send(char* buffer, const __int32& size) const
 {
-   return ::send(m_iSocket, buffer, size, 0);
+   #ifndef CAPI
+      return ::send(m_iSocket, buffer, size, 0);
+   #else
+      return (*g_SysLib.send)(m_iSocket, buffer, size, 0);
+   #endif
 }
 
 __int32 CChannel::recv(char* buffer, const __int32& size) const
 {
-   return ::recv(m_iSocket, buffer, size, 0);
+   #ifndef CAPI
+      return ::recv(m_iSocket, buffer, size, 0);
+   #else
+      return (*g_SysLib.recv)(m_iSocket, buffer, size, 0);
+   #endif
 }
 
 __int32 CChannel::peek(char* buffer, const __int32& size) const
 {
-   return ::recv(m_iSocket, buffer, size, MSG_PEEK);
+   #ifndef CAPI
+      return ::recv(m_iSocket, buffer, size, MSG_PEEK);
+   #else
+      return (*g_SysLib.recv)(m_iSocket, buffer, size, MSG_PEEK);
+   #endif
 }
 
 const CChannel& CChannel::operator<<(CPacket& packet) const
@@ -186,7 +216,8 @@ const CChannel& CChannel::operator<<(CPacket& packet) const
          *((__int32 *)packet.m_pcData + i) = htonl(*((__int32 *)packet.m_pcData + i));
 
    // convert packet header into network order
-   packet.m_nHeader = htonl(packet.m_nHeader);
+   packet.m_nHeader[0] = htonl(packet.m_nHeader[0]);
+   packet.m_nHeader[1] = htonl(packet.m_nHeader[1]);
 
    #ifdef UNIX
       while (0 == writev(m_iSocket, packet.getPacketVector(), 2)) {}
@@ -195,7 +226,9 @@ const CChannel& CChannel::operator<<(CPacket& packet) const
    #endif
 
    // convert back into local host order
-   packet.m_nHeader = ntohl(packet.m_nHeader);
+   packet.m_nHeader[0] = ntohl(packet.m_nHeader[0]);
+   packet.m_nHeader[1] = ntohl(packet.m_nHeader[1]);
+
    if (packet.getFlag())
       for (__int32 i = 0, n = packet.getLength() / sizeof(__int32); i < n; ++ i)
          *((__int32 *)packet.m_pcData + i) = ntohl(*((__int32 *)packet.m_pcData + i));
@@ -221,7 +254,8 @@ const CChannel& CChannel::operator>>(CPacket& packet) const
       return *this;
 
    // convert packet header into local host order
-   packet.m_nHeader = ntohl(packet.m_nHeader);
+   packet.m_nHeader[0] = ntohl(packet.m_nHeader[0]);
+   packet.m_nHeader[1] = ntohl(packet.m_nHeader[1]);
 
    // convert control information into local host order
    if (packet.getFlag())
@@ -239,7 +273,8 @@ __int32 CChannel::sendto(CPacket& packet, const sockaddr* addr) const
          *((__int32 *)packet.m_pcData + i) = htonl(*((__int32 *)packet.m_pcData + i));
 
    // convert packet header into network order
-   packet.m_nHeader = htonl(packet.m_nHeader);
+   packet.m_nHeader[0] = htonl(packet.m_nHeader[0]);
+   packet.m_nHeader[1] = htonl(packet.m_nHeader[1]);
 
    char* buf;
    if (CPacket::m_iPktHdrSize + packet.getLength() <= 9000)
@@ -250,7 +285,7 @@ __int32 CChannel::sendto(CPacket& packet, const sockaddr* addr) const
    memcpy(buf, packet.getPacketVector()[0].iov_base, CPacket::m_iPktHdrSize);
    memcpy(buf + CPacket::m_iPktHdrSize, packet.getPacketVector()[1].iov_base, packet.getLength());
 
-   socklen_t addrsize = (4 == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+   socklen_t addrsize = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
 
    int ret = ::sendto(m_iSocket, buf, CPacket::m_iPktHdrSize + packet.getLength(), 0, addr, addrsize);
 
@@ -263,7 +298,9 @@ __int32 CChannel::sendto(CPacket& packet, const sockaddr* addr) const
       delete [] buf;
 
    // convert back into local host order
-   packet.m_nHeader = ntohl(packet.m_nHeader);
+   packet.m_nHeader[0] = ntohl(packet.m_nHeader[0]);
+   packet.m_nHeader[1] = ntohl(packet.m_nHeader[1]);
+
    if (packet.getFlag())
       for (__int32 i = 0, n = packet.getLength() / sizeof(__int32); i < n; ++ i)
          *((__int32 *)packet.m_pcData + i) = ntohl(*((__int32 *)packet.m_pcData + i));
@@ -279,7 +316,7 @@ __int32 CChannel::recvfrom(CPacket& packet, sockaddr* addr) const
    else
       buf = new char [CPacket::m_iPktHdrSize + packet.getLength()];
 
-   socklen_t addrsize = (4 == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+   socklen_t addrsize = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
 
    int ret = ::recvfrom(m_iSocket, buf, CPacket::m_iPktHdrSize + packet.getLength(), 0, addr, &addrsize);
 
@@ -299,7 +336,9 @@ __int32 CChannel::recvfrom(CPacket& packet, sockaddr* addr) const
       memcpy(packet.getPacketVector()[1].iov_base, buf + CPacket::m_iPktHdrSize, ret - CPacket::m_iPktHdrSize);
 
       // convert back into local host order
-      packet.m_nHeader = ntohl(packet.m_nHeader);
+      packet.m_nHeader[0] = ntohl(packet.m_nHeader[0]);
+      packet.m_nHeader[1] = ntohl(packet.m_nHeader[1]);
+
       if (packet.getFlag())
          for (__int32 i = 0, n = packet.getLength() / sizeof(__int32); i < n; ++ i)
             *((__int32 *)packet.m_pcData + i) = ntohl(*((__int32 *)packet.m_pcData + i));
@@ -321,7 +360,11 @@ __int32 CChannel::getSndBufSize()
 {
    socklen_t size;
 
-   getsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, &size);
+   #ifndef CAPI
+      getsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, &size);
+   #else
+      (*g_SysLib.getsockopt)(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, &size);
+   #endif
 
    return m_iSndBufSize;
 }
@@ -330,7 +373,11 @@ __int32 CChannel::getRcvBufSize()
 {
    socklen_t size;
 
-   getsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, &size);
+   #ifndef CAPI
+      getsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, &size);
+   #else
+      (*g_SysLib.getsockopt)(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, &size);
+   #endif
 
    return m_iRcvBufSize;
 }
@@ -347,34 +394,38 @@ void CChannel::setRcvBufSize(const __int32& size)
 
 void CChannel::getSockAddr(sockaddr* addr) const
 {
-   socklen_t namelen;
+   socklen_t namelen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
 
-   if (4 == m_iIPversion)
-      namelen = sizeof(sockaddr_in);
-   else
-      namelen = sizeof(sockaddr_in6);
-
-   getsockname(m_iSocket, addr, &namelen);
+   #ifndef CAPI
+      getsockname(m_iSocket, addr, &namelen);
+   #else
+      (*g_SysLib.getsockname)(m_iSocket, addr, &namelen);
+   #endif
 }
 
 void CChannel::getPeerAddr(sockaddr* addr) const
 {
-   socklen_t namelen;
+   socklen_t namelen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
 
-   if (4 == m_iIPversion)
-      namelen = sizeof(sockaddr_in);
-   else
-      namelen = sizeof(sockaddr_in6);
-
-   getpeername(m_iSocket, addr, &namelen);
+   #ifndef CAPI
+      getpeername(m_iSocket, addr, &namelen);
+   #else
+      (*g_SysLib.getpeername)(m_iSocket, addr, &namelen);
+   #endif
 }
 
 void CChannel::setChannelOpt()
 {
    // set sending and receiving buffer size
-   if ((0 != setsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, sizeof(__int32))) ||
-       (0 != setsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, sizeof(__int32))))
-      throw CUDTException(1, 2, NET_ERROR);
+   #ifndef CAPI
+      if ((0 != setsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, sizeof(__int32))) ||
+          (0 != setsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, sizeof(__int32))))
+         throw CUDTException(1, 2, NET_ERROR);
+   #else
+      if ((0 != (*g_SysLib.setsockopt)(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, sizeof(__int32))) ||
+          (0 != (*g_SysLib.setsockopt)(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, sizeof(__int32))))
+         throw CUDTException(1, 2, NET_ERROR);
+   #endif
 
    timeval tv;
    tv.tv_sec = 0;
@@ -398,7 +449,12 @@ void CChannel::setChannelOpt()
          throw CUDTException(1, 2, NET_ERROR);
    #else
       // Set receiving time-out value
-      if (setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(timeval)) < 0)
-         throw CUDTException(1, 2, NET_ERROR);
+      #ifndef CAPI
+         if (setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(timeval)) < 0)
+            throw CUDTException(1, 2, NET_ERROR);
+      #else
+         if ((*g_SysLib.setsockopt)(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(timeval)) < 0)
+            throw CUDTException(1, 2, NET_ERROR);
+      #endif
    #endif
 }

@@ -1,8 +1,0 @@
-#add an option for link capacity if the user knows. ???
-#add a _DEBUG_ option and replace all memory operations with 
-     __safe__ self defined operations, also check data consistency
-     in the _DEBUG_ mode.
-#improve the implementation of packet sending speed estimation
-  (OR REMOVE?? and test the minimum sending rate)
-
-#security, what if a user uses a very aggressive control approach, or uses fake information.

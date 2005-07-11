@@ -2,7 +2,7 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
 <meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
@@ -31,11 +31,12 @@ last UDT error in the thread.</font></p>
 <h4><span style="font-weight: 400"><font face="Verdana" size="2">None.</font></span></h4>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
 <p><font face="Verdana" size="2">The latest UDT error in the same thread is 
-retrieved and stored in the <a href="structure.htm">UDTERROR</a> structure.</font></p>
+retrieved and stored in the <a href="structure.htm">ERRORINFO</a> structure.</font></p>
 <H4><font face="Verdana" size="2">Descriptions</font></H4>
 <p><font face="Verdana" size="2">The <b>getlasterror</b> method reads the latest 
 UDT error occurred in the thread where this method is called. This method will 
-always succeed. If there is no error ever occurred, the method returns the UDTERROR 
+always succeed. If there is no error ever occurred, the method returns the
+ERRORINFO 
 structure indicating a successful state.</font></p>
 <P>
 <p></p>

@@ -44,17 +44,20 @@ exp_timer_(this),
 snd_timer_(this),
 syn_interval_(0.01),
 mtu_(1500),
-max_flow_window_(25600)
+max_flow_window_(100000)
 {
    bind("mtu_", &mtu_);
    bind("max_flow_window_", &max_flow_window_);
 
-   flow_window_size_ = 1;
+   snd_loss_list_ = new CSndLossList(max_flow_window_, 1 << 29, 1 << 30);
+   rcv_loss_list_ = new CRcvLossList(max_flow_window_, 1 << 29, 1 << 30);
+
+   flow_window_size_ = 2;
    snd_interval_ = 0.000001;
 
    ack_interval_ = syn_interval_;
    nak_interval_ = syn_interval_;
-   exp_interval_ = 1.0;
+   exp_interval_ = 1.01;
    
    nak_count_ = 0;
    dec_count_ = 0;
@@ -70,7 +73,7 @@ max_flow_window_(25600)
    loss_rate_limit_ = 0.01;
    loss_rate_ = 0;
 
-   rtt_ = syn_interval_;
+   rtt_ = 1;
    
    rcv_interval_ = snd_interval_;
    rcv_last_ack_ = 0;
@@ -86,10 +89,10 @@ max_flow_window_(25600)
    slow_start_ = true;
    freeze_ = false;
 
-   syn_timer_.resched(0);
-   ack_timer_.resched(0);
-   nak_timer_.resched(0);
-   exp_timer_.resched(0);
+//   syn_timer_.resched(syn_interval_);
+   ack_timer_.resched(ack_interval_);
+   nak_timer_.resched(nak_interval_);
+//   exp_timer_.resched(exp_interval_);
 }
 
 UdtAgent::~UdtAgent()
@@ -117,10 +120,13 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          if (udth->ack() > snd_last_ack_)
          {
             snd_last_ack_ = udth->ack();
-            snd_loss_list_.removeall(snd_last_ack_);
+            snd_loss_list_->remove((int)snd_last_ack_);
          }
          else
             break;
+
+         //printf("ack data %d %f %d %f %d %d\n", flow_window_size_, snd_interval_, snd_curr_seqno_, Scheduler::instance().clock(), snd_last_ack_, snd_loss_list_->getLossLength());
+         snd_timer_.resched(0);
 
          if (rtt_ == syn_interval_)
             rtt_ = udth->rtt() / 1000000.0;
@@ -139,14 +145,15 @@ void UdtAgent::recv(Packet *pkt, Handler*)
             flow_window_size_ = max_flow_window_;
          }
 
-         //bandwidth_ = bandwidth_ * 0.875 + udth->bandwidth() * 0.125;
-         bandwidth_ = udth->bandwidth();
+         bandwidth_ = int(bandwidth_ * 0.875 + udth->bandwidth() * 0.125);
+         //bandwidth_ = udth->bandwidth();
 
          //printf("window: %d %d %d %d\n", flow_window_size_, udth->lrecv(), udth->rtt(), bandwidth_);
 
          exp_timer_.resched(exp_interval_);
 
-         ++ local_ack_;
+         //++ local_ack_;
+         rateControl();
 
          if (snd_interval_ > rtt_)
          {
@@ -161,33 +168,48 @@ void UdtAgent::recv(Packet *pkt, Handler*)
 
          last_dec_int_ = snd_interval_;
 
-         if (udth->loss()[0] > last_dec_seq_)
+         if ((udth->loss()[0] & 0x7FFFFFFF) > last_dec_seq_)
          {
             freeze_ = true;
             snd_interval_ = snd_interval_ * 1.125;
 
+            avg_nak_num_ = 1 + int(ceil(double(avg_nak_num_) * 0.875 + double(nak_count_) * 0.125));
+
+            dec_random_ = int(rand() * double(avg_nak_num_) / (RAND_MAX + 1.0)) + int(ceil(avg_nak_num_/5.0));
+
             nak_count_ = 1;
 
-            avg_nak_num_ = 1 + int(ceil(avg_nak_num_ * 0.875 + nak_count_ * 0.125));
-
-            dec_random_ = int(rand() * double(avg_nak_num_) / (RAND_MAX + 1.0)) + 1;
-
             last_dec_seq_ = snd_curr_seqno_;
+
+//            printf("loss %d %d %d %d %d %d\n", udth->losslen(), nak_count_, avg_nak_num_, dec_random_, last_dec_seq_, (udth->loss()[0] & 0x7FFFFFFF));
          }
          else if (0 == (++ nak_count_ % dec_random_))
          {
             snd_interval_ = snd_interval_ * 1.125;
 
             last_dec_seq_ = snd_curr_seqno_;
+
+//            printf("loss22 %f %d %d %d %d %d\n", snd_interval_, nak_count_, avg_nak_num_, dec_random_, last_dec_seq_, (udth->loss()[0] & 0x7FFFFFFF));
          }
 
- 	 //printf("loss %f %d %d %d\n", snd_interval_, nak_count_, dec_random_, last_dec_seq_);
+         if (snd_interval_ > rtt_)
+            snd_interval_ = rtt_;
 
-         local_loss_ += udth->losslen();
+         local_loss_ ++;
 
-         for (int i = 0; i < udth->losslen(); i ++)
-            if (udth->loss()[i] >= snd_last_ack_)
-               snd_loss_list_.insert(udth->loss()[i]);
+         for (int i = 0, n = udth->losslen(); i < n; ++ i)
+         {
+            if ((udth->loss()[i] & 0x80000000) && ((udth->loss()[i] & 0x7FFFFFFF) >= snd_last_ack_))
+            {
+               snd_loss_list_->insert(udth->loss()[i] & 0x7FFFFFFF, udth->loss()[i + 1]);
+               ++ i;
+            }
+            else if (udth->loss()[i] >= snd_last_ack_)
+            {
+
+               snd_loss_list_->insert(udth->loss()[i], udth->loss()[i]);
+            }
+         }
 
          exp_timer_.resched(exp_interval_);
 
@@ -196,6 +218,7 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          break;
      
       case 4:
+/*
          if (slow_start_)
             slow_start_ = false;
 
@@ -207,10 +230,11 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          last_dec_seq_ = snd_curr_seqno_;
          nak_count_ = -16;
          dec_count_ = 1;
-
+*/
          break;
 
       case 6:
+      {
          int ack;
          double rtt = ack_window_.acknowledge(udth->ackseq(), ack);
 
@@ -237,6 +261,10 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          break;
       }
 
+      default:
+         break;
+      }
+
       Packet::free(pkt);
       return;
    }
@@ -259,23 +287,30 @@ void UdtAgent::recv(Packet *pkt, Handler*)
       return;
    }
 
+//   printf("recv<> %d %d\n", udth->seqno(), rcv_curr_seqno_);
+
    if (udth->seqno() > rcv_curr_seqno_ + 1)
    {
-      int loss[MAX_LOSS_LEN];
-      int c = 0;
+      int c;
 
-      for (int i = rcv_curr_seqno_ + 1; i < udth->seqno(); i ++)
+      if (rcv_curr_seqno_ + 1 == udth->seqno() - 1)
+         c = 1;
+      else
+         c = 2;
+
+      int* loss = new int[c];
+
+      if (c == 2)
       {
-         rcv_loss_list_.insertattail(i);
-         if (c < MAX_LOSS_LEN)
-         {
-            loss[c] = i;
-            c ++;
-         }
+         loss[0] = (rcv_curr_seqno_ + 1) | 0x80000000;
+         loss[1] = udth->seqno() - 1;
       }
+      else
+         loss[0] = rcv_curr_seqno_ + 1;
 
       sendCtrl(3, c, loss);
-//      printf("%d\n", c);
+
+      delete [] loss;
    }
 
    if (udth->seqno() > rcv_curr_seqno_)
@@ -284,7 +319,7 @@ void UdtAgent::recv(Packet *pkt, Handler*)
    }
    else
    {
-      rcv_loss_list_.remove(udth->seqno());
+      rcv_loss_list_->remove(udth->seqno());
    }
 
    Packet::free(pkt);
@@ -293,6 +328,9 @@ void UdtAgent::recv(Packet *pkt, Handler*)
 
 void UdtAgent::sendmsg(int nbytes, const char* /*flags*/)
 {
+   if (curr_max_seqno_ == snd_curr_seqno_ + 1)
+      exp_timer_.resched(exp_interval_);
+
    curr_max_seqno_ += nbytes/1468;
 
    snd_timer_.resched(0);
@@ -309,18 +347,19 @@ void UdtAgent::sendCtrl(int pkttype, int lparam, int* rparam)
    switch (pkttype)
    {
    case 2:
-      if (rcv_loss_list_.getlosslength() == 0)
+      if (rcv_loss_list_->getLossLength() == 0)
          ack = rcv_curr_seqno_ + 1;
       else
-         ack = rcv_loss_list_.getfirstlostseq();
+         ack = rcv_loss_list_->getFirstLostSeq();
 
       if (ack > rcv_last_ack_)
       {
          rcv_last_ack_ = ack;
       }
-      else if (Scheduler::instance().clock() - rcv_last_ack_time_ < 2 * rtt_)
+      else if (Scheduler::instance().clock() - rcv_last_ack_time_ <= 2 * rtt_)
       {
          ack_timer_.resched(ack_interval_);
+
          break;
       }
 
@@ -346,6 +385,8 @@ void UdtAgent::sendCtrl(int pkttype, int lparam, int* rparam)
          ack_window_.store(ack_seqno_, rcv_last_ack_);
 
          rcv_last_ack_time_ = Scheduler::instance().clock();
+
+//         printf("----> ack %d %f %d %d\n", udth->ack(), Scheduler::instance().clock(), rcv_curr_seqno_, rcv_loss_list_->getLossLength());
       }
 
       ack_timer_.resched(ack_interval_);
@@ -355,23 +396,23 @@ void UdtAgent::sendCtrl(int pkttype, int lparam, int* rparam)
    case 3:
       if (rparam != NULL)
       {
-         p = allocpkt(32 + lparam);
+         p = allocpkt(32 + lparam * 4);
          udth = hdr_udt::access(p);
 
          udth->flag() = 1;
          udth->type() = 3;
          udth->losslen() = lparam;
-         memcpy(udth->loss(), rparam, MAX_LOSS_LEN);
+         memcpy(udth->loss(), rparam, lparam * 4);
 
          ch = hdr_cmn::access(p);
-         ch->size() = 32 + lparam;
+         ch->size() = 32 + lparam * 4;
          Agent::send(p, 0);
       }
-      else if (rcv_loss_list_.getlosslength() > 0)
+      else if (rcv_loss_list_->getLossLength() > 0)
       {
          int losslen;
-         int loss[MAX_LOSS_LEN];
-         rcv_loss_list_.getlossarray(loss, losslen, MAX_LOSS_LEN, rtt_);
+         int* loss = new int[MAX_LOSS_LEN];
+         rcv_loss_list_->getLossArray(loss, &losslen, MAX_LOSS_LEN, rtt_);
  
          if (losslen > 0)
          {
@@ -387,6 +428,8 @@ void UdtAgent::sendCtrl(int pkttype, int lparam, int* rparam)
             ch->size() = 32 + losslen;
             Agent::send(p, 0);
          }
+
+         delete [] loss;
       }
 
       nak_timer_.resched(nak_interval_);
@@ -433,10 +476,9 @@ void UdtAgent::sendData()
 
    int nextseqno;
 
-   if (snd_loss_list_.getlosslength() > 0)
+   if (snd_loss_list_->getLossLength() > 0)
    {
-      nextseqno = snd_loss_list_.getfirstlostseq();
-      snd_loss_list_.remove(nextseqno);
+      nextseqno = snd_loss_list_->getLostSeq();
    }
    else if (snd_curr_seqno_ - snd_last_ack_ < flow_window_size_)
    {
@@ -446,6 +488,7 @@ void UdtAgent::sendData()
    }
    else
    {
+/*
       if (freeze_)
       {
          snd_timer_.resched(syn_interval_ + snd_interval_);
@@ -453,7 +496,7 @@ void UdtAgent::sendData()
       }
       else
          snd_timer_.resched(snd_interval_);
-
+*/
       return;
    }
 
@@ -469,6 +512,8 @@ void UdtAgent::sendData()
    Agent::send(p, 0);
 
    local_send_ ++;
+
+//   printf("send data\n");
 
    if (probe)
    {
@@ -487,65 +532,63 @@ void UdtAgent::sendData()
 
 void UdtAgent::rateControl()
 {
-   if ((local_send_ > 0) && (!slow_start_))
+   if (slow_start_)
+      return;
+
+/*
+   if ((local_loss_ > 0) || (slow_start_))
    {
-
-      if ((local_loss_ > 0) || (local_ack_ == 0))
-      {
-         local_loss_ = 0;
-
-         syn_timer_.resched(syn_interval_);
-
-         return; 
-      }
-      else if (!slow_start_)
-      {
-         double inc;
-
-         if (bandwidth_ < 1.0 / snd_interval_)
-            inc = 1.0/mtu_;
-         else if ((snd_interval_ > last_dec_int_) && (bandwidth_ / 9.0 < (bandwidth_ - 1.0 / snd_interval_)))
-         {
-            inc = pow(10, ceil(log10(bandwidth_ / 9.0 * mtu_ * 8))) * 0.0000015 / mtu_;
-
-            if (inc < 1.0/mtu_)
-               inc = 1.0/mtu_;
-         }
-         else
-         {
-            inc = pow(10, ceil(log10((bandwidth_ - 1.0 / snd_interval_) * mtu_ * 8))) * 0.0000015 / mtu_;
-
-            if (inc < 1.0/mtu_)
-               inc = 1.0/mtu_;
-         }
-
-         snd_interval_ = (snd_interval_ * syn_interval_) / (snd_interval_ * inc + syn_interval_);
-
-         //printf("inc ++ %f %f\n", snd_interval_, inc);
-      }
-   }
-   else
       local_loss_ = 0;
+
+      return; 
+   }
+*/
+
+   double inc = 0.0;
+
+   if (bandwidth_ < 1.0 / snd_interval_)
+      inc = 1.0/mtu_;
+/*
+   else if ((snd_interval_ > last_dec_int_) && (bandwidth_ / 9.0 < (bandwidth_ - 1.0 / snd_interval_)))
+   {
+      inc = pow(10, ceil(log10(bandwidth_ / 9.0 * mtu_ * 8))) * 0.0000015 / mtu_;
+
+      if (inc < 1.0/mtu_)
+         inc = 1.0/mtu_;
+   }
+*/
+   else
+   {
+      inc = pow(10, ceil(log10((bandwidth_ - 1.0 / snd_interval_) * mtu_ * 8))) * 0.0000015 / mtu_;
+
+      if (inc < 1.0/mtu_)
+         inc = 1.0/mtu_;
+   }
+
+   snd_interval_ = (snd_interval_ * syn_interval_) / (snd_interval_ * inc + syn_interval_);
+
+//   printf("inc ++ %f %f %d\n", snd_interval_, inc, flow_window_size_);
 
    if (snd_interval_ < 0.000001)
       snd_interval_ = 0.000001;
 
    //printf("snd_interval_ %f\n", snd_interval_);
-
-   local_ack_ = 0;
-
-   syn_timer_.resched(syn_interval_);
 }
 
 void UdtAgent::timeOut()
 {
-   if (snd_curr_seqno_ >= snd_last_ack_)
-      for (int i = snd_last_ack_; i <= snd_curr_seqno_; i ++)
-         snd_loss_list_.insert(i);
+   //printf("timeout %d %d %f %f \n", snd_curr_seqno_, snd_last_ack_, exp_interval_, snd_interval_);
 
-   exp_interval_ = 2 * rtt_ + syn_interval_;
+   if (snd_curr_seqno_ >= snd_last_ack_)
+   {
+      snd_loss_list_->insert(int(snd_last_ack_), int(snd_curr_seqno_));
+   }
+
+   exp_interval_ = 1.0; //rtt_ + syn_interval_;
 
    exp_timer_.resched(exp_interval_);
+
+   snd_timer_.resched(0);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -575,116 +618,720 @@ void ExpTimer::expire(Event*)
 }
 
 ////////////////////////////////////////////////////////////////////
-LossList::LossList():
-attr_(0),
-next_(NULL)
+
+// Definition of >, <, >=, and <= with sequence number wrap
+
+inline const bool CList::greaterthan(const __int32& seqno1, const __int32& seqno2) const
 {
-   tail_ = this;
+   if ((seqno1 > seqno2) && (seqno1 - seqno2 < m_iSeqNoTH))
+      return true;
+ 
+   if (seqno1 < seqno2 - m_iSeqNoTH)
+      return true;
+
+   return false;
 }
 
-LossList::LossList(const int& seqno):
-attr_(seqno),
-next_(NULL)
+inline const bool CList::lessthan(const __int32& seqno1, const __int32& seqno2) const
 {
-   timestamp_ = Scheduler::instance().clock();
+   return greaterthan(seqno2, seqno1);
 }
 
-void LossList::insert(const int& seqno)
+inline const bool CList::notlessthan(const __int32& seqno1, const __int32& seqno2) const
 {
-   LossList *p = new LossList(seqno);
+   if (seqno1 == seqno2)
+      return true;
 
-   LossList *q = this;
+   return greaterthan(seqno1, seqno2);
+}
 
-   while ((NULL != q->next_) && (q->next_->attr_ < seqno))
-      q = q->next_;
+inline const bool CList::notgreaterthan(const __int32& seqno1, const __int32& seqno2) const
+{
+   if (seqno1 == seqno2)
+      return true;
 
-   if ((NULL != q->next_) && (seqno == q->next_->attr_))
+   return lessthan(seqno1, seqno2);
+}
+
+// return the distance between two sequence numbers, parameters are pre-checked
+inline const __int32 CList::getLength(const __int32& seqno1, const __int32& seqno2) const
+{
+   if (seqno2 >= seqno1)
+      return seqno2 - seqno1 + 1;
+   else if (seqno2 < seqno1 - m_iSeqNoTH)
+      return seqno2 - seqno1 + m_iMaxSeqNo + 1;
+   else
+      return 0;
+}
+
+//Definition of ++, and -- with sequence number wrap
+
+inline const __int32 CList::incSeqNo(const __int32& seqno) const
+{
+   return (seqno + 1) % m_iMaxSeqNo;
+}
+
+inline const __int32 CList::decSeqNo(const __int32& seqno) const
+{
+   return (seqno - 1 + m_iMaxSeqNo) % m_iMaxSeqNo;
+}
+
+
+CSndLossList::CSndLossList(const __int32& size, const __int32& th, const __int32& max):
+m_iSize(size)
+{
+   m_iSeqNoTH = th;
+   m_iMaxSeqNo = max;
+
+   m_piData1 = new __int32 [m_iSize];
+   m_piData2 = new __int32 [m_iSize];
+   m_piNext = new __int32 [m_iSize];
+
+   // -1 means there is no data in the node
+   for (__int32 i = 0; i < size; ++ i)
    {
-      delete p;
-      return;
+      m_piData1[i] = -1;
+      m_piData2[i] = -1;
    }
 
-   p->next_ = q->next_;
-   q->next_ = p;
-
-   attr_ ++;
+   m_iLength = 0;
+   m_iHead = -1;
+   m_iLastInsertPos = -1;
 }
 
-void LossList::insertattail(const int& seqno)
+CSndLossList::~CSndLossList()
 {
-   LossList *p = new LossList(seqno);
-
-   tail_->next_ = p;
-   tail_ = p;
-
-   attr_ ++;
+   delete [] m_piData1;
+   delete [] m_piData2;
+   delete [] m_piNext;
 }
 
-void LossList::remove(const int& seqno)
+__int32 CSndLossList::insert(const __int32& seqno1, const __int32& seqno2)
 {
-   LossList *p = this;
-
-   while ((NULL != p->next_) && (p->next_->attr_ < seqno))
-      p = p->next_;
-
-   if ((NULL != p->next_) && (p->next_->attr_ == seqno))
+   if (0 == m_iLength)
    {
-      LossList *q = p->next_;
-      p->next_ = q->next_;
-      if (tail_ == q)
-         tail_ = p;
+      // insert data into an empty list
 
-      delete q;
+      m_iHead = 0;
+      m_piData1[m_iHead] = seqno1;
+      if (seqno2 != seqno1)
+         m_piData2[m_iHead] = seqno2;
 
-      attr_ --;
+      m_piNext[m_iHead] = -1;
+      m_iLastInsertPos = m_iHead;
+
+      m_iLength += getLength(seqno1, seqno2);
+
+      return m_iLength;
    }
-}
 
-void LossList::removeall(const int& seqno)
-{
-   LossList *p = this;
-   LossList *q;
+   // otherwise find the position where the data can be inserted
+   __int32 origlen = m_iLength;
 
-   while ((NULL != p) && (NULL != p->next_) && (p->next_->attr_ <= seqno))
+   __int32 offset = seqno1 - m_piData1[m_iHead];
+
+   if (offset < -m_iSeqNoTH)
+      offset += m_iMaxSeqNo;
+   else if (offset > m_iSeqNoTH)
+      offset -= m_iMaxSeqNo;
+
+   __int32 loc = (m_iHead + offset + m_iSize) % m_iSize;
+
+   if (offset < 0)
    {
-      q = p->next_;
-      p->next_ = q->next_;
-      if (tail_ == q)
-         tail_ = p;
-      delete q;
+      // Insert data prior to the head pointer
 
-      attr_ --;
+      m_piData1[loc] = seqno1;
+      if (seqno2 != seqno1)
+         m_piData2[loc] = seqno2;
 
-      p = p->next_;
+      // new node becomes head
+      m_piNext[loc] = m_iHead;
+      m_iHead = loc;
+      m_iLastInsertPos = loc;
+
+      m_iLength += getLength(seqno1, seqno2);
    }
-}
-
-int LossList::getlosslength() const
-{
-   return attr_;
-}
-
-int LossList::getfirstlostseq() const
-{
-   return (NULL == next_) ? -1 : next_->attr_;
-}
-
-void LossList::getlossarray(int* array, int& len, const int& limit, const double& interval) const
-{
-   LossList *p = this->next_;
-
-   double currtime = Scheduler::instance().clock();
-
-   for (len = 0; (NULL != p) && (len < limit); p = p->next_)
+   else if (offset > 0)
    {
-     if (currtime - p->timestamp_ > interval)
+      if (seqno1 == m_piData1[loc])
       {
-         array[len] = p->attr_;
-         p->timestamp_ = Scheduler::instance().clock();
-         len ++;
+         m_iLastInsertPos = loc;
+
+         // first seqno is equivlent, compare the second
+         if (-1 == m_piData2[loc])
+         {
+            if (seqno2 != seqno1)
+            {
+               m_iLength += getLength(seqno1, seqno2) - 1;
+               m_piData2[loc] = seqno2;
+            }
+         }
+         else if (greaterthan(seqno2, m_piData2[loc]))
+         {
+            // new seq pair is longer than old pair, e.g., insert [3, 7] to [3, 5], becomes [3, 7]
+            m_iLength += getLength(m_piData2[loc], seqno2) - 1;
+            m_piData2[loc] = seqno2;
+         }
+         else
+            // Do nothing if it is already there
+            return 0;
+      }
+      else
+      {
+         // searching the prior node
+         __int32 i;
+         if ((-1 != m_iLastInsertPos) && lessthan(m_piData1[m_iLastInsertPos], seqno1))
+            i = m_iLastInsertPos;
+         else
+            i = m_iHead;
+
+         while ((-1 != m_piNext[i]) && lessthan(m_piData1[m_piNext[i]], seqno1))
+            i = m_piNext[i];
+
+         if ((-1 == m_piData2[i]) || lessthan(m_piData2[i], seqno1))
+         {
+            m_iLastInsertPos = loc;
+
+            // no overlap, create new node
+            m_piData1[loc] = seqno1;
+            if (seqno2 != seqno1)
+               m_piData2[loc] = seqno2;
+
+            m_piNext[loc] = m_piNext[i];
+            m_piNext[i] = loc;
+
+            m_iLength += getLength(seqno1, seqno2);
+         }
+         else
+         {
+            m_iLastInsertPos = i;
+
+            // overlap, coalesce with prior node, insert(3, 7) to [2, 5], ... becomes [2, 7]
+            if (lessthan(m_piData2[i], seqno2))
+            {
+               m_iLength += getLength(m_piData2[i], seqno2) - 1;
+               m_piData2[i] = seqno2;
+
+               loc = i;
+            }
+            else
+               return 0;
+         }
+      }
+   }
+   else
+   {
+      m_iLastInsertPos = m_iHead;
+
+      // insert to head node
+      if (seqno2 != seqno1)
+      {
+         if (-1 == m_piData2[loc])
+         {
+            m_iLength += getLength(seqno1, seqno2) - 1;
+            m_piData2[loc] = seqno2;
+         }
+         else if (greaterthan(seqno2, m_piData2[loc]))
+         {
+            m_iLength += getLength(m_piData2[loc], seqno2) - 1;
+            m_piData2[loc] = seqno2;
+         }
+         else 
+            return 0;
+      }
+      else
+         return 0;
+   }
+
+   // coalesce with next node. E.g., [3, 7], ..., [6, 9] becomes [3, 9] 
+   while ((-1 != m_piNext[loc]) && (-1 != m_piData2[loc]))
+   {
+      __int32 i = m_piNext[loc];
+
+      if (notgreaterthan(m_piData1[i], incSeqNo(m_piData2[loc])))
+      {
+         // coalesce if there is overlap
+         if (-1 != m_piData2[i])
+         {
+            if (greaterthan(m_piData2[i], m_piData2[loc]))
+            {
+               if (notlessthan(m_piData2[loc], m_piData1[i]))
+                  m_iLength -= getLength(m_piData1[i], m_piData2[loc]);
+
+               m_piData2[loc] = m_piData2[i];
+            }
+            else
+               m_iLength -= getLength(m_piData1[i], m_piData2[i]);
+         }
+         else
+         {
+            if (m_piData1[i] == incSeqNo(m_piData2[loc]))
+               m_piData2[loc] = m_piData1[i];
+            else
+               m_iLength --;
+         }
+
+         m_piData1[i] = -1;
+         m_piData2[i] = -1;
+         m_piNext[loc] = m_piNext[i];
+      }
+      else
+         break;
+   }
+
+   return m_iLength - origlen;
+}
+
+void CSndLossList::remove(const __int32& seqno)
+{
+   if (0 == m_iLength)
+      return;
+
+   // Remove all from the head pointer to a node with a larger seq. no. or the list is empty
+
+   __int32 offset = seqno - m_piData1[m_iHead];
+
+   if (offset < -m_iSeqNoTH)
+      offset += m_iMaxSeqNo;
+   else if (offset > m_iSeqNoTH)
+      offset -= m_iMaxSeqNo;
+
+   __int32 loc = (m_iHead + offset + m_iSize) % m_iSize;
+
+   if (0 == offset)
+   {
+      // It is the head. Remove the head and point to the next node
+      loc = (loc + 1) % m_iSize;
+
+      if (-1 == m_piData2[m_iHead])
+         loc = m_piNext[m_iHead];
+      else
+      {
+         m_piData1[loc] = incSeqNo(seqno);
+         if (greaterthan(m_piData2[m_iHead], incSeqNo(seqno)))
+            m_piData2[loc] = m_piData2[m_iHead];
+
+         m_piData2[m_iHead] = -1;
+
+         m_piNext[loc] = m_piNext[m_iHead];
+      }
+
+      m_piData1[m_iHead] = -1;
+
+      if (m_iLastInsertPos == m_iHead)
+         m_iLastInsertPos = -1;
+
+      m_iHead = loc;
+
+      m_iLength --;
+   }
+   else if (offset > 0)
+   {
+      __int32 h = m_iHead;
+
+      if (seqno == m_piData1[loc])
+      {
+         // target node is not empty, remove part/all of the seqno in the node.
+         __int32 temp = loc;
+         loc = (loc + 1) % m_iSize;         
+
+         if (-1 == m_piData2[temp])
+            m_iHead = m_piNext[temp];
+         else
+         {
+            // remove part, e.g., [3, 7] becomes [], [4, 7] after remove(3)
+            m_piData1[loc] = incSeqNo(seqno);
+            if (greaterthan(m_piData2[temp], incSeqNo(seqno)))
+               m_piData2[loc] = m_piData2[temp];
+            m_iHead = loc;
+            m_piNext[loc] = m_piNext[temp];
+            m_piNext[temp] = loc;
+            m_piData2[temp] = -1;
+         }
+      }
+      else
+      {
+         // targe node is empty, check prior node
+         __int32 i = m_iHead;
+         while ((-1 != m_piNext[i]) && lessthan(m_piData1[m_piNext[i]], seqno))
+            i = m_piNext[i];
+
+         loc = (loc + 1) % m_iSize;
+
+         if (-1 == m_piData2[i])
+            m_iHead = m_piNext[i];
+         else if (greaterthan(m_piData2[i], seqno))
+         {
+            // remove part seqno in the prior node
+            m_piData1[loc] = incSeqNo(seqno);
+            if (greaterthan(m_piData2[i], incSeqNo(seqno)))
+               m_piData2[loc] = m_piData2[i];
+
+            m_piData2[i] = seqno;
+
+            m_piNext[loc] = m_piNext[i];
+            m_piNext[i] = loc;
+
+            m_iHead = loc;
+         }
+         else
+            m_iHead = m_piNext[i];
+      }
+
+      // Remove all nodes prior to the new head
+      while (h != m_iHead)
+      {
+         if (m_piData2[h] != -1)
+         {
+            m_iLength -= getLength(m_piData1[h], m_piData2[h]);
+            m_piData2[h] = -1;
+         }
+         else
+            m_iLength --;
+
+         m_piData1[h] = -1;
+
+         if (m_iLastInsertPos == h)
+            m_iLastInsertPos = -1;
+
+         h = m_piNext[h];
       }
    }
 }
+
+__int32 CSndLossList::getLossLength()
+{
+   return m_iLength;
+}
+
+__int32 CSndLossList::getLostSeq()
+{
+   if (0 == m_iLength)
+     return -1;
+
+   if (m_iLastInsertPos == m_iHead)
+      m_iLastInsertPos = -1;
+
+   // return the first loss seq. no.
+   __int32 seqno = m_piData1[m_iHead];
+
+   // head moves to the next node
+   if (-1 == m_piData2[m_iHead])
+   {
+      //[3, -1] becomes [], and head moves to next node in the list
+      m_piData1[m_iHead] = -1;
+      m_iHead = m_piNext[m_iHead];
+   }
+   else
+   {
+      // shift to next node, e.g., [3, 7] becomes [], [4, 7]
+      __int32 loc = (m_iHead + 1) % m_iSize;
+
+      m_piData1[loc] = incSeqNo(seqno);
+      if (greaterthan(m_piData2[m_iHead], incSeqNo(seqno)))
+         m_piData2[loc] = m_piData2[m_iHead];
+
+      m_piData1[m_iHead] = -1;
+      m_piData2[m_iHead] = -1;
+
+      m_piNext[loc] = m_piNext[m_iHead];
+      m_iHead = loc;
+   }
+
+   m_iLength --;
+
+   return seqno;
+}
+
+
+//
+CRcvLossList::CRcvLossList(const __int32& size, const __int32& th, const __int32& max):
+m_iSize(size)
+{
+   m_iSeqNoTH = th;
+   m_iMaxSeqNo = max;
+
+   m_piData1 = new __int32 [m_iSize];
+   m_piData2 = new __int32 [m_iSize];
+   m_pLastFeedbackTime = new double [m_iSize];
+   m_piCount = new __int32 [m_iSize];
+   m_piNext = new __int32 [m_iSize];
+   m_piPrior = new __int32 [m_iSize];
+
+   // -1 means there is no data in the node
+   for (__int32 i = 0; i < size; ++ i)
+   {
+      m_piData1[i] = -1;
+      m_piData2[i] = -1;
+   }
+
+   m_iLength = 0;
+   m_iHead = -1;
+   m_iTail = -1;
+}
+
+CRcvLossList::~CRcvLossList()
+{
+   delete [] m_piData1;
+   delete [] m_piData2;
+   delete [] m_pLastFeedbackTime;
+   delete [] m_piCount;
+   delete [] m_piNext;
+   delete [] m_piPrior;
+}
+
+void CRcvLossList::insert(const __int32& seqno1, const __int32& seqno2)
+{
+   // Data to be inserted must be larger than all those in the list
+   // guaranteed by the UDT receiver
+
+   if (0 == m_iLength)
+   {
+      // insert data into an empty list
+      m_iHead = 0;
+      m_iTail = 0;
+      m_piData1[m_iHead] = seqno1;
+      if (seqno2 != seqno1)
+         m_piData2[m_iHead] = seqno2;
+
+      m_pLastFeedbackTime[m_iHead] = Scheduler::instance().clock();
+      m_piCount[m_iHead] = 2;
+
+      m_piNext[m_iHead] = -1;
+      m_piPrior[m_iHead] = -1;
+      m_iLength += getLength(seqno1, seqno2);
+
+      return;
+   }
+
+   // otherwise searching for the position where the node should be
+
+   __int32 offset = seqno1 - m_piData1[m_iHead];
+
+   if (offset < -m_iSeqNoTH)
+      offset += m_iMaxSeqNo;
+
+   __int32 loc = (m_iHead + offset) % m_iSize;
+
+   if ((-1 != m_piData2[m_iTail]) && (incSeqNo(m_piData2[m_iTail]) == seqno1))
+   {
+      // coalesce with prior node, e.g., [2, 5], [6, 7] becomes [2, 7]
+      loc = m_iTail;
+      m_piData2[loc] = seqno2;
+   }
+   else
+   {
+      // create new node
+      m_piData1[loc] = seqno1;
+
+      if (seqno2 != seqno1)
+         m_piData2[loc] = seqno2;
+
+      m_piNext[m_iTail] = loc;
+      m_piPrior[loc] = m_iTail;
+      m_piNext[loc] = -1;
+      m_iTail = loc;
+   }
+
+   // Initilize time stamp
+   m_pLastFeedbackTime[loc] = Scheduler::instance().clock();
+   m_piCount[loc] = 2;
+
+   m_iLength += getLength(seqno1, seqno2);
+}
+
+bool CRcvLossList::remove(const __int32& seqno)
+{
+   if (0 == m_iLength)
+      return false; 
+
+   // locate the position of "seqno" in the list
+   __int32 offset = seqno - m_piData1[m_iHead];
+
+   if (offset < -m_iSeqNoTH)
+      offset += m_iMaxSeqNo;
+
+   if (offset < 0)
+      return false;
+
+   __int32 loc = (m_iHead + offset) % m_iSize;
+
+   if (seqno == m_piData1[loc])
+   {
+      // This is a seq. no. that starts the loss sequence
+
+      if (-1 == m_piData2[loc])
+      {
+         // there is only 1 loss in the sequence, delete it from the node
+         if (m_iHead == loc)
+         {
+            m_iHead = m_piNext[m_iHead];
+            if (-1 != m_iHead)
+               m_piPrior[m_iHead] = -1;
+         }
+         else
+         {
+            m_piNext[m_piPrior[loc]] = m_piNext[loc];
+            if (-1 != m_piNext[loc])
+               m_piPrior[m_piNext[loc]] = m_piPrior[loc];
+            else
+               m_iTail = m_piPrior[loc];
+         }
+
+         m_piData1[loc] = -1;
+      }
+      else
+      {
+         // there are more than 1 loss in the sequence
+         // move the node to the next and update the starter as the next loss inSeqNo(seqno)
+
+         // find next node
+         __int32 i = (loc + 1) % m_iSize;
+
+         // remove the "seqno" and change the starter as next seq. no.
+         m_piData1[i] = incSeqNo(m_piData1[loc]);
+
+         // process the sequence end
+         if (greaterthan(m_piData2[loc], incSeqNo(m_piData1[loc])))
+            m_piData2[i] = m_piData2[loc];
+
+         // replicate the time stamp and report counter
+         m_pLastFeedbackTime[i] = m_pLastFeedbackTime[loc];
+         m_piCount[i] = m_piCount[loc];
+
+         // remove the current node
+         m_piData1[loc] = -1;
+         m_piData2[loc] = -1;
+ 
+         // update list pointer
+         m_piNext[i] = m_piNext[loc];
+         m_piPrior[i] = m_piPrior[loc];
+
+         if (m_iHead == loc)
+            m_iHead = i;
+         else
+            m_piNext[m_piPrior[i]] = i;
+
+         if (m_iTail == loc)
+            m_iTail = i;
+         else
+            m_piPrior[m_piNext[i]] = i;
+      }
+
+      m_iLength --;
+
+      return true;
+   }
+
+   // There is no loss sequence in the current position
+   // the "seqno" may be contained in a previous node
+
+   // searching previous node
+   __int32 i = (loc - 1 + m_iSize) % m_iSize;
+   while (-1 == m_piData1[i])
+      i = (i - 1 + m_iSize) % m_iSize;
+
+   // not contained in this node, return
+   if ((-1 == m_piData2[i]) || greaterthan(seqno, m_piData2[i]))
+       return false;
+
+   if (seqno == m_piData2[i])
+   {
+      // it is the sequence end
+
+      if (seqno == incSeqNo(m_piData1[i]))
+         m_piData2[i] = -1;
+      else
+         m_piData2[i] = decSeqNo(seqno);
+   }
+   else
+   {
+      // split the sequence
+
+      // construct the second sequence from incSeqNo(seqno) to the original sequence end
+      // located at "loc + 1"
+      loc = (loc + 1) % m_iSize;
+
+      m_piData1[loc] = incSeqNo(seqno);
+      if (greaterthan(m_piData2[i], incSeqNo(seqno)))
+         m_piData2[loc] = m_piData2[i];
+
+      // the first (original) sequence is between the original sequence start to decSeqNo(seqno)
+      if (seqno == incSeqNo(m_piData1[i]))
+         m_piData2[i] = -1;
+      else
+         m_piData2[i] = decSeqNo(seqno);
+
+      // replicate the time stamp and report counter
+      m_pLastFeedbackTime[loc] = m_pLastFeedbackTime[i];
+      m_piCount[loc] = m_piCount[i];
+
+      // update the list pointer
+      m_piNext[loc] = m_piNext[i];
+      m_piNext[i] = loc;
+      m_piPrior[loc] = i;
+
+      if (m_iTail == i)
+         m_iTail = loc;
+      else
+         m_piPrior[m_piNext[loc]] = loc;
+   }
+
+   m_iLength --;
+
+   return true;
+}
+
+__int32 CRcvLossList::getLossLength() const
+{
+   return m_iLength;
+}
+
+__int32 CRcvLossList::getFirstLostSeq() const
+{
+   if (0 == m_iLength)
+      return -1;
+
+   return m_piData1[m_iHead];
+}
+
+void CRcvLossList::getLossArray(__int32* array, __int32* len, const __int32& limit, const double& threshold)
+{
+   double currtime = Scheduler::instance().clock();
+
+   __int32 i  = m_iHead;
+
+   len = 0;
+
+   while ((*len < limit - 1) && (-1 != i))
+   {
+      if (currtime - m_pLastFeedbackTime[i] > m_piCount[i] * threshold)
+      {
+         array[*len] = m_piData1[i];
+         if (-1 != m_piData2[i])
+         {
+            // there are more than 1 loss in the sequence
+            array[*len] |= 0x80000000;
+            ++ *len;
+            array[*len] = m_piData2[i];
+         }
+
+         ++ *len;
+
+         // update the timestamp
+         m_pLastFeedbackTime[i] = Scheduler::instance().clock();
+         // update how many times this loss has been fed back, the "k" in UDT paper
+         ++ m_piCount[i];
+      }
+
+      i = m_piNext[i];
+   }
+}
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////
 //

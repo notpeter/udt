@@ -2,7 +2,7 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
 <meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
@@ -42,7 +42,7 @@ sending will not return until all data has been successfully received.</font></p
 	<p style="margin-top: 0; margin-bottom: 0">
 	<font face="Courier New" size="1">// blocking sending</font></p>
 	<p style="margin-top: 0; margin-bottom: 0">
-	<font face="Courier New" size="1">if (UDT_ERROR == UDT::send(usock, buffer, 
+	<font face="Courier New" size="1">if (UDT::ERROR == UDT::send(usock, buffer, 
 	size, 0))<br>
 	{<br>
 &nbsp;&nbsp; cout &lt;&lt; &quot;send: &quot; &lt;&lt; UDT::getlasterror().getErrorMessage();<br>
@@ -52,7 +52,7 @@ sending will not return until all data has been successfully received.</font></p
 	<p style="margin-top: 0; margin-bottom: 0">
 	<font face="Courier New" size="1">// blocking overlapped sending</font></p>
 	<p style="margin-top: 0; margin-bottom: 0">
-	<font face="Courier New" size="1">if (UDT_ERROR == UDT::send(usock, buffer, 
+	<font face="Courier New" size="1">if (UDT::ERROR == UDT::send(usock, buffer, 
 	size, 0, &amp;handle, DeleteBuf))<br>
 	{<br>
 &nbsp;&nbsp; cout &lt;&lt; &quot;send: &quot; &lt;&lt; UDT::getlasterror().getErrorMessage();<br>

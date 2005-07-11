@@ -2,7 +2,7 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
 <meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
@@ -18,15 +18,15 @@
 </table>
 <h1><font face="Verdana" size="4">Error Handling</font></h1>
 <p><font face="Verdana" size="2">All UDT API will return an error upon a failed 
-operation. Particularly, UDT defines <b>INVALID_UDTSOCK</b> and <b>UDT_ERROR</b> as error 
+operation. Particularly, UDT defines <b>UDT::INVALID_SOCK</b> and <b>UDT::ERROR</b> as error 
 returned values. Application should check the return value against these two 
 constants (several routine return <b>false</b> as error value).</font></p>
 <p><font face="Verdana" size="2">On error, <a href="error.htm">getlasterror</a> can be used to retrieve 
 the error information. In fact, the function returns the latest error occurred 
-in the thread where the function is called. <a href="error.htm">getlasterror</a> returns a 
-<a href="structure.htm#UDTERROR">UDTERROR</a> 
+in the thread where the function is called. <a href="error.htm">getlasterror</a> returns a
+<a href="structure.htm#UDTERROR">ERRORINFO</a> 
 structure, it contains both the error code and special text error message. Two 
-helper functions of <u>getErrorCode</u> and <u>getErrorMessage</u> can be used to read these 
+helper functions of <u><b>getErrorCode</b></u> and <u><b>getErrorMessage</b></u> can be used to read these 
 information.</font></p>
 <h4><font face="Verdana" size="2">Examples</font></h4>
 <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
@@ -41,7 +41,7 @@ information.</font></p>
 &nbsp;</font><p style="margin-top: 0; margin-bottom: 0">
     <font face="Courier New" size="1">UDTSOCKET serv = UDT::socket(AF_INET, 
 	SOCK_STREAM, 0);<br>
-	if (UDT_ERROR == UDT::bind(serv, (sockaddr*)&amp;my_addr, sizeof(my_addr)))<br>
+	if (UDT::ERROR == UDT::bind(serv, (sockaddr*)&amp;my_addr, sizeof(my_addr)))<br>
 	{<br>
 &nbsp;&nbsp; cout &lt;&lt; &quot;bind: &quot; &lt;&lt; UDT::getlasterror().getErrorMessage();</font><p style="margin-top: 0; margin-bottom: 0">
     &nbsp;<p style="margin-top: 0; margin-bottom: 0">

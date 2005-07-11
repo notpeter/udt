@@ -2,7 +2,7 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
 <meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
@@ -50,7 +50,7 @@ directory.</font></p>
 	my_addr.sin_addr.s_addr = INADDR_ANY;<br>
 	memset(&amp;(my_addr.sin_zero), '\0', 8);<br>
 	<br>
-	if (UDT_ERROR == UDT::bind(serv, (sockaddr*)&amp;my_addr, sizeof(my_addr)))<br>
+	if (UDT::ERROR == UDT::bind(serv, (sockaddr*)&amp;my_addr, sizeof(my_addr)))<br>
 	{<br>
 &nbsp;&nbsp; cout &lt;&lt; &quot;bind: &quot; &lt;&lt; UDT::getlasterror().getErrorMessage();<br>
 &nbsp;&nbsp; return 0;<br>
@@ -69,7 +69,7 @@ directory.</font></p>
 	<br>
 	char data[100];<br>
 	<br>
-	if (UDT_ERROR == UDT::recv(recver, data, 100, 0))<br>
+	if (UDT::ERROR == UDT::recv(recver, data, 100, 0))<br>
 	{<br>
 &nbsp;&nbsp; cout &lt;&lt; &quot;recv:&quot; &lt;&lt; UDT::getlasterror().getErrorMessage() &lt;&lt; endl;<br>
 &nbsp;&nbsp; return 0;<br>
@@ -113,7 +113,7 @@ client example</font></b></p>
 	memset(&amp;(serv_addr.sin_zero), '\0', 8);<br>
 	<br>
 	// connect to the server, implict bind<br>
-	if (UDT_ERROR == UDT::connect(client, (sockaddr*)&amp;serv_addr, 
+	if (UDT::ERROR == UDT::connect(client, (sockaddr*)&amp;serv_addr, 
 	sizeof(serv_addr)))<br>
 	{<br>
 &nbsp;&nbsp; cout &lt;&lt; &quot;connect: &quot; &lt;&lt; UDT::getlasterror().getErrorMessage();<br>
@@ -121,7 +121,7 @@ client example</font></b></p>
 	}<br>
 	<br>
 	char* hello = &quot;hello world!\n&quot;;<br>
-	if (UDT_ERROR == UDT::send(client, hello, strlen(hello) + 1, 0))<br>
+	if (UDT::ERROR == UDT::send(client, hello, strlen(hello) + 1, 0))<br>
 	{<br>
 &nbsp;&nbsp; cout &lt;&lt; &quot;send: &quot; &lt;&lt; UDT::getlasterror().getErrorMessage();<br>
 &nbsp;&nbsp; return 0;<br>

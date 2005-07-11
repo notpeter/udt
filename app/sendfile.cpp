@@ -2,7 +2,6 @@
 #include <udt.h>
 
 using namespace std;
-using namespace UDT;
 
 int main(int argc, char* argv[])
 {
@@ -28,7 +27,7 @@ int main(int argc, char* argv[])
    my_addr.sin_addr.s_addr = INADDR_ANY;
    memset(&(my_addr.sin_zero), '\0', 8);
 
-   if (UDT_ERROR == UDT::bind(serv, (sockaddr*)&my_addr, sizeof(my_addr)))
+   if (UDT::ERROR == UDT::bind(serv, (sockaddr*)&my_addr, sizeof(my_addr)))
    {
       cout << "bind: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
@@ -43,7 +42,7 @@ int main(int argc, char* argv[])
 
    UDTSOCKET fhandle;
 
-   if (INVALID_UDTSOCK == (fhandle = UDT::accept(serv, (sockaddr*)&their_addr, &namelen)))
+   if (UDT::INVALID_SOCK == (fhandle = UDT::accept(serv, (sockaddr*)&their_addr, &namelen)))
    {
       cout << "accept: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
@@ -51,16 +50,16 @@ int main(int argc, char* argv[])
 
    UDT::close(serv);
 
-   ifstream ifs(argv[1]);
+   ifstream ifs(argv[1], ios::in | ios::binary);
 
    ifs.seekg(0, ios::end);
-   streampos size = ifs.tellg();
+   __int64 size = ifs.tellg();
    ifs.seekg(0, ios::beg);
 
-   TRACEINFO trace;
+   UDT::TRACEINFO trace;
    UDT::perfmon(fhandle, &trace);
 
-   if (UDT_ERROR == UDT::sendfile(fhandle, ifs, 0, size))
+   if (UDT::ERROR == UDT::sendfile(fhandle, ifs, 0, size))
    {
       cout << "sendfile: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;

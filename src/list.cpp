@@ -33,7 +33,7 @@ All the lists are static linked lists in ascending order of sequence numbers.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/10/2005
+   Yunhong Gu [ygu@cs.uic.edu], last updated 06/19/2005
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -416,6 +416,8 @@ void CSndLossList::remove(const __int32& seqno)
 
             m_iHead = loc;
          }
+         else
+            m_iHead = m_piNext[i];
       }
 
       // Remove all nodes prior to the new head
@@ -598,6 +600,9 @@ bool CRcvLossList::remove(const __int32& seqno)
    if (offset < -m_iSeqNoTH)
       offset += m_iMaxSeqNo;
 
+   if (offset < 0)
+      return false;
+
    __int32 loc = (m_iHead + offset) % m_iSize;
 
    if (seqno == m_piData1[loc])
@@ -666,68 +671,64 @@ bool CRcvLossList::remove(const __int32& seqno)
 
       return true;
    }
-   else if (offset > 0)
+
+   // There is no loss sequence in the current position
+   // the "seqno" may be contained in a previous node
+
+   // searching previous node
+   __int32 i = (loc - 1 + m_iSize) % m_iSize;
+   while (-1 == m_piData1[i])
+      i = (i - 1 + m_iSize) % m_iSize;
+
+   // not contained in this node, return
+   if ((-1 == m_piData2[i]) || greaterthan(seqno, m_piData2[i]))
+       return false;
+
+   if (seqno == m_piData2[i])
    {
-      // There is no loss sequence in the current position
-      // the "seqno" may be contained in a previous node
+      // it is the sequence end
 
-      // searching previous node
-      __int32 i = (loc - 1 + m_iSize) % m_iSize;
-      while (-1 == m_piData1[i])
-         i = (i - 1 + m_iSize) % m_iSize;
-
-      // not contained in this node, return
-      if ((-1 == m_piData2[i]) || greaterthan(seqno, m_piData2[i]))
-          return false;
-
-      if (seqno == m_piData2[i])
-      {
-         // it is the sequence end
-
-         if (seqno == incSeqNo(m_piData1[i]))
-            m_piData2[i] = -1;
-         else
-            m_piData2[i] = decSeqNo(seqno);
-      }
+      if (seqno == incSeqNo(m_piData1[i]))
+         m_piData2[i] = -1;
       else
-      {
-         // split the sequence
+         m_piData2[i] = decSeqNo(seqno);
+   }
+   else
+   {
+      // split the sequence
 
-         // construct the second sequence from incSeqNo(seqno) to the original sequence end
-         // located at "loc + 1"
-         loc = (loc + 1) % m_iSize;
+      // construct the second sequence from incSeqNo(seqno) to the original sequence end
+      // located at "loc + 1"
+      loc = (loc + 1) % m_iSize;
 
-         m_piData1[loc] = incSeqNo(seqno);
-         if (greaterthan(m_piData2[i], incSeqNo(seqno)))
-            m_piData2[loc] = m_piData2[i];
+      m_piData1[loc] = incSeqNo(seqno);
+      if (greaterthan(m_piData2[i], incSeqNo(seqno)))
+         m_piData2[loc] = m_piData2[i];
 
-         // the first (original) sequence is between the original sequence start to decSeqNo(seqno)
-         if (seqno == incSeqNo(m_piData1[i]))
-            m_piData2[i] = -1;
-         else
-            m_piData2[i] = decSeqNo(seqno);
+      // the first (original) sequence is between the original sequence start to decSeqNo(seqno)
+      if (seqno == incSeqNo(m_piData1[i]))
+         m_piData2[i] = -1;
+      else
+         m_piData2[i] = decSeqNo(seqno);
 
-         // replicate the time stamp and report counter
-         m_pLastFeedbackTime[loc] = m_pLastFeedbackTime[i];
-         m_piCount[loc] = m_piCount[i];
+      // replicate the time stamp and report counter
+      m_pLastFeedbackTime[loc] = m_pLastFeedbackTime[i];
+      m_piCount[loc] = m_piCount[i];
 
-         // update the list pointer
-         m_piNext[loc] = m_piNext[i];
-         m_piNext[i] = loc;
-         m_piPrior[loc] = i;
+      // update the list pointer
+      m_piNext[loc] = m_piNext[i];
+      m_piNext[i] = loc;
+      m_piPrior[loc] = i;
 
-         if (m_iTail == i)
-            m_iTail = loc;
-         else
-            m_piPrior[m_piNext[loc]] = loc;
-      }
-
-      m_iLength --;
-
-      return true;
+      if (m_iTail == i)
+         m_iTail = loc;
+      else
+         m_piPrior[m_piNext[loc]] = loc;
    }
 
-   return false;
+   m_iLength --;
+
+   return true;
 }
 
 __int32 CRcvLossList::getLossLength() const
