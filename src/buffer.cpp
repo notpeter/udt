@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT) version 2
@@ -34,7 +34,7 @@ The receiving buffer is a logically circular memeory block.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/10/2005
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/04/2006
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -256,6 +256,7 @@ void CSndBuffer::releaseBuffer(char* buf, int)
 
 //
 CRcvBuffer::CRcvBuffer():
+m_pcData(NULL),
 m_iSize(40960000),
 m_iStartPos(0),
 m_iLastAckPos(0),
@@ -270,6 +271,7 @@ m_iPendingSize(0)
 }
 
 CRcvBuffer::CRcvBuffer(const __int32& bufsize):
+m_pcData(NULL),
 m_iSize(bufsize),
 m_iStartPos(0),
 m_iLastAckPos(0),

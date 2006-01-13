@@ -9,17 +9,9 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-   __int64 size;
-
-   #ifdef BSD
-      if ((argc != 5) || (0 == atoi(argv[2])) || (0 == (size = strtoll(argv[4], NULL, 10))))
-   #elif WIN32
-      if ((argc != 5) || (0 == atoi(argv[2])) || (0 == (size = _atoi64(argv[4]))))
-   #else
-      if ((argc != 5) || (0 == atoi(argv[2])) || (0 == (size = atoll(argv[4]))))
-   #endif
+   if ((argc != 5) || (0 == atoi(argv[2])))
    {
-      cout << "usage: recvfile server_ip server_port filename filesize" << endl;
+      cout << "usage: recvfile server_ip server_port remote_filename local_filename" << endl;
       return 0;
    }
 
@@ -45,7 +37,35 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-   ofstream ofs(argv[3], ios::out | ios::binary | ios::trunc);
+
+   // send name information of the requested file
+   int len = strlen(argv[3]);
+
+   if (UDT::ERROR == UDT::send(fhandle, (char*)&len, sizeof(int), 0))
+   {
+      cout << "sned: " << UDT::getlasterror().getErrorMessage() << endl;
+      return 0;
+   }
+
+   if (UDT::ERROR == UDT::send(fhandle, argv[3], len, 0))
+   {
+      cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
+      return 0;
+   }
+
+
+   // get size information
+   __int64 size;
+
+   if (UDT::ERROR == UDT::recv(fhandle, (char*)&size, sizeof(__int64), 0))
+   {
+      cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
+      return 0;
+   }
+
+
+   // receive the file
+   ofstream ofs(argv[4], ios::out | ios::binary | ios::trunc);
    __int64 recvsize; 
 
    if (UDT::ERROR == (recvsize = UDT::recvfile(fhandle, ofs, 0, size)))
@@ -54,8 +74,6 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-   if (recvsize < size)
-      cout << "recvfile: received file size (" << recvsize << ") is less than expected (" << size << ")." << endl; 
 
    UDT::close(fhandle);
 

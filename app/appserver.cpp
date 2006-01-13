@@ -1,7 +1,11 @@
 #ifndef WIN32
 #include <unistd.h>
 #include <cstdlib>
-#include <arpa/inet.h>
+#include <cstring>
+#include <netdb.h>
+#else
+#include <winsock2.h>
+#include <Ws2tcpip.h>
 #endif
 #include <iostream>
 #include <udt.h>
@@ -23,30 +27,45 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-   UDTSOCKET serv = UDT::socket(AF_INET, SOCK_STREAM, 0);
+   addrinfo hints;
+   addrinfo* res;
 
-   // for testing with customized CC
-   //UDT::setsockopt(serv, 0, UDT_CC, new CCCFactory<CUDPBlast>, sizeof(CCCFactory<CUDPBlast>));
+   memset(&hints, 0, sizeof(struct addrinfo));
 
-   short port;
+   hints.ai_flags = AI_PASSIVE;
+   hints.ai_family = AF_INET;
+   hints.ai_socktype = SOCK_STREAM;
+
+   char* service = "9000";
    if (2 == argc)
-      port = short(atoi(argv[1]));
-   else
-      port = 9000;
+      service = argv[1];
 
-   sockaddr_in my_addr;
-   my_addr.sin_family = AF_INET;
-   my_addr.sin_port = htons(port);
-   my_addr.sin_addr.s_addr = INADDR_ANY;
-   memset(&(my_addr.sin_zero), '\0', 8);
+   if (0 != getaddrinfo(NULL, service, &hints, &res))
+   {
+      cout << "illegal port number or port is busy.\n" << endl;
+      return 0;
+   }
 
-   if (UDT::ERROR == UDT::bind(serv, (sockaddr*)&my_addr, sizeof(my_addr)))
+   UDTSOCKET serv = UDT::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+
+   // UDT Options
+   //UDT::setsockopt(serv, 0, UDT_CC, new CCCFactory<CUDPBlast>, sizeof(CCCFactory<CUDPBlast>));
+   //UDT::setsockopt(serv, 0, UDT_MSS, new int(7500), sizeof(int));
+   //UDT::setsockopt(serv, 0, UDT_RCVBUF, new int(100000000), sizeof(int));
+   //UDT::setsockopt(serv, 0, UDP_RCVBUF, new int(100000000), sizeof(int));
+
+
+   if (UDT::ERROR == UDT::bind(serv, res->ai_addr, res->ai_addrlen))
    {
       cout << "bind: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
 
-   cout << "server is ready at port: " << port << endl;
+   freeaddrinfo(res);
+
+
+   cout << "server is ready at port: " << service << endl;
 
    if (UDT::ERROR == UDT::listen(serv, 10))
    {
@@ -54,24 +73,24 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-   int namelen;
-   sockaddr_in their_addr;
+
+   sockaddr_storage clientaddr;
+   int addrlen;
+
    UDTSOCKET recver;
 
    while (true)
    {
-      if (UDT::INVALID_SOCK == (recver = UDT::accept(serv, (sockaddr*)&their_addr, &namelen)))
+      if (UDT::INVALID_SOCK == (recver = UDT::accept(serv, (sockaddr*)&clientaddr, &addrlen)))
       {
          cout << "accept: " << UDT::getlasterror().getErrorMessage() << endl;
          return 0;
       }
 
-#ifndef WIN32
-      char ip[16];
-      cout << "new connection: " << inet_ntop(AF_INET, &their_addr.sin_addr, ip, 16) << ":" << ntohs(their_addr.sin_port) << endl;
-#else
-      cout << "new connection: " << inet_ntoa(their_addr.sin_addr) << ":" << ntohs(their_addr.sin_port) << endl;
-#endif
+      char clienthost[1025];
+      char clientservice[32];
+      getnameinfo((sockaddr *)&clientaddr, addrlen, clienthost, sizeof(clienthost), clientservice, sizeof(clientservice), NI_NUMERICHOST);
+      cout << "new connection: " << clienthost << ":" << clientservice << endl;
 
 #ifndef WIN32
       pthread_t rcvthread;

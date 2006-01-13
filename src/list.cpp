@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT) version 2
@@ -33,7 +33,7 @@ All the lists are static linked lists in ascending order of sequence numbers.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 06/19/2005
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/04/2006
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -102,6 +102,9 @@ inline const __int32 CList::decSeqNo(const __int32& seqno) const
 
 
 CSndLossList::CSndLossList(const __int32& size, const __int32& th, const __int32& max):
+m_piData1(NULL),
+m_piData2(NULL),
+m_piNext(NULL),
 m_iSize(size)
 {
    m_iSeqNoTH = th;
@@ -495,6 +498,12 @@ __int32 CSndLossList::getLostSeq()
 
 //
 CRcvLossList::CRcvLossList(const __int32& size, const __int32& th, const __int32& max):
+m_piData1(NULL),
+m_piData2(NULL),
+m_pLastFeedbackTime(NULL),
+m_piCount(NULL),
+m_piNext(NULL),
+m_piPrior(NULL),
 m_iSize(size)
 {
    m_iSeqNoTH = th;
@@ -781,6 +790,9 @@ void CRcvLossList::getLossArray(__int32* array, __int32& len, const __int32& lim
 
 //
 CIrregularPktList::CIrregularPktList(const __int32& size, const __int32& th, const __int32& max):
+m_piData(NULL),
+m_piErrorSize(NULL),
+m_piNext(NULL),
 m_iSize(size)
 {
    m_iSeqNoTH = th;

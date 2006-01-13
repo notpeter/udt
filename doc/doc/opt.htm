@@ -208,7 +208,7 @@ read and set up UDT options, respectively.</font></p>
 			<p style="margin-top: 1; margin-bottom: 1">
 			<font face="Verdana" size="1">Default value is <font color="#008000">4194304</font> bytes.</font></td>
 		</tr>
-		<tr>
+        <tr>
 			<td width="133">
 			<p style="margin-top: 1; margin-bottom: 1">
 			<font face="Verdana" size="1">UDT_LINGER</font></td>
@@ -217,12 +217,23 @@ read and set up UDT options, respectively.</font></p>
 			<font face="Verdana" size="1">linger</font></td>
 			<td width="323">
 			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">linger time on close</font></td>
+            <font face="Verdana" size="1">Linger time on close</font></td>
 			<td width="812">
 			<p style="margin-top: 1; margin-bottom: 1">
 			<font face="Verdana" size="1">Default value is <font color="#008000">
 			1</font> second linger time.</font></td>
-		</tr>
+        </tr>
+        <tr>
+			<td width="133">
+            <font face="Verdana" size="1">UDT_RENDEZVOUS</font></td>
+			<td width="133">
+            <font face="Verdana" size="1">bool</font></td>
+			<td width="323">
+            <font face="Verdana" size="1">Use rendezvous connection setup method</font></td>
+			<td width="812">
+            <font face="Verdana" size="1">Default value is false (no rendezvous
+            setup).</font></td>
+        </tr>
 	</table>
 	<dt>&nbsp;</dt>
 	<dt><font face="Verdana" size="2"><i>optval</i> </font></dt>
@@ -246,23 +257,6 @@ is returned and the specific error information can be retrieved by
     <tr>
       <td width="133">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5004</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		<i>u</i> 
-		is an invalid UDT socket.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5003</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		the option value or option value length is invalid for setsockopt.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		5001</font></td>
       <td width="812">
       <font face="Verdana" size="1">
@@ -275,6 +269,23 @@ is returned and the specific error information can be retrieved by
       <td width="812">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		the specific option cannot be set on a connected socket.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		5003</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		the option value or option value length is invalid for setsockopt.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		5004</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		<i>u</i> 
+		is an invalid UDT socket.</font></td>
     </tr>
     </table>
 <h4><font face="Verdana" size="2">Description</font></h4>

@@ -39,16 +39,15 @@ constants.</font></p>
       <td width="133">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">1000</font></td>
       <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		cannot set up network connection.</font></td>
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">connection
+      setup failure.</font></td>
     </tr>
     <tr>
       <td width="133">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		1001</font></td>
       <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		connection set up failure, server does not exist.</font></td>
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">server does not exist.</font></td>
     </tr>
     <tr>
       <td width="133">
@@ -56,7 +55,13 @@ constants.</font></p>
 		1002</font></td>
       <td width="812">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		connection set up failure, connection request was rejected by server.</font></td>
+ connection request was rejected by server.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <font face="Verdana" size="1">1003</font></td>
+      <td width="812">
+      <font face="Verdana" size="1">could not create/configure UDP socket.</font></td>
     </tr>
     <tr>
       <td width="133">
@@ -85,8 +90,20 @@ constants.</font></p>
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		3000</font></td>
       <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		invalid memory access.</font></td>
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">system
+      resource failure.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <font face="Verdana" size="1">3001</font></td>
+      <td width="812">
+      <font face="Verdana" size="1">could not create new threads.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <font face="Verdana" size="1">3002</font></td>
+      <td width="812">
+      <font face="Verdana" size="1">could not allocate memory buffers.</font></td>
     </tr>
     <tr>
       <td width="133">
@@ -186,11 +203,25 @@ constants.</font></p>
     </tr>
     <tr>
       <td width="133">
+      <font face="Verdana" size="1">5007</font></td>
+      <td width="812">
+      <font face="Verdana" size="1">Rendezvous connect process does not allow
+      listen and accept call.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <font face="Verdana" size="1">5008</font></td>
+      <td width="812">
+      <font face="Verdana" size="1">The rendezvous set up processing is enabled;
+      bind should be called before connect.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		6000</font></td>
       <td width="812">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		non-blocking call fails.</font></td>
+		non-blocking call failure.</font></td>
     </tr>
     <tr>
       <td width="133">

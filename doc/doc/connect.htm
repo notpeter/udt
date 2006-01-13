@@ -61,15 +61,6 @@ is returned and the specific error information can be retrieved using
     <tr>
       <td width="133">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5004</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		<i>u</i> 
-		is an invalid UDT socket.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		1001</font></td>
       <td width="812">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
@@ -86,11 +77,29 @@ is returned and the specific error information can be retrieved using
     <tr>
       <td width="133">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5002</font></td>
+        5002</font></td>
       <td width="812">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		the socket is not allowed to do a connect call: it is either in 
 		listening state or has been already connected.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		5004</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		<i>u</i> 
+		is an invalid UDT socket.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+        5008</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">The
+      rendezvous set up processing is enabled; bind should be called before
+      connect.</font></td>
     </tr>
     </table>
 <H4><font face="Verdana" size="2">Description</font></H4>
@@ -101,7 +110,6 @@ least 1 round trip time to finish.</font></P>
 <P><font face="Verdana" size="2">The blocking manner does not affect the <b>connect</b> 
 call. The <b>connect</b> process is always blocked until the connection is set up or 
 rejected.</font></P>
-<p></p>
 <p></p>
 <H4><font face="Verdana" size="2">See Also</font></H4>
 <P>

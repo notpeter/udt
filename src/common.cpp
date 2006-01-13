@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT) version 2
@@ -41,7 +41,7 @@ method to catch and handle UDT errors and exceptions.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 04/10/2005
+   Yunhong Gu [ygu@cs.uic.edu], last updated 01/12/2006
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -245,6 +245,9 @@ CGuard::~CGuard()
 
 //
 CACKWindow::CACKWindow():
+m_piACKSeqNo(NULL),
+m_piACK(NULL),
+m_pTimeStamp(NULL),
 m_iSize(1024),
 m_iHead(0),
 m_iTail(0)
@@ -257,6 +260,9 @@ m_iTail(0)
 }
 
 CACKWindow::CACKWindow(const __int32& size):
+m_piACKSeqNo(NULL),
+m_piACK(NULL),
+m_pTimeStamp(NULL),
 m_iSize(size),
 m_iHead(0),
 m_iTail(0)
@@ -351,8 +357,13 @@ __int32 CACKWindow::acknowledge(const __int32& seq, __int32& ack)
 //
 CPktTimeWindow::CPktTimeWindow():
 m_iAWSize(16),
+m_piPktWindow(NULL),
 m_iRWSize(16),
-m_iPWSize(16)
+m_piRTTWindow(NULL),
+m_piPCTWindow(NULL),
+m_piPDTWindow(NULL),
+m_iPWSize(16),
+m_piProbeWindow(NULL)
 {
    m_piPktWindow = new __int32[m_iAWSize];
    m_piRTTWindow = new __int32[m_iRWSize];
@@ -380,8 +391,13 @@ m_iPWSize(16)
 
 CPktTimeWindow::CPktTimeWindow(const __int32& s1, const __int32& s2, const __int32& s3):
 m_iAWSize(s1),
+m_piPktWindow(NULL),
 m_iRWSize(s2),
-m_iPWSize(s3)
+m_piRTTWindow(NULL),
+m_piPCTWindow(NULL),
+m_piPDTWindow(NULL),
+m_iPWSize(s3),
+m_piProbeWindow(NULL)
 {
    m_piPktWindow = new __int32[m_iAWSize];
    m_piRTTWindow = new __int32[m_iRWSize];
@@ -564,7 +580,7 @@ void CPktTimeWindow::probe2Arrival()
 CCC::CCC():
 m_dPktSndPeriod(1.0),
 m_dCWndSize(16.0),
-m_iACKPeriod(10),
+m_iACKPeriod(0),
 m_iACKInterval(0),
 m_iRTO(-1)
 {
@@ -636,7 +652,7 @@ const char* CUDTException::getErrorMessage()
         break;
 
       case 1:
-        strcpy(m_pcMsg, "Couldn't set up network connection");
+        strcpy(m_pcMsg, "Connection setup failure");
 
         switch (m_iMinor)
         {
@@ -654,7 +670,7 @@ const char* CUDTException::getErrorMessage()
 
         case 3:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "unable to create new threads");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "unable to create/configure UDP socket");
 
            break;
         
@@ -668,7 +684,7 @@ const char* CUDTException::getErrorMessage()
         switch (m_iMinor)
         {
         case 1:
-           strcpy(m_pcMsg, "Connection broken");
+           strcpy(m_pcMsg, "Connection was broken");
 
            break;
 
@@ -684,11 +700,28 @@ const char* CUDTException::getErrorMessage()
         break;
 
       case 3:
-        strcpy(m_pcMsg, "Memory exceptions occurs");
+        strcpy(m_pcMsg, "System resource failure");
+
+        switch (m_iMinor)
+        {
+        case 1:
+           strcpy(m_pcMsg, "unable to create new threads");
+
+           break;
+
+        case 2:
+           strcpy(m_pcMsg, "unable to allocate buffers");
+
+           break;
+
+        default:
+           break;
+        }
+
         break;
 
       case 4:
-        strcpy(m_pcMsg, "File exceptions occurs");
+        strcpy(m_pcMsg, "File system failure");
 
         switch (m_iMinor)
         {
@@ -763,6 +796,18 @@ const char* CUDTException::getErrorMessage()
 
            break;
 
+        case 7:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Listen/accept is not supported in rendezous connection setup");
+
+           break;
+
+        case 8:
+           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot call connect on UNBOUND socket in rendezvous connection setup");
+
+           break;
+
         default:
            break;
         }
@@ -770,31 +815,31 @@ const char* CUDTException::getErrorMessage()
         break;
 
      case 6:
-        strcpy(m_pcMsg, "Non-blocking call failed");
+        strcpy(m_pcMsg, "Non-blocking call failure");
 
         switch (m_iMinor)
         {
         case 1:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "No buffer available for sending");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "no buffer available for sending");
 
            break;
 
         case 2:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "No data available for reading");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "no data available for reading");
 
            break;
 
         case 3:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "No buffer available for overlapped reading");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "no buffer available for overlapped reading");
 
            break;
 
         case 4:
            strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Non-blocking overlapped recv is on going");
+           strcpy(m_pcMsg + strlen(m_pcMsg), "non-blocking overlapped recv is on going");
 
            break;
 
@@ -805,7 +850,7 @@ const char* CUDTException::getErrorMessage()
         break;
 
       default:
-        strcpy(m_pcMsg, "Error");
+        strcpy(m_pcMsg, "Unknown error");
    }
 
    // Adding "errno" information

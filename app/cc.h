@@ -454,7 +454,7 @@ Reference:
    http://netlab.caltech.edu/pub/papers/draft-jwl-tcp-fast-01.txt
 
 Note:
-   Pricision of RTT measurement may make great difference in the throughput
+   Precision of RTT measurement may make great difference in the throughput
 *****************************************************************************/
 
 class CFAST: public CVegas

@@ -1,7 +1,11 @@
 #ifndef WIN32
 #include <unistd.h>
 #include <cstdlib>
-#include <arpa/inet.h>
+#include <cstring>
+#include <netdb.h>
+#else
+#include <winsock2.h>
+#include <Ws2tcpip.h>
 #endif
 #include <iostream>
 #include <udt.h>
@@ -25,35 +29,39 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-   UDTSOCKET client = UDT::socket(AF_INET, SOCK_STREAM, 0);
+   struct addrinfo hints, *res;
 
-   //for testing with custmized CC
+   memset(&hints, 0, sizeof(struct addrinfo));
+
+   hints.ai_family = AF_INET;
+   hints.ai_socktype = SOCK_STREAM;
+
+   if (0 != getaddrinfo(argv[1], argv[2], &hints, &res))
+   {
+      cout << "incorrect network address.\n" << endl;
+      return 0;
+   }
+
+   UDTSOCKET client = UDT::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+   // UDT Options
    //UDT::setsockopt(client, 0, UDT_CC, new CCCFactory<CUDPBlast>, sizeof(CCCFactory<CUDPBlast>));
+   //UDT::setsockopt(client, 0, UDT_MSS, new int(7500), sizeof(int));
+   //UDT::setsockopt(client, 0, UDT_SNDBUF, new int(200000000), sizeof(int));
+   //UDT::setsockopt(client, 0, UDP_SNDBUF, new int(100000000), sizeof(int));
 
 #ifdef WIN32
    UDT::setsockopt(client, 0, UDT_MSS, new int(1052), sizeof(int));
 #endif
 
-   sockaddr_in serv_addr;
-   serv_addr.sin_family = AF_INET;
-   serv_addr.sin_port = htons(short(atoi(argv[2])));
-#ifndef WIN32
-   if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0)
-#else
-   if (INADDR_NONE == (serv_addr.sin_addr.s_addr = inet_addr(argv[1])))
-#endif
-   {
-      cout << "incorrect network address.\n";
-      return 0;
-   }
-   memset(&(serv_addr.sin_zero), '\0', 8);
-
    // connect to the server, implict bind
-   if (UDT::ERROR == UDT::connect(client, (sockaddr*)&serv_addr, sizeof(serv_addr)))
+   if (UDT::ERROR == UDT::connect(client, res->ai_addr, res->ai_addrlen))
    {
       cout << "connect: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
+
+   freeaddrinfo(res);
 
    // using CC method
    //CUDPBlast* cchandle = NULL;

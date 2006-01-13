@@ -1,3 +1,6 @@
+#ifndef __WIN32
+#include <cstdlib>
+#endif
 #include <iostream>
 #include <udt.h>
 
@@ -5,10 +8,10 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-   //usage: sendfile "filename"
-   if (2 != argc)
+   //usage: sendfile [server_port]
+   if ((2 < argc) || ((2 == argc) && (0 == atoi(argv[1]))))
    {
-      cout << "usage: sendfile filename" << endl;
+      cout << "usage: sendfile [server_port]" << endl;
       return 0;
    }
 
@@ -20,6 +23,8 @@ int main(int argc, char* argv[])
 #endif
 
    short port = 9000;
+   if (2 == argc)
+      port = atoi(argv[1]);
 
    sockaddr_in my_addr;
    my_addr.sin_family = AF_INET;
@@ -50,15 +55,44 @@ int main(int argc, char* argv[])
 
    UDT::close(serv);
 
-   ifstream ifs(argv[1], ios::in | ios::binary);
+
+   // aquiring file name information from client
+   char file[1024];
+   int len;
+
+   if (UDT::ERROR == UDT::recv(fhandle, (char*)&len, sizeof(int), 0))
+   {
+      cout << "recv: " << UDT::getlasterror().getErrorMessage() << endl;
+      return 0;
+   }
+
+   if (UDT::ERROR == UDT::recv(fhandle, file, len, 0))
+   {
+      cout << "recv: " << UDT::getlasterror().getErrorMessage() << endl;
+      return 0;
+   }
+
+
+   // open the file
+   ifstream ifs(file, ios::in | ios::binary);
 
    ifs.seekg(0, ios::end);
    __int64 size = ifs.tellg();
    ifs.seekg(0, ios::beg);
 
+
+   // send file size information
+   if (UDT::ERROR == UDT::send(fhandle, (char*)&size, sizeof(__int64), 0))
+   {
+      cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
+      return 0;
+   }
+
+
    UDT::TRACEINFO trace;
    UDT::perfmon(fhandle, &trace);
 
+   // send the file
    if (UDT::ERROR == UDT::sendfile(fhandle, ifs, 0, size))
    {
       cout << "sendfile: " << UDT::getlasterror().getErrorMessage() << endl;

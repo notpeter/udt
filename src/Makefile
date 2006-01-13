@@ -8,12 +8,10 @@ ifndef arch
    arch = IA32
 endif
 
-#WARNING: Optimization option may decrease the performance!
-CCFLAGS = -fpic -Wall -D$(os) -finline-functions
+CCFLAGS = -fPIC -Wall -D$(os) -finline-functions #-O3
 
 CCFLAGS += -DTRACE
 CCFLAGS += -DNO_BUSY_WAITING
-#IMPORTANT: NO_BUSY_WAITING has NO effect when CUSTOM_CC is used!
 #CCFLAGS += -DCUSTOM_CC
 #CCFLAGS += -DCAPI
 #CCFLAGS += -DNOISY_LINK

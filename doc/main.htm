@@ -7,6 +7,7 @@
 </HEAD>
 <BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#CC0000" VLINK="#990066" ALINK="#CC0000" ONLOAD="window.onerror=myError; loaded=true;">
 <NULL SPACE TAG (NS2 BUGFIX)>
+
 <SCRIPT LANGUAGE="JavaScript"> /*
 This page requires a JavaScript- enabled browser. Yours isn't.
 (F&uuml;r diese Seite muss JavaScript einsetzbar sein!) */ <!-- hide
@@ -64,8 +65,9 @@ initTree("<B>UDT Documentation<\/B>","*", "intro.htm");
   sub_Page("Configuration|Read and set UDT options",              "dc","t-config.htm");
   sub_Page("Transfer Data|Sending / Receiving data",              "dd","t-data.htm");
   sub_Page("Transfer File|Sending / Receiving files",             "de","t-file.htm");
-  sub_Page("Error Handling|Handle Error and Exceptions",          "df","t-error.htm");
-  lastPage("Config Congestion Control|Add 3rd Party Congestion Control Algorithm",          "dg","t-cc.htm");
+  sub_Page("Handling Firewalls|Handling Firewalls",               "df","t-firewall.htm");
+  sub_Page("Error Handling|Handle Error and Exceptions",          "dg","t-error.htm");
+  lastPage("Config Congestion Control|Add 3rd Party Congestion Control Algorithm",          "dh","t-cc.htm");
  end_Book();
  sub_Book("Reference",           "e", "reference.htm");
   sub_Book("UDT Functions",            "ea", "function.htm");
@@ -404,7 +406,6 @@ function openAll() { if (isDHTML) { for (var i = 1; i <= TVcount; i++)
 
 // end-hide --> 
 </SCRIPT>
-</DIV>
 <DIV ID="waitMsg" STYLE="cursor:wait; position:absolute; left:1; height:80; width:204; display:none; top:3">
 <TABLE HEIGHT="100%" WIDTH="100%"><TR><TD width="100%" height="100%">&nbsp;</TD></TR></TABLE>
 </DIV>

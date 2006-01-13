@@ -6,7 +6,7 @@
 // Assumption: This code does NOT process sequence number wrap, which will overflow after 2^31 packets.
 //             But I assume that you won't run NS for that long time :)
 //
-// Last Update: 03/31/2004
+// Last Update: 01/05/2006
 //
 
 #include <stdlib.h>
@@ -89,10 +89,8 @@ max_flow_window_(100000)
    slow_start_ = true;
    freeze_ = false;
 
-//   syn_timer_.resched(syn_interval_);
    ack_timer_.resched(ack_interval_);
    nak_timer_.resched(nak_interval_);
-//   exp_timer_.resched(exp_interval_);
 }
 
 UdtAgent::~UdtAgent()
@@ -125,7 +123,6 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          else
             break;
 
-         //printf("ack data %d %f %d %f %d %d\n", flow_window_size_, snd_interval_, snd_curr_seqno_, Scheduler::instance().clock(), snd_last_ack_, snd_loss_list_->getLossLength());
          snd_timer_.resched(0);
 
          if (rtt_ == syn_interval_)
@@ -146,13 +143,9 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          }
 
          bandwidth_ = int(bandwidth_ * 0.875 + udth->bandwidth() * 0.125);
-         //bandwidth_ = udth->bandwidth();
-
-         //printf("window: %d %d %d %d\n", flow_window_size_, udth->lrecv(), udth->rtt(), bandwidth_);
 
          exp_timer_.resched(exp_interval_);
 
-         //++ local_ack_;
          rateControl();
 
          if (snd_interval_ > rtt_)
@@ -180,16 +173,12 @@ void UdtAgent::recv(Packet *pkt, Handler*)
             nak_count_ = 1;
 
             last_dec_seq_ = snd_curr_seqno_;
-
-//            printf("loss %d %d %d %d %d %d\n", udth->losslen(), nak_count_, avg_nak_num_, dec_random_, last_dec_seq_, (udth->loss()[0] & 0x7FFFFFFF));
          }
          else if (0 == (++ nak_count_ % dec_random_))
          {
             snd_interval_ = snd_interval_ * 1.125;
 
             last_dec_seq_ = snd_curr_seqno_;
-
-//            printf("loss22 %f %d %d %d %d %d\n", snd_interval_, nak_count_, avg_nak_num_, dec_random_, last_dec_seq_, (udth->loss()[0] & 0x7FFFFFFF));
          }
 
          if (snd_interval_ > rtt_)
@@ -225,7 +214,6 @@ void UdtAgent::recv(Packet *pkt, Handler*)
          last_dec_int_ = snd_interval_;
 
          snd_interval_ = snd_interval_ * 1.125;
-         //printf("delay ------ %f %d \n", snd_interval_, flow_window_size_);
 
          last_dec_seq_ = snd_curr_seqno_;
          nak_count_ = -16;
@@ -286,8 +274,6 @@ void UdtAgent::recv(Packet *pkt, Handler*)
       Packet::free(pkt);
       return;
    }
-
-//   printf("recv<> %d %d\n", udth->seqno(), rcv_curr_seqno_);
 
    if (udth->seqno() > rcv_curr_seqno_ + 1)
    {
@@ -385,8 +371,6 @@ void UdtAgent::sendCtrl(int pkttype, int lparam, int* rparam)
          ack_window_.store(ack_seqno_, rcv_last_ack_);
 
          rcv_last_ack_time_ = Scheduler::instance().clock();
-
-//         printf("----> ack %d %f %d %d\n", udth->ack(), Scheduler::instance().clock(), rcv_curr_seqno_, rcv_loss_list_->getLossLength());
       }
 
       ack_timer_.resched(ack_interval_);
@@ -513,8 +497,6 @@ void UdtAgent::sendData()
 
    local_send_ ++;
 
-//   printf("send data\n");
-
    if (probe)
    {
       snd_timer_.resched(0);
@@ -535,28 +517,10 @@ void UdtAgent::rateControl()
    if (slow_start_)
       return;
 
-/*
-   if ((local_loss_ > 0) || (slow_start_))
-   {
-      local_loss_ = 0;
-
-      return; 
-   }
-*/
-
    double inc = 0.0;
 
    if (bandwidth_ < 1.0 / snd_interval_)
       inc = 1.0/mtu_;
-/*
-   else if ((snd_interval_ > last_dec_int_) && (bandwidth_ / 9.0 < (bandwidth_ - 1.0 / snd_interval_)))
-   {
-      inc = pow(10, ceil(log10(bandwidth_ / 9.0 * mtu_ * 8))) * 0.0000015 / mtu_;
-
-      if (inc < 1.0/mtu_)
-         inc = 1.0/mtu_;
-   }
-*/
    else
    {
       inc = pow(10, ceil(log10((bandwidth_ - 1.0 / snd_interval_) * mtu_ * 8))) * 0.0000015 / mtu_;
@@ -567,18 +531,12 @@ void UdtAgent::rateControl()
 
    snd_interval_ = (snd_interval_ * syn_interval_) / (snd_interval_ * inc + syn_interval_);
 
-//   printf("inc ++ %f %f %d\n", snd_interval_, inc, flow_window_size_);
-
    if (snd_interval_ < 0.000001)
       snd_interval_ = 0.000001;
-
-   //printf("snd_interval_ %f\n", snd_interval_);
 }
 
 void UdtAgent::timeOut()
 {
-   //printf("timeout %d %d %f %f \n", snd_curr_seqno_, snd_last_ack_, exp_interval_, snd_interval_);
-
    if (snd_curr_seqno_ >= snd_last_ack_)
    {
       snd_loss_list_->insert(int(snd_last_ack_), int(snd_curr_seqno_));
@@ -1433,7 +1391,11 @@ size_(16)
    first_round_ = true;
 
    for (int i = 0; i < size_; ++ i)
-      probe_window_[i] = rtt_window_[i] = pct_window_[i] = pdt_window_[i] = 0.0;
+   {
+      pkt_window_[i] = 1.0;
+      rtt_window_[i] = pct_window_[i] = pdt_window_[i] = 0.0;
+      probe_window_[i] = 1000.0;
+   }
 
    last_arr_time_ = Scheduler::instance().clock();
 }
@@ -1453,7 +1415,7 @@ int TimeWindow::getbandwidth() const
       for (int j = i; j < size_; ++ j)
          if (probe_window_[i] > probe_window_[j])
          {
-            temp = pkt_window_[i];
+            temp = probe_window_[i];
             probe_window_[i] = probe_window_[j];
             probe_window_[j] = temp;
          }
@@ -1513,8 +1475,8 @@ bool TimeWindow::getdelaytrend() const
          pdt += pdt_window_[i];
       }
 
-   pct /= size_ - 1;
-   if (0 != pdt)
+   pct /= size_ - 1.0;
+   if (0.0 != pdt)
       pdt = (rtt_window_[(rtt_window_ptr_ - 1 + size_) % size_] - rtt_window_[rtt_window_ptr_]) / pdt;
 
    return ((pct > 0.66) && (pdt > 0.45)) || ((pct > 0.54) && (pdt > 0.55));
