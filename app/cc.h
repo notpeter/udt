@@ -3,7 +3,7 @@ DISCLAIMER: The algorithms implemented using UDT/CCC in this file may be
 modified. These modifications may NOT necessarily reflect the view of
 the algorithms' original authors.
 
-Written by: Yunhong Gu <ygu@cs.uic.edu>, last updated on Mar 02, 2005.
+Written by: Yunhong Gu <ygu@cs.uic.edu>, last updated on Feb 07, 2006.
 *****************************************************************************/
 
 #include <cmath>
@@ -542,7 +542,11 @@ be set at any time by using setRate().
 class CUDPBlast: public CCC
 {
 public:
-   CUDPBlast() {m_dCWndSize = 83333.0;}
+   CUDPBlast() 
+   {
+      m_dPktSndPeriod = 1000000;
+      m_dCWndSize = 83333.0;
+   }
 
 public:
    void setRate(int mbps)

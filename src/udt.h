@@ -53,7 +53,7 @@ CUDT:           UDT
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/05/2006
+   Yunhong Gu [ygu@cs.uic.edu], last updated 02/03/2006
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -144,7 +144,9 @@ enum UDTOpt
    UDP_RCVBUF,		// UDP receiving buffer size
    UDT_MAXMSG,		// maximum datagram message size
    UDT_MSGTTL,		// time-to-live of a datagram message
-   UDT_RENDEZVOUS	// rendezvous connection mode
+   UDT_RENDEZVOUS,	// rendezvous connection mode
+   UDT_SNDTIMEO,	// send() timeout
+   UDT_RCVTIMEO		// recv() timeout
 };
 
 
@@ -1192,10 +1194,10 @@ private:
       UDT_MEM_ROUTINE m_pMemRoutine;    // function to process buffer after a complete receiving
 
       Block* m_next;                    // next block
-   }  *m_pPendingBlock, *m_pLastBlock;
+   } *m_pPendingBlock, *m_pLastBlock;
 
-   // m_pPendingBlock			// the list of pending overlapped recv buffers
-   // m_pLastBlock;			// the last block of pending buffers
+   // m_pPendingBlock:			// the list of pending overlapped recv buffers
+   // m_pLastBlock:			// the last block of pending buffers
 
    __int32 m_iPendingSize;		// total size of pending recv buffers
 };
@@ -1716,6 +1718,8 @@ private: // Options
    __int32 m_iMsgTTL;				// Time-to-live of a datagram message
    __int32 m_iIPversion;			// IP version
    bool m_bRendezvous;				// Rendezvous connection mode
+   __int32 m_iSndTimeOut;			// sending timeout in milliseconds
+   __int32 m_iRcvTimeOut;			// receiving timeout in milliseconds
 
    const __int32 m_iProbeInterval;		// Number of regular packets between two probing packet pairs
    const __int32 m_iQuickStartPkts;		// Number of packets to be sent as a quick start

@@ -71,7 +71,8 @@ data into a local memory buffer.</font></p>
 <p><font face="Verdana" size="2">On success, the actual size of received data is returned; Otherwise,
 UDT::ERROR 
 is returned and the specific error information can be retrieved by 
-<a href="error.htm">getlasterror</a>.</font></p>
+<a href="error.htm">getlasterror</a>. If UDT_RCVTIMEO is set to a positive
+value, zero will be returned if no data is received before the timer expires.</font></p>
   <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table2" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
     <tr>
       <th align="center" bgcolor="#C0C0C0" width="133">
@@ -147,6 +148,8 @@ If there is at least one non-blocking overlapped call in progress, all further
 regular <b>recv</b> (non overlapped), <a href="recvfile.htm">recvfile</a>, and
 blocking overlapped <b>recv</b> will be rejected with error number 6004. This is
 due to an implementation limitation.</font></P>
+<P><font face="Verdana" size="2">Note that, <a href="opt.htm">UDT_SNDTIMEO</a>
+does NOT apply to overlapped <b>recv</b>.</font></P>
 <H4><font face="Verdana" size="2">See Also</font></H4>
 <P><b><font face="Verdana" size="2"><a href="select.htm">select</a></font></b><font face="Verdana" size="2"><b>, 
 <a href="send.htm">send</a>, <a href="sendfile.htm">sendfile</a>, <a href="recvfile.htm">recvfile</a>,

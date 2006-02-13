@@ -38,7 +38,7 @@ UDT packet definition: packet.h
 
 /****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/04/2006
+   Yunhong Gu [ygu@cs.uic.edu], last updated 02/06/2006
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -79,8 +79,8 @@ using namespace std;
 
 CChannel::CChannel():
 m_iIPversion(AF_INET),
-m_iSndBufSize(102400),
-m_iRcvBufSize(409600),
+m_iSndBufSize(65536),
+m_iRcvBufSize(65536),
 m_pcChannelBuf(NULL)
 {
    m_pcChannelBuf = new char [9000];
@@ -88,8 +88,8 @@ m_pcChannelBuf(NULL)
 
 CChannel::CChannel(const __int32& version):
 m_iIPversion(version),
-m_iSndBufSize(102400),
-m_iRcvBufSize(409600),
+m_iSndBufSize(65536),
+m_iRcvBufSize(65536),
 m_pcChannelBuf(NULL)
 {
    m_pcChannelBuf = new char [9000];
@@ -338,7 +338,7 @@ __int32 CChannel::recvfrom(CPacket& packet, sockaddr* addr) const
 
 __int32 CChannel::getSndBufSize()
 {
-   socklen_t size;
+   socklen_t size = sizeof(__int32);
 
    #ifndef CAPI
       getsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, &size);
@@ -351,7 +351,7 @@ __int32 CChannel::getSndBufSize()
 
 __int32 CChannel::getRcvBufSize()
 {
-   socklen_t size;
+   socklen_t size = sizeof(__int32);
 
    #ifndef CAPI
       getsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, &size);

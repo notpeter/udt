@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 
    if (UDT::ERROR == UDT::send(fhandle, (char*)&len, sizeof(int), 0))
    {
-      cout << "sned: " << UDT::getlasterror().getErrorMessage() << endl;
+      cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
 

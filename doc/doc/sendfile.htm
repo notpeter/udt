@@ -102,7 +102,8 @@ i.e., the peer side can use either <a href="recv.htm">recv</a> or
 <a href="recvfile.htm">recvfile</a> to receive data, no matter <a href="send.htm">
 send</a> or <b>sendfile</b> is used at the other side.</font></P>
 <P><font face="Verdana" size="2"><b>sendfile</b> is always in blocking mode. The
-<a href="opt.htm">UDT_SNDSYN</a> option only affects <a href="send.htm">send</a>.</font></P>
+<a href="opt.htm">UDT_SNDSYN</a> option only affects <a href="send.htm">send</a>.
+In addition, <a href="opt.htm">UDT_SNDTIMEO</a> does not apply to this method.</font></P>
 <H4><font face="Verdana" size="2">See Also</font></H4>
 <P><font face="Verdana" size="2"><b>
 <a href="recv.htm">recv</a>, <a href="recvfile.htm">recvfile</a></b></font></P>

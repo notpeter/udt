@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
       cout << "recv: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
+   file[len] = '\0';
 
 
    // open the file
