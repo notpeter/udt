@@ -48,7 +48,7 @@ libudt.so: $(OBJS)
 ifneq ($(os), BSD)
 	$(C++) -shared -o $@ $^
 else
-	libtool -dynamic -o libudt.dylib -lgcc -lstdc++ -lpthread -lm $^
+	$(C++) -dynamiclib -o libudt.dylib -lstdc++ -lpthread -lm $^
 endif
 
 libudt.a: $(OBJS)

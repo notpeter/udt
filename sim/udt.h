@@ -99,17 +99,15 @@ protected:
 };
 
 
-#define __int32 int
-
-class CList
+class LossList
 {
 protected:
-   const bool greaterthan(const __int32& seqno1, const __int32& seqno2) const;
-   const bool lessthan(const __int32& seqno1, const __int32& seqno2) const;
-   const bool notlessthan(const __int32& seqno1, const __int32& seqno2) const;
-   const bool notgreaterthan(const __int32& seqno1, const __int32& seqno2) const;
+   const bool greaterthan(const int& seqno1, const int& seqno2) const;
+   const bool lessthan(const int& seqno1, const int& seqno2) const;
+   const bool notlessthan(const int& seqno1, const int& seqno2) const;
+   const bool notgreaterthan(const int& seqno1, const int& seqno2) const;
 
-   const __int32 getLength(const __int32& seqno1, const __int32& seqno2) const;
+   const int32 getLength(const int& seqno1, const int& seqno2) const;
 
    const __int32 incSeqNo(const __int32& seqno) const;
    const __int32 decSeqNo(const __int32& seqno) const;

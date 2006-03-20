@@ -32,7 +32,7 @@ reference: UDT programming manual and socket programming reference
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/05/2006
+   Yunhong Gu [ygu@cs.uic.edu], last updated 03/13/2006
 
 modified by
    <programmer's name, programmer's email, last updated mm/dd/yyyy>
@@ -713,7 +713,6 @@ __int32 CUDTUnited::select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds,
    timeval entertime, currtime;
 
    gettimeofday(&entertime, 0);
-   gettimeofday(&currtime, 0);
 
    __int64 to;
    if (NULL == timeout)
