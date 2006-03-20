@@ -1,8 +1,8 @@
 /*****************************************************************************
-Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-UDP-based Data Transfer Library (UDT) version 2
+UDP-based Data Transfer Library (UDT) version 3
 
 Laboratory for Advanced Computing (LAC)
 National Center for Data Mining (NCDM)
@@ -32,11 +32,7 @@ A UDT packet is a 2-dimension vector of packet header and data.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 02/06/2005
-
-modified by
-   <programmer's name, programmer's email, last updated mm/dd/yyyy>
-   <descrition of changes>
+   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
 *****************************************************************************/
 
 
@@ -54,7 +50,9 @@ modified by
 //    0                   1                   2                   3
 //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |0|                         Sequence Number                     |
+//   |0|                        Sequence Number                      |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |ff |o|                     Message Number                      |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //   |                          Time Stamp                           |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -62,49 +60,58 @@ modified by
 //   bit 0:
 //      0: Data Packet
 //      1: Control Packet
+//   bit ff:
+//      11: solo message packet
+//      10: first packet of a message
+//      01: last packet of a message
+//   bit o:
+//      0: in order delivery not required
+//      1: in order delivery required
 //
 //    0                   1                   2                   3
 //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//   |1|type |        Reserved       |           ACK Seq. No.        |
+//   |1|            Type             |             Reserved          |
+//   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//   |                       Additional Info                         |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //   |                          Time Stamp                           |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //
-//   bit 1-3:
-//      000: Protocol Connection Handshake
-//              bits 16-31:   Undefined
+//   bit 1-15:
+//      0: Protocol Connection Handshake
+//              Add. Info:    Undefined
 //              Control Info: Handshake information (see CHandShake)
-//      001: Keep-alive
-//              bits 16-31:   Undefined
+//      1: Keep-alive
+//              Add. Info:    Undefined
 //              Control Info: None
-//      010: Acknowledgement (ACK)
-//              bits 16-31:   The ACK sequence number
+//      2: Acknowledgement (ACK)
+//              Add. Info:    The ACK sequence number
 //              Control Info: The sequence number to which (but not include) all the previous packets have beed received
 //              Optional:     RTT
 //                            RTT Variance
 //                            advertised flow window size (number of packets)
 //                            estimated bandwidth (number of packets per second)
-//      011: Negative Acknowledgement (NAK)
-//              bits 16-31:   Undefined
+//      3: Negative Acknowledgement (NAK)
+//              Add. Info:    Undefined
 //              Control Info: Loss list (see loss list coding below)
-//      100: Congestion Warning
-//              bits 16-31:   Undefined
+//      4: Congestion Warning
+//              Add. Info:    Undefined
 //              Control Info: None
-//      101: Shutdown
-//              bits 16-31:   Undefined
+//      5: Shutdown
+//              Add. Info:    Undefined
 //              Control Info: None
-//      110: Acknowledgement of Acknowledement (ACK-square)
-//              bits 16-31:   The ACK sequence number
+//      6: Acknowledgement of Acknowledement (ACK-square)
+//              Add. Info:    The ACK sequence number
 //              Control Info: None
-//      111: Explained by bits 4 - 15
+//      7: Message Drop Request
+//              Add. Info:    Message ID
+//              Control Info: first sequence number of the message
+//                            last seqeunce number of the message
+//      65535: Explained by bits 16 - 31
 //              
-//   bit 4 - 15:
+//   bit 16 - 31:
 //      This space is used for future expansion or user defined control packets. 
-//      Although a user defined packets can use this space freely, it is highly
-//      recommended that lower bit is chosen first, i.e., starting from 0xFFF
-//      for bits 4 - 15. For example, if a customized protocol need to add two 
-//      new types of packets, 0xFFF and 0xFFE is recommended.
 //
 //    0                   1                   2                   3
 //    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -124,12 +131,14 @@ modified by
 //      For any single loss or consectutive loss less than 2 packets, use
 //      the original sequence numbers in the field.
 
-#include "udt.h"
+
+#include "packet.h"
 
 // Set up the aliases in the constructure
 CPacket::CPacket():
 m_iSeqNo((__int32&)(m_nHeader[0])),
-m_iTimeStamp((__int32&)(m_nHeader[1])),
+m_iMsgNo((__int32&)(m_nHeader[1])),
+m_iTimeStamp((__int32&)(m_nHeader[2])),
 m_pcData((char*&)(m_PacketVector[1].iov_base))
 {
    m_PacketVector[0].iov_base = (char *)m_nHeader;
@@ -152,16 +161,16 @@ void CPacket::setLength(const __int32& len)
 
 void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __int32& size)
 {
-   // Set (bit-0 = 1) and (bit-1~3 = type)
-   m_nHeader[0] = 0x80000000 | (pkttype << 28);
+   // Set (bit-0 = 1) and (bit-1~15 = type)
+   m_nHeader[0] = 0x80000000 | (pkttype << 16);
 
-   // Set bit-16~31 and control information field
+   // Set additional information and control information field
    switch (pkttype)
    {
-   case 2: //010 - Acknowledgement (ACK)
+   case 2: //0010 - Acknowledgement (ACK)
       // ACK packet seq. no.
       if (NULL != lparam)
-         m_nHeader[0] |= *(__int32 *)lparam;
+         m_nHeader[1] = *(__int32 *)lparam;
 
       // data ACK seq. no. 
       // optional: RTT (microsends), RTT variance (microseconds) advertised flow window size (packets), and estimated link capacity (packets per second)
@@ -170,9 +179,9 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
 
       break;
 
-   case 6: //110 - Acknowledgement of Acknowledgement (ACK-2)
+   case 6: //0110 - Acknowledgement of Acknowledgement (ACK-2)
       // ACK packet seq. no.
-      m_nHeader[0] |= *(__int32 *)lparam;
+      m_nHeader[1] = *(__int32 *)lparam;
 
       // control info field should be none
       // but "writev" does not allow this
@@ -181,14 +190,14 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
 
       break;
 
-   case 3: //011 - Loss Report (NAK)
+   case 3: //0011 - Loss Report (NAK)
       // loss list
       m_PacketVector[1].iov_base = (char *)rparam;
       m_PacketVector[1].iov_len = size;
 
       break;
 
-   case 4: //100 - Congestion Warning
+   case 4: //0100 - Congestion Warning
       // control info field should be none
       // but "writev" does not allow this
       m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
@@ -196,7 +205,7 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
   
       break;
 
-   case 1: //001 - Keep-alive
+   case 1: //0001 - Keep-alive
       // control info field should be none
       // but "writev" does not allow this
       m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
@@ -204,14 +213,14 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
 
       break;
 
-   case 0: //000 - Handshake
+   case 0: //0000 - Handshake
       // control info filed is handshake info
       m_PacketVector[1].iov_base = (char *)rparam;
       m_PacketVector[1].iov_len = size; //sizeof(CHandShake);
 
       break;
 
-   case 5: //101 - Shutdown
+   case 5: //0101 - Shutdown
       // control info field should be none
       // but "writev" does not allow this
       m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
@@ -219,7 +228,17 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
 
       break;
 
-   case 7: //111 - Reserved for user defined control packets
+   case 7: //0111 - Message Drop Request
+      // msg id 
+      m_nHeader[1] = *(__int32 *)lparam;
+
+      //first seq no, last seq no
+      m_PacketVector[1].iov_base = (char *)rparam;
+      m_PacketVector[1].iov_len = size;
+
+      break;
+
+   case 65535: //0x7FFF - Reserved for user defined control packets
       // for extended control packet
       // "lparam" contains the extneded type information for bit 4 - 15
       // "rparam" is the control information
@@ -256,18 +275,36 @@ __int32 CPacket::getFlag() const
 
 __int32 CPacket::getType() const
 {
-   // read bit 1~3
-   return (m_nHeader[0] >> 28) & 0x00000007;
+   // read bit 1~15
+   return (m_nHeader[0] >> 16) & 0x00007FFF;
 }
 
 __int32 CPacket::getExtendedType() const
 {
-   // read bit 4~16
-   return (m_nHeader[0] >> 16) & 0x00000FFF;
+   // read bit 16~31
+   return m_nHeader[0] & 0x0000FFFF;
 }
 
 __int32 CPacket::getAckSeqNo() const
 {
-   // read bit 16~31
-   return m_nHeader[0] & 0x0000FFFF;
+   // read additional information field
+   return m_nHeader[1];
+}
+
+__int32 CPacket::getMsgBoundary() const
+{
+   // read [1] bit 0~1
+   return m_nHeader[1] >> 30;
+}
+
+__int32 CPacket::getMsgOrderFlag() const
+{
+   // read [1] bit 2
+   return (m_nHeader[1] >> 29) & 1;
+}
+
+__int32 CPacket::getMsgSeq() const
+{
+   // read [1] bit 3~31
+   return m_nHeader[1] & 0x1FFFFFFF;
 }

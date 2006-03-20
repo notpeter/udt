@@ -60,14 +60,16 @@ initTree("<B>UDT Documentation<\/B>","*", "intro.htm");
  sub_Page("Installation|Make and Install UDT",          "b", "make.htm");
  sub_Page("Simulation|Simulate UDT on NS-2",            "c", "sim.htm");
  sub_Book("Tutorial",            						"d", "tutorial.htm");
-  sub_Page("Introduction|Introduction to UDT programming",        "da","t-intro.htm");
-  sub_Page("Hello World|A simple UDT example",            	  	  "db","t-hello.htm");
-  sub_Page("Configuration|Read and set UDT options",              "dc","t-config.htm");
-  sub_Page("Transfer Data|Sending / Receiving data",              "dd","t-data.htm");
-  sub_Page("Transfer File|Sending / Receiving files",             "de","t-file.htm");
-  sub_Page("Handling Firewalls|Handling Firewalls",               "df","t-firewall.htm");
-  sub_Page("Error Handling|Handle Error and Exceptions",          "dg","t-error.htm");
-  lastPage("Config Congestion Control|Add 3rd Party Congestion Control Algorithm",          "dh","t-cc.htm");
+  sub_Page("Transition from UDT2|Transition from UDT2",                  "da","t-udt2.htm");
+  sub_Page("Introduction|Introduction to UDT programming",        "db","t-intro.htm");
+  sub_Page("Hello World|A simple UDT example",            	  	  "dc","t-hello.htm");
+  sub_Page("Configuration|Read and set UDT options",              "dd","t-config.htm");
+  sub_Page("Transfer Data|Sending / Receiving data",              "de","t-data.htm");
+  sub_Page("Messaging with Partial Reliability|Messaging with Partial Reliability",               "df","t-msg.htm");
+  sub_Page("Transfer File|Sending / Receiving files",             "dg","t-file.htm");
+  sub_Page("Handling Firewalls|Handling Firewalls",               "dh","t-firewall.htm");
+  sub_Page("Error Handling|Handle Error and Exceptions",          "di","t-error.htm");
+  lastPage("Config Congestion Control|Add 3rd Party Congestion Control Algorithm",          "dj","t-cc.htm");
  end_Book();
  sub_Book("Reference",           "e", "reference.htm");
   sub_Book("UDT Functions",            "ea", "function.htm");
@@ -84,12 +86,14 @@ initTree("<B>UDT Documentation<\/B>","*", "intro.htm");
    sub_Page("perfmon|perfmon",                     "eak","trace.htm");
    sub_Page("recv|recv", 						   "eal","recv.htm");
    sub_Page("recvfile|recvfile", 				   "eam","recvfile.htm");
-   sub_Page("select|select", 				       "ean","select.htm");
-   sub_Page("send|send", 				   		   "eao","send.htm");
-   sub_Page("sendfile|sendfile", 				   "eap","sendfile.htm");
-   sub_Page("setsockopt|setsockopt", 			   "eaq","opt.htm");
-   sub_Page("shutdown|shutdown",                   "ear","shutdown.htm");
-   lastPage("socket|socket",                   	   "eas","socket.htm");
+   sub_Page("recvmsg|recvmsg", 				           "ean","recvmsg.htm");
+   sub_Page("select|select", 				       "eao","select.htm");
+   sub_Page("send|send", 				   		   "eap","send.htm");
+   sub_Page("sendfile|sendfile", 				   "eaq","sendfile.htm");
+   sub_Page("sendmsg|sendmsg", 				           "ear","sendmsg.htm");
+   sub_Page("setsockopt|setsockopt", 			   "eas","opt.htm");
+   sub_Page("shutdown|shutdown",                   "eat","shutdown.htm");
+   lastPage("socket|socket",                   	   "ear","socket.htm");
   end_Book();
   sub_Page("UDT Structures", 			"eb","structure.htm");
   sub_Page("Congestion Control Class", 	"ec","ccc.htm");
@@ -407,7 +411,7 @@ function openAll() { if (isDHTML) { for (var i = 1; i <= TVcount; i++)
 // end-hide --> 
 </SCRIPT>
 <DIV ID="waitMsg" STYLE="cursor:wait; position:absolute; left:1; height:80; width:204; display:none; top:3">
-<TABLE HEIGHT="100%" WIDTH="100%"><TR><TD width="100%" height="100%">&nbsp;</TD></TR></TABLE>
+<TABLE HEIGHT="100%" WIDTH="100%"><TR><TD width="100%" height="100%">¡¡</TD></TR></TABLE>
 </DIV>
 </BODY>
 </HTML>

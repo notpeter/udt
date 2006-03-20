@@ -2,8 +2,6 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
@@ -24,41 +22,46 @@ read and set up UDT options, respectively.</font></p>
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">int getsockopt(<br>
-&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>
-&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">level</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-&nbsp; SOCKOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-&nbsp; char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optval</a></font>, <br>
-&nbsp; int *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optlen</a></font>&nbsp; <br>
-	);</font></p>
+    <font face="Courier New" size="1">int getsockopt(</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">level</a></font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; SOCKOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optval</a></font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; int *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optlen</a></font></font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">);</font></p>
 	<p style="margin-top: 0; margin-bottom: 0">
     &nbsp;</p>
-    <p style="margin-top: 0; margin-bottom: 0">
-	<font face="Courier New" size="1">int setsockopt(<br>
-&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">level</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-&nbsp; SOCKOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-&nbsp; const char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optval</a></font>,&nbsp;
-	<br>
-&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optlen</a></font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-	);</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">int setsockopt(</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">level</a></font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; SOCKOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; const char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optval</a></font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optlen</a></font></font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">);</font></p>
     </td>
   </tr>
 </table>
 <h4><font face="Verdana" size="2">Parameters</font></h4>
 <dl>
-	<dt><i><font face="Verdana" size="2">u </font></i> </dt>
+	<dt><i><font face="Verdana" size="2">u</font></i></dt>
 	<dd><font face="Verdana" size="2">[in] Descriptor identifying an listening 
 	socket. </font></dd>
-	<dt><i><font face="Verdana" size="2">level </font></i> </dt>
+	<dt><i><font face="Verdana" size="2">level</font></i></dt>
 	<dd><font face="Verdana" size="2">[in] Ignored. For compatibility use only. </font></dd>
-	<dt><i><font face="Verdana" size="2">optName </font></i></dt>
+	<dt><i><font face="Verdana" size="2">optName</font></i></dt>
 	<dd><font face="Verdana" size="2">[in] The <font color="#008000">enum</font> 
   name of UDT option. The names and meanings are listed in the table below:</font></dd>
 	<dt>&nbsp;</dt>

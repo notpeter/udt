@@ -2,8 +2,6 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
@@ -17,17 +15,13 @@ example applications, simulation scripts, and documentation. Currently the
 source code can be compiled on Linux, BSD, Solaris, and Windows system.</font></p>
 <p><font face="Verdana">Here is the content of the distribution:</font></p>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana">
-<font color="#000080">./src</font>: UDT 
-source code</font></p>
+<font color="#000080">./src</font>: UDT source code</font></p>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana">
-<font color="#000080">./app</font>: Example 
-applications</font></p>
+<font color="#000080">./app</font>: Example applications</font></p>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana">
-<font color="#000080">./sim</font>: NS-2 
-simulation scripts</font></p>
+<font color="#000080">./sim</font>: NS-2 simulation scripts</font></p>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana">
-<font color="#000080">./doc</font>: UDT 
-documentation</font></p>
+<font color="#000080">./doc</font>: UDT documentation</font></p>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana">
 <font color="#000080">./win</font>: Windows version of UDT</font></p>
 <p><font face="Verdana">The library is in the original source code format 
@@ -48,8 +42,6 @@ Note that it is case sensitive. There is a default value for Linux on the IA32
 architecture, so if UDT is compiled on it, simply use
 <font color="#FF0000">make</font>.</font></p>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2">On 
-UNIX, use <font color="#FF0000">make -f Makefile.unix</font>.</font></p>
-<p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2">On 
 Windows, use the Visual Studio .Net project files at ./win directory.</font></p>
 <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2">After a successful make, you can begin to use the UDT 
@@ -67,24 +59,15 @@ the library path environment variable must be updated as:</font></p>
 of libudt.so&gt;:$LD_LIBRARY_PATH</font></p>
 
 <p><b><font face="Verdana" size="2"><a name="DTRACE"></a>Note:</font></b></p>
-<p><font face="Verdana" size="2">1. To enable 
-the performance trace function, please uncomment the -DTRACE 
-compile option in ./src/Makefile. If you do not need this, it is recommended
-that you close this option.</font></p>
-
-<p><font face="Verdana" size="2">2. By default, UDT implements a busy waiting 
-rate control, which may take 99% CPU time. If there are other computations in 
-the system, UDT will yield to allow other applications to have a fair share of 
-CPU time. However, if you wish to avoid this busy waiting, enable the -DNO_BUSY_WAITING 
-option in related ./src/Makefile. The latter choice will have slight performance 
-drop.</font></p>
-<p><font face="Verdana" size="2">3. If you need to configure congestion control
+<p><font face="Verdana" size="2">1. By default, UDT uses the non-busy-waiting 
+data sending in order to reduce CPU usage. You may turn off the -DNO_BUSY_WAITING 
+option in ./src/Makefile, which may lead to better performance.</font></p>
+<p><font face="Verdana" size="2">2. If you need to configure congestion control
 algorithms, please uncomment the -DCUSTOM_CC compile option in ./src/Makefile.
 When this option is enabled, -DNO_BUSY_WAITIING is always disabled.</font></p>
-<p><font face="Verdana" size="2">4. By compiling UDT with -DCAPI option, a set 
-of standard socket API will be enclosed in libudt.so, which can be linked to 
-your application so that it can use UDT without any changes. Currently this 
-feature is only available on Linux. On other system, this option has no effects.</font></p>
+<p><font face="Verdana" size="2">3. UDT has been compiled on UNIX 
+systems. However, no thorough testing has been done on UNIX. Please contact the 
+developer directly for more information.</font></p>
 
 </body>
 

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding = "Windows-1252"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.00"
+	Version="7.10"
 	Name="udt"
 	ProjectGUID="{D84D100A-7C21-4CCB-B16E-0FB37137C16C}">
 	<Platforms>
@@ -56,7 +56,13 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -67,7 +73,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/GS"
 				Optimization="2"
-				InlineFunctionExpansion="1"
+				InlineFunctionExpansion="2"
+				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;UDT_EXPORTS;TRACE;NO_BUSY_WAITING"
 				MinimalRebuild="FALSE"
@@ -104,9 +111,17 @@
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
 				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
+	<References>
+	</References>
 	<Files>
 		<Filter
 			Name="Source Files"
@@ -118,10 +133,16 @@
 				RelativePath="..\src\buffer.cpp">
 			</File>
 			<File
+				RelativePath="..\src\ccc.cpp">
+			</File>
+			<File
 				RelativePath="..\src\channel.cpp">
 			</File>
 			<File
 				RelativePath="..\src\common.cpp">
+			</File>
+			<File
+				RelativePath="..\src\core.cpp">
 			</File>
 			<File
 				RelativePath="..\src\list.cpp">
@@ -130,14 +151,41 @@
 				RelativePath="..\src\packet.cpp">
 			</File>
 			<File
-				RelativePath="..\src\udt.cpp">
+				RelativePath="..\src\window.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc">
 			<File
+				RelativePath="..\src\api.h">
+			</File>
+			<File
+				RelativePath="..\src\buffer.h">
+			</File>
+			<File
+				RelativePath="..\src\ccc.h">
+			</File>
+			<File
+				RelativePath="..\src\channel.h">
+			</File>
+			<File
+				RelativePath="..\src\common.h">
+			</File>
+			<File
+				RelativePath="..\src\core.h">
+			</File>
+			<File
+				RelativePath="..\src\list.h">
+			</File>
+			<File
+				RelativePath="..\src\packet.h">
+			</File>
+			<File
 				RelativePath="..\src\udt.h">
+			</File>
+			<File
+				RelativePath="..\src\window.h">
 			</File>
 		</Filter>
 		<Filter

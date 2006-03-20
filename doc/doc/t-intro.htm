@@ -2,8 +2,6 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
@@ -31,18 +29,17 @@ socket API. That is, you can easily translate a network application that was usi
 socket API into a new one using UDT API.</font></p>
 <p><font face="Verdana" size="2">For example:</font></p>
 <p><font face="Verdana" size="2">in socket, you write:</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table1" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table4" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
 <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">int s = socket(AF_INET, SOCK_STREAM, 0);</font></p></td>
   </tr>
 </table>
 <p><font face="Verdana" size="2">its counterpart in UDT is:</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table5" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
-<p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">UDTSOCKET u = UDT::socket(AF_INET, SOCK_STREAM, 
-0); </font></p></td>
+<p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">UDTSOCKET u = UDT::socket(AF_INET, SOCK_STREAM, 0); </font></p></td>
   </tr>
 </table>
 <p><font face="Verdana" size="2">UDT defines its own namespace <i>UDT</i> to 

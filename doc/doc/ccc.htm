@@ -2,8 +2,6 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
@@ -18,9 +16,10 @@
 </table>
 <h1><font face="Verdana" size="4">Base Congestion Control Class Structure</font></h1>
 <p><font face="Verdana" size="2">The following class <b>CCC</b>  (some details
-are omitted) is the base 
-class that a 3rd party congestion control algorithm should inherit from and 
+are omitted) is the base class that a 3rd party congestion control algorithm should inherit from and 
 overload the proper functions.</font></p>
+<p><font face="Verdana" size="2">The class definition is in ccc.h, all new 
+control algorithms definition should include this header file.</font></p>
 <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table1" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">

@@ -2,8 +2,6 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
@@ -24,20 +22,21 @@ data into a local memory buffer.</font></p>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
     <font size="1" face="Courier New">int recv(<br>
-&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-&nbsp; char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">buf</a></font>,&nbsp; <br>
-&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">len</a></font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-&nbsp; int <a class="synParam" onclick="showTip(this)"><font color="#FFFFFF">flags</font>,</a></font></p>
+&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">&nbsp; char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">buf</a></font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">len</a></font>,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font size="1" face="Courier New">&nbsp; int <a class="synParam" onclick="showTip(this)"><font color="#FFFFFF">flags</font>,</a></font></p>
 	<p style="margin-top: 0; margin-bottom: 0">
     <font face="Courier New" size="1">&nbsp; int *<font color="#FFFFFF">handle </font>
 	= NULL,</font></p>
 	<p style="margin-top: 0; margin-bottom: 0">
     <font face="Courier New" size="1">&nbsp; <a href="structure.htm#MEM">UDT_MEM_ROUTINE</a>
-	<font color="#FFFFFF">routine</font>&nbsp;= NULL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<br>
-	);</font></p>
+	<font color="#FFFFFF">routine</font>&nbsp;= NULL</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">);</font></p>
     </td>
   </tr>
 </table>
@@ -65,7 +64,7 @@ data into a local memory buffer.</font></p>
 	<dt><font face="Verdana"><i><font size="2">routine</font></i><font size="2">
 	</font></font> </dt>
 	<dd><font face="Verdana" size="2">[in] Optional. Function used to process the buffer (received data)
-	after the receving is finished. </font></dd>
+	after the receiving is finished. </font></dd>
 </dl>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
 <p><font face="Verdana" size="2">On success, the actual size of received data is returned; Otherwise,
@@ -109,6 +108,14 @@ value, zero will be returned if no data is received before the timer expires.</f
     <tr>
       <td width="133">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		5010</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		cannot use <i>recv</i> in SOCK_DGRAM mode.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		6002</font></td>
       <td width="812">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
@@ -148,7 +155,7 @@ If there is at least one non-blocking overlapped call in progress, all further
 regular <b>recv</b> (non overlapped), <a href="recvfile.htm">recvfile</a>, and
 blocking overlapped <b>recv</b> will be rejected with error number 6004. This is
 due to an implementation limitation.</font></P>
-<P><font face="Verdana" size="2">Note that, <a href="opt.htm">UDT_SNDTIMEO</a>
+<P><font face="Verdana" size="2">Note that, <a href="opt.htm">UDT_RCVTIMEO</a>
 does NOT apply to overlapped <b>recv</b>.</font></P>
 <H4><font face="Verdana" size="2">See Also</font></H4>
 <P><b><font face="Verdana" size="2"><a href="select.htm">select</a></font></b><font face="Verdana" size="2"><b>, 

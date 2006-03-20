@@ -1,9 +1,9 @@
 //
-// Author: Yunhong Gu, ygu@cs.uic.edu
+// Author: Yunhong Gu, gu@lac.uic.edu
 //
 // Descrition: the program is used to simulate UDT on NS-2
 //
-// Last Update: 05/21/03
+// Last Update: 03/20/2006
 // 
 
 
@@ -99,6 +99,7 @@ protected:
 };
 
 
+
 class LossList
 {
 protected:
@@ -107,65 +108,65 @@ protected:
    const bool notlessthan(const int& seqno1, const int& seqno2) const;
    const bool notgreaterthan(const int& seqno1, const int& seqno2) const;
 
-   const int32 getLength(const int& seqno1, const int& seqno2) const;
+   const int getLength(const int& seqno1, const int& seqno2) const;
 
-   const __int32 incSeqNo(const __int32& seqno) const;
-   const __int32 decSeqNo(const __int32& seqno) const;
+   const int incSeqNo(const int& seqno) const;
+   const int decSeqNo(const int& seqno) const;
 
 protected:
-   __int32 m_iSeqNoTH;                  // threshold for comparing seq. no.
-   __int32 m_iMaxSeqNo;                 // maximum permitted seq. no.
+   int seq_no_th_;                  // threshold for comparing seq. no.
+   int max_seq_no_;                 // maximum permitted seq. no.
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-class CSndLossList: public CList
+class SndLossList: public LossList
 {
 public:
-   CSndLossList(const __int32& size, const __int32& th, const __int32& max);
-   ~CSndLossList();
+   SndLossList(const int& size, const int& th, const int& max);
+   ~SndLossList();
 
-   __int32 insert(const __int32& seqno1, const __int32& seqno2);
-   void remove(const __int32& seqno);
-   __int32 getLossLength();
-   __int32 getLostSeq();
+   int insert(const int& seqno1, const int& seqno2);
+   void remove(const int& seqno);
+   int getLossLength();
+   int getLostSeq();
 
 private:
-   __int32* m_piData1;			// sequence number starts
-   __int32* m_piData2;			// seqnence number ends
-   __int32* m_piNext;			// next node in the list
+   int* data1_;			// sequence number starts
+   int* data2_;			// seqnence number ends
+   int* next_;			// next node in the list
 
-   __int32 m_iHead;			// first node
-   __int32 m_iLength;			// loss length
-   __int32 m_iSize;			// size of the static array
-   __int32 m_iLastInsertPos;		// position of last insert node
+   int head_;			// first node
+   int length_;			// loss length
+   int size_;			// size of the static array
+   int last_insert_pos_;		// position of last insert node
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////
-class CRcvLossList: public CList
+class RcvLossList: public LossList
 {
 public:
-   CRcvLossList(const __int32& size, const __int32& th, const __int32& max);
-   ~CRcvLossList();
+   RcvLossList(const int& size, const int& th, const int& max);
+   ~RcvLossList();
 
-   void insert(const __int32& seqno1, const __int32& seqno2);
-   bool remove(const __int32& seqno);
-   __int32 getLossLength() const;
-   __int32 getFirstLostSeq() const;
-   void getLossArray(__int32* array, __int32* len, const __int32& limit, const double& interval);
+   void insert(const int& seqno1, const int& seqno2);
+   bool remove(const int& seqno);
+   int getLossLength() const;
+   int getFirstLostSeq() const;
+   void getLossArray(int* array, int* len, const int& limit, const double& interval);
 
 private:
-   __int32* m_piData1;			// sequence number starts
-   __int32* m_piData2;			// sequence number ends
-   double* m_pLastFeedbackTime;		// last feedback time of the node
-   __int32* m_piCount;			// report counter
-   __int32* m_piNext;			// next node in the list
-   __int32* m_piPrior;			// prior node in the list;
+   int* data1_;			// sequence number starts
+   int* data2_;			// sequence number ends
+   double* last_feedback_time_;		// last feedback time of the node
+   int* count_;			// report counter
+   int* next_;			// next node in the list
+   int* prior_;			// prior node in the list;
 
-   __int32 m_iHead;			// first node in the list
-   __int32 m_iTail;			// last node in the list;
-   __int32 m_iLength;			// loss length
-   __int32 m_iSize;			// size of the static array
+   int head_;			// first node in the list
+   int tail_;			// last node in the list;
+   int length_;			// loss length
+   int size_;			// size of the static array
 };
 
 
@@ -261,8 +262,8 @@ protected:
    int max_flow_window_;
    int flow_window_size_;
    
-   CSndLossList* snd_loss_list_;
-   CRcvLossList* rcv_loss_list_;
+   SndLossList* snd_loss_list_;
+   RcvLossList* rcv_loss_list_;
 
    double snd_interval_;
 

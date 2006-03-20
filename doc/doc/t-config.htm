@@ -2,8 +2,6 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
@@ -31,29 +29,30 @@ be exactly equal to 9000, and the other must not be less than 9000.</font></p>
 synchronization mode from traditional sockets. It can set the sending and 
 receiving synchronization independently, which allows more flexibility. However, 
 UDT does not allow non-blocking operation on connection setup and close.</font></p>
-<p><font face="Verdana" size="2">The maximum flow window size UDT_FC is similar 
-to the maximum TCP window size. Flow control is something like the TCP window 
-control. The UDT_FC option sets up the maximum window size, or the 
-maximum number of unacknowledged packets. A sound value should be <i>bandwidth * (RTT + <font color="#008000">0.01</font>)</i> 
-/ <i>MSS</i> or greater.&nbsp; 
-A smaller value will limit the performance. Note that the UDT_FC is used to 
-limit the maximum flow window size of the peer side; that is, the setting should 
-be done at the receiving side in order to limit the sending side flow window.</p>
+<font face="Verdana" size="2">
 <p>The UDT buffer size is used to limit the size of temporary storage of 
 sending/receiving data. The sending buffer size is only a limit. Memory is 
 allocated upon necessary. The receiving buffer is statically allocated and the 
 same amount of memory is allocated to the UDT throughout the UDT life. 
 Generally, larger buffer (but not so large that the physical memory is used up) 
-is better for performance.</p>
+is better for performance the the buffer sizes for both sides should be at least 
+Bandwidth*RTT.</p>
 <p>UDT uses UDP as the data channel, so the UDP buffer size affects the performance. 
 Again, a larger value is generally better, but the effects become smaller and 
-disappear as the buffer size increases. Generally, the sending buffer size should be 
-smaller than the receiving buffer size.</p>
+disappear as the buffer size increases. Generally, the sending buffer size can be 
+a small value, because it does not limit the packet sending much but a large 
+value will increase the delay. On the other hand, the receiving buffer size 
+should not be less than the UDT receiver buffer size, in order that the flow 
+control is effective.</p>
+<p>UDT_FC is actually an internal parameter and you should set it to not less 
+than UDT_RCVBUF/UDT_MSS.</p>
 <p>UDT_LINGER is similar to the SO_LINGER option on the regular sockets.</p>
-<p style="margin-top: 0; margin-bottom: 0"><b><font face="Verdana" size="2">
-Example: read current UDT settings</font></b></p>
+<p>UDT_RENDEZVOUS is used to enable rendezvous connection setup.</p>
+<p>UDT_SNDTIMEO and UDT_RCVTIMEO are similar to SO_SNDTIMEO and SO_RCVTIMEO, 
+respectively.</p>
+<p style="margin-top: 0; margin-bottom: 0"><b>Example: read current UDT settings</b></p>
 <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
@@ -66,10 +65,9 @@ Example: read current UDT settings</font></b></p>
   </tr>
 </table>
 <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
-<p style="margin-top: 0; margin-bottom: 0"><b><font face="Verdana" size="2">
-Example: modify UDT settings</font></b></p>
+<p style="margin-top: 0; margin-bottom: 0"><b>Example: modify UDT settings</b></p>
 <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber3" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table3" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
@@ -81,11 +79,6 @@ Example: modify UDT settings</font></b></p>
     <p><font face="Courier New" size="1">UDT::setsockopt(u, UDT_SNDSYN, 0, &amp;block, sizeof(bool));</font></td>
   </tr>
 </table>
-<p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
-<br>
-&nbsp;</font></p>
-
-</font>
 
 </body>
 

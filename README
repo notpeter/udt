@@ -1,17 +1,9 @@
-Copyright © 2001 - 2005, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 Please read the COPYRIGHT information in the current directory carefully.
 
 Visit http://udt.sf.net for most recent news about UDT.
-
-------------------------------------------------------------------------------- 
-NOTE for performance testing: 
-If you want to test UDT's performance, please read carefully the documentation 
-of UDT::setsockopt, UDT::perfmon, and the tutorial on how to tune UDT's 
-performance (in ./doc directory). The example program of appserver and 
-appclient may be ready for your testing (or with simple modification). 
-------------------------------------------------------------------------------- 
 
 Tarball releases on SourceForge will have the most recent, thoroughly tested 
 version of the software. However, you may go to the SourceForge CVS area for 
@@ -37,11 +29,10 @@ YYY: [IA32(default), POWERPC, IA64, AMD64]
 For example, on OS X, you need to do "make -e os=BSD arch=POWERPC"; on 32-bit 
 Linux system, simply use "make".
 
-On UNIX systems, use: make -f Makefile.unix 
-On Windows systems, use the Visual Studio .NET project files in ./win directory. 
+On Windows systems, use the Visual Studio .NET project files in ./win directory.
 
-For more compile options (TRACE, NO_BUSY_WAITING, CUSTOM_CC, and CAPI), please 
-see UDT documenation: Installation.
+For more compile options (NO_BUSY_WAITING and CUSTOM_CC), please see UDT 
+documenation: Installation.
 
 
 To use UDT in your application: 
@@ -53,10 +44,19 @@ To report bugs, request new features, or make a contribution to the software:
 visit http://sourceforge.net/projects/udt/ 
 
 
-Join the discussion mailing list: 
+Join the discussion mailing list or post to the discussion forum: 
 http://lists.sourceforge.net/lists/listinfo/udt-general 
+http://sourceforge.net/forum/?group_id=115059
 
 
-To query technical/research issues about the protocol: 
-write to: Yunhong Gu [gu@lac.uic.edu] 
+NOTE:
+In order to help more users to easily find answers about UDT usage and help to 
+increase the activity of this project, please send all general questions to the 
+mailing list or post it to the forum. The mailing list and forum is monitored by 
+the UDT developer and your questions will be replied as soon as possible (
+usually within 24 hours.) For complicated issues, the developer would like to 
+set up an MSN conversation with you to investigate the problems, if necessary.
 
+However, if you are one of our collaborators or if your questions contain 
+sensitive information about your projects, feel free to send emails to the 
+developer directly.

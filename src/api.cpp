@@ -2,7 +2,7 @@
 Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-UDP-based Data Transfer Library (UDT) version 2
+UDP-based Data Transfer Library (UDT) version 3
 
 Laboratory for Advanced Computing (LAC)
 National Center for Data Mining (NCDM)
@@ -32,13 +32,8 @@ reference: UDT programming manual and socket programming reference
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 03/13/2006
-
-modified by
-   <programmer's name, programmer's email, last updated mm/dd/yyyy>
-   <descrition of changes>
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/14/2006
 *****************************************************************************/
-
 
 #ifndef WIN32
    #include <unistd.h>
@@ -46,8 +41,9 @@ modified by
    #include <winsock2.h>
    #include <ws2tcpip.h>
 #endif
+#include "api.h"
+#include "core.h"
 
-#include "udt.h"
 
 CUDTSocket::CUDTSocket():
 m_pSelfAddr(NULL),
@@ -99,6 +95,7 @@ CUDTSocket::~CUDTSocket()
    #endif
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
 CUDTUnited::CUDTUnited():
 m_SocketID(1 << 30)
@@ -154,6 +151,9 @@ UDTSOCKET CUDTUnited::newSocket(const __int32& af, const __int32& type)
 {
    // garbage collection before a new socket is created
    checkBrokenSockets();
+
+   if ((type != SOCK_STREAM) && (type != SOCK_DGRAM))
+      throw CUDTException(5, 3, 0);
 
    CUDTSocket* ns = NULL;
 
@@ -980,8 +980,8 @@ CUDTException* CUDTUnited::getError()
    #endif
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-//
 UDTSOCKET CUDT::socket(int af, int type, int)
 {
    try
@@ -1255,6 +1255,51 @@ int CUDT::recv(UDTSOCKET u, char* buf, int len, int, int* handle, UDT_MEM_ROUTIN
    }
 }
 
+int CUDT::sendmsg(UDTSOCKET u, const char* buf, int len, int ttl, bool inorder)
+{
+   try
+   {
+      CUDT* udt = s_UDTUnited.lookup(u);
+
+      return udt->sendmsg((char*)buf, len, ttl, inorder);
+   }
+   catch (CUDTException e)
+   {
+      s_UDTUnited.setError(new CUDTException(e));
+      return ERROR;
+   }
+   catch (bad_alloc&)
+   {
+      s_UDTUnited.setError(new CUDTException(3, 2, 0));
+      return ERROR;
+   }
+   catch (...)
+   {
+      s_UDTUnited.setError(new CUDTException(-1, 0, 0));
+      return ERROR;
+   }
+}
+
+int CUDT::recvmsg(UDTSOCKET u, char* buf, int len)
+{
+   try
+   {
+      CUDT* udt = s_UDTUnited.lookup(u);
+
+      return udt->recvmsg(buf, len);
+   }
+   catch (CUDTException e)
+   {
+      s_UDTUnited.setError(new CUDTException(e));
+      return ERROR;
+   }
+   catch (...)
+   {
+      s_UDTUnited.setError(new CUDTException(-1, 0, 0));
+      return ERROR;
+   }
+}
+
 __int64 CUDT::sendfile(UDTSOCKET u, ifstream& ifs, const __int64& offset, __int64& size, const int& block)
 {
    try
@@ -1359,7 +1404,6 @@ CUDTException& CUDT::getlasterror()
 
 int CUDT::perfmon(UDTSOCKET u, CPerfMon* perf, bool clear)
 {
-#ifdef TRACE
    try
    {
       CUDT* udt = s_UDTUnited.lookup(u);
@@ -1378,13 +1422,125 @@ int CUDT::perfmon(UDTSOCKET u, CPerfMon* perf, bool clear)
       s_UDTUnited.setError(new CUDTException(-1, 0, 0));
       return ERROR;
    }
-#else
-   s_UDTUnited.setError(new CUDTException(5, 0, 0));
-   return ERROR;
-#endif
 }
 
 bool CUDT::isUSock(UDTSOCKET u)
 {
    return (NULL != s_UDTUnited.lookup(u));
+}
+
+CUDT* CUDT::getUDTHandle(UDTSOCKET u)
+{
+   return s_UDTUnited.lookup(u);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+namespace UDT
+{
+UDTSOCKET socket(int af, int type, int protocol)
+{
+   return CUDT::socket(af, type, protocol);
+}
+
+int bind(UDTSOCKET u, const struct sockaddr* name, int namelen)
+{
+   return CUDT::bind(u, name, namelen);
+}
+
+int listen(UDTSOCKET u, int backlog)
+{
+   return CUDT::listen(u, backlog);
+}
+
+UDTSOCKET accept(UDTSOCKET u, struct sockaddr* addr, int* addrlen)
+{
+   return CUDT::accept(u, addr, addrlen);
+}
+
+int connect(UDTSOCKET u, const struct sockaddr* name, int namelen)
+{
+   return CUDT::connect(u, name, namelen);
+}
+
+int close(UDTSOCKET u)
+{
+   return CUDT::close(u);
+}
+
+int getpeername(UDTSOCKET u, struct sockaddr* name, int* namelen)
+{
+   return CUDT::getpeername(u, name, namelen);
+}
+
+int getsockname(UDTSOCKET u, struct sockaddr* name, int* namelen)
+{
+   return CUDT::getsockname(u, name, namelen);
+}
+
+int getsockopt(UDTSOCKET u, int level, SOCKOPT optname, void* optval, int* optlen)
+{
+   return CUDT::getsockopt(u, level, optname, optval, optlen);
+}
+
+int setsockopt(UDTSOCKET u, int level, SOCKOPT optname, const void* optval, int optlen)
+{
+   return CUDT::setsockopt(u, level, optname, optval, optlen);
+}
+
+int shutdown(UDTSOCKET u, int how)
+{
+   return CUDT::shutdown(u, how);
+}
+
+int send(UDTSOCKET u, const char* buf, int len, int flags, int* handle, UDT_MEM_ROUTINE routine)
+{
+   return CUDT::send(u, buf, len, flags, handle, routine);
+}
+
+int recv(UDTSOCKET u, char* buf, int len, int flags, int* handle, UDT_MEM_ROUTINE routine)
+{
+   return CUDT::recv(u, buf, len, flags, handle, routine);
+}
+
+int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl, bool inorder)
+{
+   return CUDT::sendmsg(u, buf, len, ttl, inorder);
+}
+
+int recvmsg(UDTSOCKET u, char* buf, int len)
+{
+   return CUDT::recvmsg(u, buf, len);
+}
+
+__int64 sendfile(UDTSOCKET u, ifstream& ifs, const __int64& offset, __int64& size, const int& block)
+{
+   return CUDT::sendfile(u, ifs, offset, size, block);
+}
+
+__int64 recvfile(UDTSOCKET u, ofstream& ofs, const __int64& offset, __int64& size, const int& block)
+{
+   return CUDT::recvfile(u, ofs, offset, size, block);
+}
+
+bool getoverlappedresult(UDTSOCKET u, int handle, int& progress, bool wait)
+{
+   return CUDT::getoverlappedresult(u, handle, progress, wait);
+}
+
+int select(int nfds, UDSET* readfds, UDSET* writefds, UDSET* exceptfds, const struct timeval* timeout)
+{
+   return CUDT::select(nfds, readfds, writefds, exceptfds, timeout);
+}
+
+ERRORINFO getlasterror()
+{
+   return CUDT::getlasterror();
+}
+
+int perfmon(UDTSOCKET u, TRACEINFO* perf, bool clear)
+{
+   return CUDT::perfmon(u, perf, clear);
+}
+
 }

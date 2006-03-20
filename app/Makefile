@@ -28,7 +28,7 @@ ifeq ($(os), UNIX)
    LDFLAGS += -lsocket
 endif
 
-OBJS = appserver.o appclient.o sendfile.o recvfile.o
+OBJS = appserver.o appclient.o sendfile.o recvfile.o msgserver.o msgclient.o
 
 DIR = $(shell pwd)
 
@@ -48,7 +48,7 @@ recvfile: recvfile.o
 
 clean:
 	rm -f *.o
-	rm -f appserver appclient sendfile recvfile
+	rm -f appserver appclient sendfile recvfile msgserver msgclient
 
 install:
 	export PATH=$(DIR):$$PATH

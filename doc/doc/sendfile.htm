@@ -2,15 +2,13 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
 
 <body>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#99CCFF" bordercolor="#99CCFF">
   <tr>
     <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT 
 	Functions</i></font></td>
@@ -19,7 +17,7 @@
 <h1 style="margin-bottom: 0"><font face="Verdana" size="4">sendfile</font></h1>
 <p><font face="Verdana" size="2">The <b>sendfile </b>method sends out a file 
 stream.</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table3" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0"><font size="1" face="Courier New">
@@ -61,7 +59,7 @@ stream.</font></p>
 <p><font face="Verdana" size="2">On success, the actual size of data sent is 
 returned. Otherwise, UDT::ERROR is returned and the specific error information 
 can be retrieved using <a href="error.htm">getlasterror</a>.</font></p>
-  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table1" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
+  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table4" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
     <tr>
       <th align="center" bgcolor="#C0C0C0" width="133">
 		<font face="Verdana" size="2">Error Code</font></th>
@@ -91,6 +89,14 @@ can be retrieved using <a href="error.htm">getlasterror</a>.</font></p>
       <td width="812">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">u 
 		is an invalid UDT socket.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		5010</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		cannot use <i>sendfile</i> in SOCK_DGRAM mode.</font></td>
     </tr>
     </table>
 <h4><font face="Verdana" size="2">Description</font></h4>

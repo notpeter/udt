@@ -9,7 +9,7 @@
 #endif
 #include <iostream>
 #include <udt.h>
-#include "cc.h"
+//#include "cc.h"
 
 using namespace std;
 
@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
 
    hints.ai_family = AF_INET;
    hints.ai_socktype = SOCK_STREAM;
+   //hints.ai_socktype = SOCK_DGRAM;
 
    if (0 != getaddrinfo(argv[1], argv[2], &hints, &res))
    {
@@ -82,8 +83,8 @@ int main(int argc, char* argv[])
 
    for (int i = 0; i < 1000; i ++)
    {
-      //if (UDT::ERROR == UDT::send(client, new char[size], size, 0, &handle, DeleteBuf))
       if (UDT::ERROR == UDT::send(client, data, size, 0, &handle))
+      //if (UDT::ERROR == UDT::sendmsg(client, data, size))
       {
          cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
          return 0;

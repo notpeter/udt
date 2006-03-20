@@ -9,7 +9,7 @@
 #endif
 #include <iostream>
 #include <udt.h>
-#include "cc.h"
+//#include "cc.h"
 
 using namespace std;
 
@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
    hints.ai_flags = AI_PASSIVE;
    hints.ai_family = AF_INET;
    hints.ai_socktype = SOCK_STREAM;
+   //hints.ai_socktype = SOCK_DGRAM;
 
    char* service = "9000";
    if (2 == argc)
@@ -87,8 +88,8 @@ int main(int argc, char* argv[])
          return 0;
       }
 
-      char clienthost[1025];
-      char clientservice[32];
+      char clienthost[NI_MAXHOST];
+      char clientservice[NI_MAXSERV];
       getnameinfo((sockaddr *)&clientaddr, addrlen, clienthost, sizeof(clienthost), clientservice, sizeof(clientservice), NI_NUMERICHOST|NI_NUMERICSERV);
       cout << "new connection: " << clienthost << ":" << clientservice << endl;
 
@@ -124,6 +125,7 @@ DWORD WINAPI recvdata(LPVOID usocket)
    while (true)
    {
       if (UDT::ERROR == UDT::recv(recver, data, size, 0, &handle, NULL))
+      //if (UDT::ERROR == UDT::recvmsg(recver, data, size))
       {
          cout << "recv:" << UDT::getlasterror().getErrorMessage() << endl;
          break;

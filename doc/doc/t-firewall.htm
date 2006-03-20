@@ -2,8 +2,6 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
@@ -39,7 +37,8 @@ address. After the connect call is returned, the UDT connection is set up.</font
 <p style="margin-top: 0; margin-bottom: 0"><b>Example: rendezvous connection
 setup</b></p>
 <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
@@ -55,19 +54,12 @@ setup</b></p>
     <p><font face="Courier New" size="1">UDT::connect(u, &amp;peer_addr, sizeof(peer_addr));</font></td>
   </tr>
 </table>
-<p>
-<font face="Verdana" size="2">However, UDT does not support SO_REUSEADDR option.
+
+<p>However, UDT does not support SO_REUSEADDR option.
 When both the user are behind firewalls and they talk to a known server for the
 peer address and port, a UDT socket can be set up first and connect to the
 server. After it retrieves the information about the peer side, it should then
-disconnect and start this rendezvous connection to the peer side.</font>
-</p>
-
-<p>
-<font face="Verdana" size="2">&nbsp;&nbsp;
-<br>
-&nbsp;</font>
-</p>
+disconnect and start this rendezvous connection to the peer side.</p>
 
 </body>
 

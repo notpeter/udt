@@ -2,7 +2,7 @@
 Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-UDP-based Data Transfer Library (UDT) version 2
+UDP-based Data Transfer Library (UDT) version 3
 
 Laboratory for Advanced Computing (LAC)
 National Center for Data Mining (NCDM)
@@ -34,27 +34,25 @@ The receiving buffer is a logically circular memeory block.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 01/04/2006
-
-modified by
-   <programmer's name, programmer's email, last updated mm/dd/yyyy>
-   <descrition of changes>
+   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
 *****************************************************************************/
 
-
 #include <cstring>
-#include "udt.h"
+#include <cmath>
+#include "common.h"
+#include "buffer.h"
 
-using namespace std;
 
-CSndBuffer::CSndBuffer():
+CSndBuffer::CSndBuffer(const __int32& mss):
 m_pBlock(NULL),
 m_pLastBlock(NULL),
 m_pCurrSendBlk(NULL),
 m_pCurrAckBlk(NULL),
 m_iCurrBufSize(0),
 m_iCurrSendPnt(0),
-m_iCurrAckPnt(0)
+m_iCurrAckPnt(0),
+m_iNextMsgNo(0),
+m_iMSS(mss)
 {
    #ifndef WIN32
       pthread_mutex_init(&m_BufLock, NULL);
@@ -87,7 +85,7 @@ CSndBuffer::~CSndBuffer()
    #endif
 }
 
-void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& handle, const UDT_MEM_ROUTINE func)
+void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& handle, const UDT_MEM_ROUTINE func, const __int32& ttl, const __int32& seqno, const bool& order)
 {
    CGuard bufferguard(m_BufLock);
 
@@ -98,6 +96,12 @@ void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& 
       m_pBlock = new Block;
       m_pBlock->m_pcData = const_cast<char *>(data);
       m_pBlock->m_iLength = len;
+      gettimeofday(&m_pBlock->m_OriginTime, 0);
+      m_pBlock->m_iTTL = ttl;
+      m_pBlock->m_iMsgNo = m_iNextMsgNo;
+      m_pBlock->m_iSeqNo = seqno;
+      m_pBlock->m_iInOrder = order;
+      m_pBlock->m_iInOrder <<= 29;
       m_pBlock->m_iHandle = handle;
       m_pBlock->m_pMemRoutine = func;
       m_pBlock->m_next = NULL;
@@ -111,10 +115,19 @@ void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& 
    {
       // Insert a new block to the tail of the list
 
+      __int32 lastseq = m_pLastBlock->m_iSeqNo;
+      __int32 offset = m_pLastBlock->m_iLength;
+
       m_pLastBlock->m_next = new Block;
       m_pLastBlock = m_pLastBlock->m_next;
       m_pLastBlock->m_pcData = const_cast<char *>(data);
       m_pLastBlock->m_iLength = len;
+      gettimeofday(&m_pLastBlock->m_OriginTime, 0);
+      m_pLastBlock->m_iTTL = ttl;
+      m_pLastBlock->m_iMsgNo = m_iNextMsgNo;
+      m_pLastBlock->m_iSeqNo = lastseq + (__int32)ceil(double(offset) / m_iMSS);
+      m_pLastBlock->m_iInOrder = order;
+      m_pLastBlock->m_iInOrder <<= 29;
       m_pLastBlock->m_iHandle = handle;
       m_pLastBlock->m_pMemRoutine = func;
       m_pLastBlock->m_next = NULL;
@@ -123,9 +136,11 @@ void CSndBuffer::addBuffer(const char* data, const __int32& len, const __int32& 
    }
 
    m_iCurrBufSize += len;
+
+   m_iNextMsgNo = CMsgNo::incmsg(m_iNextMsgNo);
 }
 
-__int32 CSndBuffer::readData(char** data, const __int32& len)
+__int32 CSndBuffer::readData(char** data, const __int32& len, __int32& msgno)
 {
    CGuard bufferguard(m_BufLock);
 
@@ -137,7 +152,15 @@ __int32 CSndBuffer::readData(char** data, const __int32& len)
    if (m_iCurrSendPnt + len < m_pCurrSendBlk->m_iLength)
    {
       *data = m_pCurrSendBlk->m_pcData + m_iCurrSendPnt;
+
+      msgno = m_pCurrSendBlk->m_iMsgNo | m_pCurrSendBlk->m_iInOrder;
+      if (0 == m_iCurrSendPnt)
+         msgno |= 0x80000000;
+      if (m_pCurrSendBlk->m_iLength == m_iCurrSendPnt + len)
+         msgno |= 0x40000000;
+
       m_iCurrSendPnt += len;
+
       return len;
    }
 
@@ -146,13 +169,18 @@ __int32 CSndBuffer::readData(char** data, const __int32& len)
    __int32 readlen = m_pCurrSendBlk->m_iLength - m_iCurrSendPnt;
    *data = m_pCurrSendBlk->m_pcData + m_iCurrSendPnt;
 
+   if (0 == m_iCurrSendPnt)
+      msgno = m_pCurrSendBlk->m_iMsgNo | 0xC0000000 | m_pCurrSendBlk->m_iInOrder;
+   else
+      msgno = m_pCurrSendBlk->m_iMsgNo | 0x40000000 | m_pCurrSendBlk->m_iInOrder;
+
    m_pCurrSendBlk = m_pCurrSendBlk->m_next;
    m_iCurrSendPnt = 0;
 
    return readlen;
 }
 
-__int32 CSndBuffer::readData(char** data, const __int32 offset, const __int32& len)
+__int32 CSndBuffer::readData(char** data, const __int32 offset, const __int32& len, __int32& msgno, __int32& seqno, __int32& msglen)
 {
    CGuard bufferguard(m_BufLock);
 
@@ -173,15 +201,46 @@ __int32 CSndBuffer::readData(char** data, const __int32 offset, const __int32& l
          return 0;
    }
 
+   if (p->m_iTTL >= 0)
+   {
+      timeval currtime;
+      gettimeofday(&currtime, 0);
+
+      __int32 e = (currtime.tv_sec - p->m_OriginTime.tv_sec) * 1000000 + currtime.tv_usec - p->m_OriginTime.tv_usec;
+
+      if (e > p->m_iTTL)
+      {
+         msgno = p->m_iMsgNo;
+         seqno = p->m_iSeqNo;
+         msglen = p->m_iLength;
+
+         return -1;
+      }
+   }
+
    // Read a regular data
    if (loffset + len <= p->m_iLength)
    {
       *data = p->m_pcData + loffset;
+      msgno = p->m_iMsgNo | p->m_iInOrder;
+
+      if (0 == loffset)
+         msgno |= 0x80000000;
+      if (p->m_iLength == loffset + len)
+         msgno |= 0x40000000;
+
       return len;
    }
 
    // Read an irrugular data at the end of a block
    *data = p->m_pcData + loffset;
+   msgno = p->m_iMsgNo | p->m_iInOrder;
+
+   if (0 == loffset)
+      msgno |= 0xC0000000;
+   else
+      msgno |= 0x40000000;
+
    return p->m_iLength - loffset;
 }
 
@@ -253,9 +312,9 @@ void CSndBuffer::releaseBuffer(char* buf, int)
    delete [] buf;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-//
-CRcvBuffer::CRcvBuffer():
+CRcvBuffer::CRcvBuffer(const __int32& mss):
 m_pcData(NULL),
 m_iSize(40960000),
 m_iStartPos(0),
@@ -265,12 +324,20 @@ m_pcUserBuf(NULL),
 m_iUserBufSize(0),
 m_pPendingBlock(NULL),
 m_pLastBlock(NULL),
-m_iPendingSize(0)
+m_iPendingSize(0),
+m_pMessageList(NULL),
+m_iMSS(mss)
 {
    m_pcData = new char [m_iSize];
+
+   #ifndef WIN32
+      pthread_mutex_init(&m_MsgLock, NULL);
+   #else
+      m_MsgLock = CreateMutex(NULL, false, NULL);
+   #endif
 }
 
-CRcvBuffer::CRcvBuffer(const __int32& bufsize):
+CRcvBuffer::CRcvBuffer(const __int32& mss, const __int32& bufsize):
 m_pcData(NULL),
 m_iSize(bufsize),
 m_iStartPos(0),
@@ -280,9 +347,17 @@ m_pcUserBuf(NULL),
 m_iUserBufSize(0),
 m_pPendingBlock(NULL),
 m_pLastBlock(NULL),
-m_iPendingSize(0)
+m_iPendingSize(0),
+m_pMessageList(NULL),
+m_iMSS(mss)
 {
    m_pcData = new char [m_iSize];
+
+   #ifndef WIN32
+      pthread_mutex_init(&m_MsgLock, NULL);
+   #else
+      m_MsgLock = CreateMutex(NULL, false, NULL);
+   #endif
 }
 
 CRcvBuffer::~CRcvBuffer()
@@ -297,6 +372,15 @@ CRcvBuffer::~CRcvBuffer()
      delete p;
      p = m_pPendingBlock;
    }
+
+   if (NULL != m_pMessageList)
+      delete [] m_pMessageList;
+
+   #ifndef WIN32
+      pthread_mutex_destroy(&m_MsgLock);
+   #else
+      CloseHandle(m_MsgLock);
+   #endif
 }
 
 bool CRcvBuffer::nextDataPos(char** data, __int32 offset, const __int32& len)
@@ -349,7 +433,7 @@ bool CRcvBuffer::nextDataPos(char** data, __int32 offset, const __int32& len)
    return false;
 }
 
-bool CRcvBuffer::addData(char* data, __int32 offset, __int32 len)
+bool CRcvBuffer::addData(char** data, __int32 offset, __int32 len)
 {
    // Check the user buffer first
    if (NULL != m_pcUserBuf)
@@ -357,14 +441,14 @@ bool CRcvBuffer::addData(char* data, __int32 offset, __int32 len)
       if (m_iUserBufAck + offset + len <= m_iUserBufSize)
       {
          // write data into the user buffer
-         memcpy(m_pcUserBuf + m_iUserBufAck + offset, data, len);
+         memcpy(m_pcUserBuf + m_iUserBufAck + offset, *data, len);
          return true;
       }
       else if (m_iUserBufAck + offset < m_iUserBufSize)
       {
          // write part of the data to the user buffer
-         memcpy(m_pcUserBuf + m_iUserBufAck + offset, data, m_iUserBufSize - (m_iUserBufAck + offset));
-         data += m_iUserBufSize - (m_iUserBufAck + offset);
+         memcpy(m_pcUserBuf + m_iUserBufAck + offset, *data, m_iUserBufSize - (m_iUserBufAck + offset));
+         *data += m_iUserBufSize - (m_iUserBufAck + offset);
          len -= m_iUserBufSize - (m_iUserBufAck + offset);
          offset = 0;
       }
@@ -381,24 +465,28 @@ bool CRcvBuffer::addData(char* data, __int32 offset, __int32 len)
    if (m_iLastAckPos >= m_iStartPos)
       if (m_iLastAckPos + offset + len <= m_iSize)
       {
-         memcpy(m_pcData + m_iLastAckPos + offset, data, len);
+         memcpy(m_pcData + m_iLastAckPos + offset, *data, len);
+         *data = m_pcData + m_iLastAckPos + offset;
          return true;
       }
       else if ((m_iLastAckPos + offset < m_iSize) && (len - (m_iSize - m_iLastAckPos - offset) <= m_iStartPos))
       {
-         memcpy(m_pcData + m_iLastAckPos + offset, data, m_iSize - m_iLastAckPos - offset);
-         memcpy(m_pcData, data + m_iSize - m_iLastAckPos - offset, len - (m_iSize - m_iLastAckPos - offset));
+         memcpy(m_pcData + m_iLastAckPos + offset, *data, m_iSize - m_iLastAckPos - offset);
+         memcpy(m_pcData, *data + m_iSize - m_iLastAckPos - offset, len - (m_iSize - m_iLastAckPos - offset));
+         *data = m_pcData + m_iLastAckPos + offset;
          return true;
       }
       else if ((m_iLastAckPos + offset >= m_iSize) && (offset - (m_iSize - m_iLastAckPos) + len <= m_iStartPos))
       {
-         memcpy(m_pcData + offset - (m_iSize - m_iLastAckPos), data, len);
+         memcpy(m_pcData + offset - (m_iSize - m_iLastAckPos), *data, len);
+         *data = m_pcData + offset - (m_iSize - m_iLastAckPos);
          return true;
       }
 
    if (m_iLastAckPos + offset + len <= m_iStartPos)
    {
-      memcpy(m_pcData + m_iLastAckPos + offset, data, len);
+      memcpy(m_pcData + m_iLastAckPos + offset, *data, len);
+      *data = m_pcData + m_iLastAckPos + offset;
       return true;
    }
 
@@ -695,4 +783,287 @@ bool CRcvBuffer::getOverlappedResult(const __int32& handle, __int32& progress)
 __int32 CRcvBuffer::getPendingQueueSize() const
 {
    return m_iPendingSize + m_iUserBufSize;
+}
+
+void CRcvBuffer::initMsgList()
+{
+   // the message list should contain the most possible number of messages: when each packet is a message
+   m_iMsgInfoSize = m_iSize / m_iMSS + 1;
+
+   m_pMessageList = new MsgInfo[m_iMsgInfoSize];
+
+   m_iPtrFirstMsg = -1;
+   m_iPtrRecentACK = -1;
+   m_iLastMsgNo = 0;
+   m_iValidMsgCount = 0;
+
+   for (int i = 0; i < m_iMsgInfoSize; ++ i)
+   {
+      m_pMessageList[i].m_pcData = NULL;
+      m_pMessageList[i].m_iMsgNo = -1;
+      m_pMessageList[i].m_iStartSeq = -1;
+      m_pMessageList[i].m_iEndSeq = -1;
+      m_pMessageList[i].m_iSizeDiff = 0;
+      m_pMessageList[i].m_bValid = false;
+      m_pMessageList[i].m_bDropped = false;
+      m_pMessageList[i].m_bInOrder = false;
+      m_pMessageList[i].m_iMsgNo = -1;
+   }
+}
+
+void CRcvBuffer::checkMsg(const __int32& type, const __int32& msgno, const __int32& seqno, const char* ptr, const bool& inorder, const __int32& diff)
+{
+   CGuard msgguard(m_MsgLock);
+
+   __int32 pos;
+
+   if (-1 == m_iPtrFirstMsg)
+   {
+      pos = m_iPtrFirstMsg = 0;
+      m_iPtrRecentACK = -1;
+   }
+   else
+   {
+      pos = m_iPtrFirstMsg + CMsgNo::msgoff(m_pMessageList[m_iPtrFirstMsg].m_iMsgNo, msgno);
+
+      if (pos >= m_iMsgInfoSize)
+         pos -= m_iMsgInfoSize;
+      else if (pos < 0)
+      {
+         pos += m_iMsgInfoSize;
+         m_iPtrFirstMsg = pos;
+      }
+   }
+
+   MsgInfo* p = m_pMessageList + pos;
+
+   p->m_iMsgNo = msgno;
+
+   switch (type)
+   {
+   case 3:
+      // single packet message
+      p->m_pcData = (char*)ptr;
+      p->m_iStartSeq = p->m_iEndSeq = seqno;
+      p->m_bInOrder = inorder;
+      p->m_iSizeDiff = diff;
+
+      break;
+
+   case 2:
+      // first packet of the message
+      p->m_pcData = (char*)ptr;
+      p->m_iStartSeq = seqno;
+      p->m_bInOrder = inorder;
+
+      break;
+
+   case 1:
+      // last packet of the message
+      p->m_iEndSeq = seqno;
+      p->m_iSizeDiff = diff;
+
+      break;
+   }
+
+   // update the largest msg no so far
+   if (CMsgNo::msgcmp(m_iLastMsgNo, msgno) < 0)
+      m_iLastMsgNo = msgno;
+}
+
+bool CRcvBuffer::ackMsg(const __int32& ack, const CRcvLossList* rll)
+{
+   CGuard msgguard(m_MsgLock);
+
+   // no message exist, return
+   if (-1 == m_iPtrFirstMsg)
+   {
+      // also means no message is valid
+
+      m_iStartPos = m_iLastAckPos;
+
+      return false;
+   }
+
+   __int32 ptr;
+   __int32 len;
+
+   if (-1 == m_iPtrRecentACK)
+   {
+      // all messages are new, check from the start
+      ptr = m_iPtrFirstMsg;
+      len = CMsgNo::msglen(m_pMessageList[ptr].m_iMsgNo, m_iLastMsgNo);
+   }
+   else
+   {
+      // check from the last ACK point
+      ptr = m_iPtrRecentACK + 1;
+
+      if (ptr == m_iMsgInfoSize)
+         ptr = 0;
+
+      len = CMsgNo::msglen(m_pMessageList[ptr].m_iMsgNo, m_iLastMsgNo);
+   }
+
+   for (__int32 i = 0; i < len; ++ i)
+   {
+      if ((m_pMessageList[ptr].m_iStartSeq != -1) &&
+          (m_pMessageList[ptr].m_iEndSeq != -1) &&
+          (!m_pMessageList[ptr].m_bDropped) &&
+          (!(rll->find(m_pMessageList[ptr].m_iStartSeq, m_pMessageList[ptr].m_iEndSeq))) &&
+          (!m_pMessageList[ptr].m_bInOrder || CSeqNo::seqcmp(m_pMessageList[ptr].m_iEndSeq, ack) <= 0))
+      {
+         m_pMessageList[ptr].m_bValid = true;
+         m_pMessageList[ptr].m_iLength = CSeqNo::seqlen(m_pMessageList[ptr].m_iStartSeq, m_pMessageList[ptr].m_iEndSeq) * m_iMSS - m_pMessageList[ptr].m_iSizeDiff;
+
+         ++ m_iValidMsgCount;
+      }
+
+      if ((m_pMessageList[ptr].m_iEndSeq != -1) && (CSeqNo::seqcmp(m_pMessageList[ptr].m_iEndSeq, ack) <= 0))
+         m_iPtrRecentACK = ptr;
+
+      ++ ptr;
+
+      if (ptr == m_iMsgInfoSize)
+         ptr = 0;
+   }
+
+   return (m_iValidMsgCount > 0);
+}
+
+void CRcvBuffer::dropMsg(const __int32& msgno)
+{
+   CGuard msgguard(m_MsgLock);
+
+   // no message exist, return
+   if (-1 == m_iPtrFirstMsg)
+      return;
+
+   __int32 ptr = m_iPtrFirstMsg + CMsgNo::msglen(m_pMessageList[m_iPtrFirstMsg].m_iMsgNo, msgno);
+   if (ptr >= m_iMsgInfoSize)
+      ptr -= m_iMsgInfoSize;
+
+   m_pMessageList[ptr].m_iMsgNo = msgno;
+   m_pMessageList[ptr].m_bDropped = true;
+
+   // update the largest msg no so far
+   if (CMsgNo::msgcmp(m_iLastMsgNo, msgno) < 0)
+      m_iLastMsgNo = msgno;
+}
+
+__int32 CRcvBuffer::readMsg(char* data, const __int32& len)
+{
+   CGuard msgguard(m_MsgLock);
+
+   // no message exist, return
+   if (-1 == m_iPtrFirstMsg)
+      return 0;
+
+   __int32 ptr = m_iPtrFirstMsg;
+
+   // searching first valid message
+   while (m_pMessageList[ptr].m_iMsgNo != m_iLastMsgNo)
+   {
+      if (m_pMessageList[ptr].m_bValid)
+         break;
+
+      ++ ptr;
+      if (ptr == m_iMsgInfoSize)
+         ptr = 0;
+   }
+
+   __int32 size = 0;
+
+   if (m_pMessageList[ptr].m_bValid)
+   {
+      if ((m_pMessageList[ptr].m_bInOrder) || (CSeqNo::seqcmp(m_pMessageList[ptr].m_iEndSeq, m_pMessageList[m_iPtrRecentACK].m_iEndSeq) <= 0))
+      {
+         m_iStartPos = m_pMessageList[ptr].m_pcData + CSeqNo::seqlen(m_pMessageList[ptr].m_iStartSeq, m_pMessageList[ptr].m_iEndSeq) * m_iMSS - m_pcData;
+         if (m_iStartPos > m_iSize)
+            m_iStartPos -= m_iSize;
+      }
+      else
+      {
+         if (NULL != m_pMessageList[m_iPtrRecentACK].m_pcData)
+            m_iStartPos = m_pMessageList[m_iPtrRecentACK].m_pcData - m_pcData;
+      }
+
+      size = (len > m_pMessageList[ptr].m_iLength) ? m_pMessageList[ptr].m_iLength : len;
+
+      if (m_pMessageList[ptr].m_pcData - m_pcData + size < m_iSize)
+      {
+         memcpy(data, m_pMessageList[ptr].m_pcData, size);
+      }
+      else
+      {
+         __int32 partial = m_pMessageList[ptr].m_pcData - m_pcData + size - m_iSize;
+
+         memcpy(data, m_pMessageList[ptr].m_pcData, size - partial);
+         memcpy(data + size - partial, m_pcData, partial);
+      }
+
+      m_pMessageList[ptr].m_bValid = false;
+
+      -- m_iValidMsgCount;
+   }
+
+   // all messages prior to the first valid message before the recent ACK point are permanently invalid
+   if (CMsgNo::msgcmp(m_pMessageList[ptr].m_iMsgNo, m_pMessageList[m_iPtrRecentACK].m_iMsgNo) <= 0)
+   {
+      while (ptr != m_iPtrRecentACK)
+      {
+         ptr ++;
+         if (ptr == m_iMsgInfoSize)
+            ptr = 0;
+
+         if (m_pMessageList[ptr].m_bValid)
+            break;
+      }
+   }
+   else 
+      ptr = m_iPtrRecentACK;
+
+   // release the invalid message items
+   while (m_iPtrFirstMsg != ptr)
+   {
+      m_pMessageList[m_iPtrFirstMsg].m_pcData = NULL;
+      m_pMessageList[m_iPtrFirstMsg].m_iMsgNo = -1;
+      m_pMessageList[m_iPtrFirstMsg].m_iStartSeq = -1;
+      m_pMessageList[m_iPtrFirstMsg].m_iEndSeq = -1;
+      m_pMessageList[m_iPtrFirstMsg].m_iLength = -1;
+      m_pMessageList[m_iPtrFirstMsg].m_bValid = false;
+      m_pMessageList[m_iPtrFirstMsg].m_bDropped = false;
+      m_pMessageList[m_iPtrFirstMsg].m_bInOrder = false;
+
+      ++ m_iPtrFirstMsg;
+      if (m_iPtrFirstMsg == m_iMsgInfoSize)
+         m_iPtrFirstMsg = 0;
+   }
+
+   // all messages are invalid, re-init the message list
+   if ((m_pMessageList[m_iPtrFirstMsg].m_iMsgNo == m_iLastMsgNo) && !(m_pMessageList[m_iPtrFirstMsg].m_bValid))
+   {
+      m_pMessageList[m_iPtrFirstMsg].m_pcData = NULL;
+      m_pMessageList[m_iPtrFirstMsg].m_iMsgNo = -1;
+      m_pMessageList[m_iPtrFirstMsg].m_iStartSeq = -1;
+      m_pMessageList[m_iPtrFirstMsg].m_iEndSeq = -1;
+      m_pMessageList[m_iPtrFirstMsg].m_iLength = -1;
+      m_pMessageList[m_iPtrFirstMsg].m_bValid = false;
+      m_pMessageList[m_iPtrFirstMsg].m_bDropped = false;
+      m_pMessageList[m_iPtrFirstMsg].m_bInOrder = false;
+
+      m_iPtrFirstMsg = -1;
+      m_iPtrRecentACK = -1;
+
+      m_iStartPos = m_iLastAckPos;
+   }
+
+   return size;
+}
+
+__int32 CRcvBuffer::getValidMsgCount()
+{
+   CGuard msgguard(m_MsgLock);
+
+   return m_iValidMsgCount;
 }

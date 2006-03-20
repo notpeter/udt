@@ -2,15 +2,13 @@
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
-<meta name="ProgId" content="FrontPage.Editor.Document">
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
 <title>UDT Reference</title>
 </head>
 
 <body>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#99CCFF" bordercolor="#99CCFF">
   <tr>
     <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT 
 	Functions</i></font></td>
@@ -19,7 +17,7 @@
 <h1 style="margin-bottom: 0"><font face="Verdana" size="4">send</font></h1>
 <p><font face="Verdana" size="2">The <b>send </b>method sends out an application 
 buffer.</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table3" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
   <tr>
     <td width="100%">
     <p style="margin-top: 0; margin-bottom: 0">
@@ -75,7 +73,7 @@ is returned and the specific error information can be retrieved by
 <a href="error.htm">getlasterror</a>. When UDT_SNDTIMEO is set to a positive
 value, zero will be returned if no data is sent out before the assigned timer
 expires.</font></p>
-  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table1" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
+  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table4" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
     <tr>
       <th align="center" bgcolor="#C0C0C0" width="133">
 		<font face="Verdana" size="2">Error Code</font></th>
@@ -119,6 +117,14 @@ expires.</font></p>
     <tr>
       <td width="133">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		5010</font></td>
+      <td width="812">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
+		cannot use <i>send</i> in SOCK_DGRAM mode.</font></td>
+    </tr>
+    <tr>
+      <td width="133">
+      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
 		6001</font></td>
       <td width="812">
       <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
@@ -139,8 +145,9 @@ returns immediately and the data will be sent at background (if there is enough
 buffer). Once the data sending is completed, the function of <i>routine</i> will be 
 executed on the data.</font></P>
 <H4><font face="Verdana" size="2">See Also</font></H4>
-<P><font face="Verdana" size="2"><b><a href="recv.htm">recv</a></b>, <b>
-<a href="recvfile.htm">recvfile</a></b></font></P>
+<P><b><font face="Verdana" size="2"><a href="select.htm">select</a></font></b><font face="Verdana" size="2"><b>, 
+<a href="recv.htm">recv</a>, <a href="sendfile.htm">sendfile</a>, <a href="recvfile.htm">recvfile</a>,
+</b><a href="overlap.htm"><b>getoverlappedresult</b></a></font></P>
 
 </body>
 

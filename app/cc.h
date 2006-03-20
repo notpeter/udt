@@ -3,12 +3,20 @@ DISCLAIMER: The algorithms implemented using UDT/CCC in this file may be
 modified. These modifications may NOT necessarily reflect the view of
 the algorithms' original authors.
 
-Written by: Yunhong Gu <ygu@cs.uic.edu>, last updated on Feb 07, 2006.
+Written by: Yunhong Gu <ygu@cs.uic.edu>, last updated on Mar 02, 2005.
 *****************************************************************************/
+
+#ifndef WIN32
+   #include <sys/time.h>
+   #include <time.h>
+#endif
 
 #include <cmath>
 #include <vector>
 #include <algorithm>
+
+#include <window.h>
+#include <ccc.h>
 #include <udt.h>
 
 using namespace std;
@@ -552,10 +560,10 @@ be set at any time by using setRate().
 class CUDPBlast: public CCC
 {
 public:
-   CUDPBlast() 
+   CUDPBlast()
    {
-      m_dPktSndPeriod = 1000000;
-      m_dCWndSize = 83333.0;
+      m_dPktSndPeriod = 1000000; 
+      m_dCWndSize = 83333.0; 
    }
 
 public:
