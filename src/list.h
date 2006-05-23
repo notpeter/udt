@@ -30,7 +30,7 @@ This header file contains the definition of List structures used in UDT.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 #ifndef __UDT_LIST_H__
@@ -43,7 +43,7 @@ written by
 class CSndLossList
 {
 public:
-   CSndLossList(const __int32& size);
+   CSndLossList(const int& size);
    ~CSndLossList();
 
       // Functionality:
@@ -54,7 +54,7 @@ public:
       // Returned value:
       //    number of packets that are not in the list previously.
 
-   __int32 insert(const __int32& seqno1, const __int32& seqno2);
+   int insert(const int32_t& seqno1, const int32_t& seqno2);
 
       // Functionality:
       //    Remove ALL the seq. no. that are not greater than the parameter.
@@ -63,7 +63,7 @@ public:
       // Returned value:
       //    None.
 
-   void remove(const __int32& seqno);
+   void remove(const int32_t& seqno);
 
       // Functionality:
       //    Read the loss length.
@@ -72,7 +72,7 @@ public:
       // Returned value:
       //    The length of the list.
 
-   __int32 getLossLength();
+   int getLossLength();
 
       // Functionality:
       //    Read the first (smallest) loss seq. no. in the list and remove it.
@@ -81,17 +81,17 @@ public:
       // Returned value:
       //    The seq. no. or -1 if the list is empty.
 
-   __int32 getLostSeq();
+   int32_t getLostSeq();
 
 private:
-   __int32* m_piData1;                  // sequence number starts
-   __int32* m_piData2;                  // seqnence number ends
-   __int32* m_piNext;                   // next node in the list
+   int32_t* m_piData1;                  // sequence number starts
+   int32_t* m_piData2;                  // seqnence number ends
+   int* m_piNext;                       // next node in the list
 
-   __int32 m_iHead;                     // first node
-   __int32 m_iLength;                   // loss length
-   __int32 m_iSize;                     // size of the static array
-   __int32 m_iLastInsertPos;            // position of last insert node
+   int m_iHead;                         // first node
+   int m_iLength;                       // loss length
+   int m_iSize;                         // size of the static array
+   int m_iLastInsertPos;                // position of last insert node
 
    pthread_mutex_t m_ListLock;          // used to synchronize list operation
 };
@@ -101,7 +101,7 @@ private:
 class CRcvLossList
 {
 public:
-   CRcvLossList(const __int32& size);
+   CRcvLossList(const int& size);
    ~CRcvLossList();
 
       // Functionality:
@@ -112,7 +112,7 @@ public:
       // Returned value:
       //    None.
 
-   void insert(const __int32& seqno1, const __int32& seqno2);
+   void insert(const int32_t& seqno1, const int32_t& seqno2);
 
       // Functionality:
       //    Remove a loss seq. no. from the receiver's loss list.
@@ -121,7 +121,7 @@ public:
       // Returned value:
       //    if the packet is removed (true) or no such lost packet is found (false).
 
-   bool remove(const __int32& seqno);
+   bool remove(const int32_t& seqno);
 
       // Functionality:
       //    Remove all packets between seqno1 and seqno2.
@@ -131,7 +131,7 @@ public:
       // Returned value:
       //    if the packet is removed (true) or no such lost packet is found (false).
 
-   bool remove(const __int32& seqno1, const __int32& seqno2);
+   bool remove(const int32_t& seqno1, const int32_t& seqno2);
 
       // Functionality:
       //    Find if there is any lost packets whose sequence number falling seqno1 and seqno2.
@@ -141,7 +141,7 @@ public:
       // Returned value:
       //    True if found; otherwise false.
 
-   bool find(const __int32& seqno1, const __int32& seqno2) const;
+   bool find(const int32_t& seqno1, const int32_t& seqno2) const;
 
       // Functionality:
       //    Read the loss length.
@@ -150,7 +150,7 @@ public:
       // Returned value:
       //    the length of the list.
 
-   __int32 getLossLength() const;
+   int getLossLength() const;
 
       // Functionality:
       //    Read the first (smallest) seq. no. in the list.
@@ -159,7 +159,7 @@ public:
       // Returned value:
       //    the sequence number or -1 if the list is empty.
 
-   __int32 getFirstLostSeq() const;
+   int getFirstLostSeq() const;
 
       // Functionality:
       //    Get a encoded loss array for NAK report.
@@ -171,20 +171,20 @@ public:
       // Returned value:
       //    None.
 
-   void getLossArray(__int32* array, __int32& len, const __int32& limit, const __int32& threshold);
+   void getLossArray(int32_t* array, int& len, const int& limit, const int& threshold);
 
 private:
-   __int32* m_piData1;                  // sequence number starts
-   __int32* m_piData2;                  // sequence number ends
+   int32_t* m_piData1;                  // sequence number starts
+   int32_t* m_piData2;                  // sequence number ends
    timeval* m_pLastFeedbackTime;        // last feedback time of the node
-   __int32* m_piCount;                  // report counter
-   __int32* m_piNext;                   // next node in the list
-   __int32* m_piPrior;                  // prior node in the list;
+   int* m_piCount;                      // report counter
+   int* m_piNext;                       // next node in the list
+   int* m_piPrior;                      // prior node in the list;
 
-   __int32 m_iHead;                     // first node in the list
-   __int32 m_iTail;                     // last node in the list;
-   __int32 m_iLength;                   // loss length
-   __int32 m_iSize;                     // size of the static array
+   int m_iHead;                         // first node in the list
+   int m_iTail;                         // last node in the list;
+   int m_iLength;                       // loss length
+   int m_iSize;                         // size of the static array
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -192,7 +192,7 @@ private:
 class CIrregularPktList
 {
 public:
-   CIrregularPktList(const __int32& size);
+   CIrregularPktList(const int& size);
    ~CIrregularPktList();
 
       // Functionality:
@@ -202,7 +202,7 @@ public:
       // Returned value:
       //    the total size error of all the irregular packets prior to (excluding) "seqno".
 
-   __int32 currErrorSize(const __int32& seqno) const;
+   int currErrorSize(const int32_t& seqno) const;
 
       // Functionality:
       //    Insert an irregular packet into the list.
@@ -212,7 +212,7 @@ public:
       // Returned value:
       //    None
 
-   void addIrregularPkt(const __int32& seqno, const __int32& errsize);
+   void addIrregularPkt(const int32_t& seqno, const int& errsize);
 
       // Functionality:
       //    Remove ALL the packets prior to "seqno".
@@ -221,17 +221,17 @@ public:
       // Returned value:
       //    None
 
-   void deleteIrregularPkt(const __int32& seqno);
+   void deleteIrregularPkt(const int32_t& seqno);
 
 private:
-   __int32* m_piData;                   // sequence number
-   __int32* m_piErrorSize;              // size error of the node
-   __int32* m_piNext;                   // next node in the list
+   int32_t* m_piData;                   // sequence number
+   int* m_piErrorSize;                  // size error of the node
+   int* m_piNext;                       // next node in the list
 
-   __int32 m_iHead;                     // first node in the list
-   __int32 m_iLength;                   // number of irregular packets in the list
-   __int32 m_iSize;                     // size of the static array
-   __int32 m_iInsertPos;                // last node insert position
+   int m_iHead;                         // first node in the list
+   int m_iLength;                       // number of irregular packets in the list
+   int m_iSize;                         // size of the static array
+   int m_iInsertPos;                    // last node insert position
 };
 
 

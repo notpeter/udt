@@ -34,7 +34,11 @@ data into a local memory buffer.</font></p>
 	= NULL,</font></p>
 	<p style="margin-top: 0; margin-bottom: 0">
     <font face="Courier New" size="1">&nbsp; <a href="structure.htm#MEM">UDT_MEM_ROUTINE</a>
-	<font color="#FFFFFF">routine</font>&nbsp;= NULL</font></p>
+	<font color="#FFFFFF">routine</font>&nbsp;= NULL,</font></p>
+	<p style="margin-top: 0; margin-bottom: 0">
+    <font face="Courier New" size="1">&nbsp; void* <font color="#FFFFFF">context
+    </font>
+	= NULL</font></p>
 	<p style="margin-top: 0; margin-bottom: 0">
     <font face="Courier New" size="1">);</font></p>
     </td>
@@ -65,6 +69,9 @@ data into a local memory buffer.</font></p>
 	</font></font> </dt>
 	<dd><font face="Verdana" size="2">[in] Optional. Function used to process the buffer (received data)
 	after the receiving is finished. </font></dd>
+	<dt><font size="2" face="Verdana"><i>context</i></font> </dt>
+	<dd><font face="Verdana" size="2">[in] Optional. Context parameter used in
+      the buffer process routine. </font></dd>
 </dl>
 <h4><font face="Verdana" size="2">Return Values</font></h4>
 <p><font face="Verdana" size="2">On success, the actual size of received data is returned; Otherwise,
@@ -148,14 +155,18 @@ until exact the same size of <i>len</i> data are received. On non-blocking mode,
 <b>recv</b> 
 returns immediately but the successive data continue to be written into the user 
 buffer. In either case, after the IO is completed, the function pointed by 
-<i>routine</i> (if it is not NULL) will be executed on the buffer. The progress
+<i>routine</i> (if it is not NULL) will be called to process the buffer. Note
+that UDT does not duplicate the <i>context</i> parameter: it should remain valid
+until the <i>routine</i> is called, and it should be released (if necessary) by
+applications. The progress
 the overlapped <b>recv</b> can be queried by using <a href="overlap.htm">getoverlappedresult</a>.</font></P>
 <P><font face="Verdana" size="2">Non-blocking overlapped receiving is exclusive.
 If there is at least one non-blocking overlapped call in progress, all further
 regular <b>recv</b> (non overlapped), <a href="recvfile.htm">recvfile</a>, and
 blocking overlapped <b>recv</b> will be rejected with error number 6004. This is
-due to an implementation limitation.</font></P>
-<P><font face="Verdana" size="2">Note that, <a href="opt.htm">UDT_RCVTIMEO</a>
+due to an implementation limitation.<br>
+<br>
+Note that, <a href="opt.htm">UDT_RCVTIMEO</a>
 does NOT apply to overlapped <b>recv</b>.</font></P>
 <H4><font face="Verdana" size="2">See Also</font></H4>
 <P><b><font face="Verdana" size="2"><a href="select.htm">select</a></font></b><font face="Verdana" size="2"><b>, 

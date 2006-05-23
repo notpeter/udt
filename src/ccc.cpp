@@ -30,7 +30,7 @@ This header file contains the definition of UDT/CCC base class.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 
@@ -47,17 +47,17 @@ m_iRTO(-1)
 {
 }
 
-void CCC::setACKTimer(const __int32& msINT)
+void CCC::setACKTimer(const int& msINT)
 {
    m_iACKPeriod = msINT;
 }
 
-void CCC::setACKInterval(const __int32& pktINT)
+void CCC::setACKInterval(const int& pktINT)
 {
    m_iACKInterval = pktINT;
 }
 
-void CCC::setRTO(const __int32& usRTO)
+void CCC::setRTO(const int& usRTO)
 {
    m_iRTO = usRTO;
 }

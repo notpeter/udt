@@ -32,7 +32,7 @@ A UDT packet is a 2-dimension vector of packet header and data.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 
@@ -134,11 +134,15 @@ written by
 
 #include "packet.h"
 
+
+const int CPacket::m_iPktHdrSize = 12;
+
+
 // Set up the aliases in the constructure
 CPacket::CPacket():
-m_iSeqNo((__int32&)(m_nHeader[0])),
-m_iMsgNo((__int32&)(m_nHeader[1])),
-m_iTimeStamp((__int32&)(m_nHeader[2])),
+m_iSeqNo((int32_t&)(m_nHeader[0])),
+m_iMsgNo((int32_t&)(m_nHeader[1])),
+m_iTimeStamp((int32_t&)(m_nHeader[2])),
 m_pcData((char*&)(m_PacketVector[1].iov_base))
 {
    m_PacketVector[0].iov_base = (char *)m_nHeader;
@@ -149,17 +153,17 @@ CPacket::~CPacket()
 {
 }
 
-__int32 CPacket::getLength() const
+int CPacket::getLength() const
 {
    return m_PacketVector[1].iov_len;
 }
 
-void CPacket::setLength(const __int32& len)
+void CPacket::setLength(const int& len)
 {
    m_PacketVector[1].iov_len = len;
 }
 
-void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __int32& size)
+void CPacket::pack(const int& pkttype, void* lparam, void* rparam, const int& size)
 {
    // Set (bit-0 = 1) and (bit-1~15 = type)
    m_nHeader[0] = 0x80000000 | (pkttype << 16);
@@ -170,7 +174,7 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
    case 2: //0010 - Acknowledgement (ACK)
       // ACK packet seq. no.
       if (NULL != lparam)
-         m_nHeader[1] = *(__int32 *)lparam;
+         m_nHeader[1] = *(int32_t *)lparam;
 
       // data ACK seq. no. 
       // optional: RTT (microsends), RTT variance (microseconds) advertised flow window size (packets), and estimated link capacity (packets per second)
@@ -181,12 +185,12 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
 
    case 6: //0110 - Acknowledgement of Acknowledgement (ACK-2)
       // ACK packet seq. no.
-      m_nHeader[1] = *(__int32 *)lparam;
+      m_nHeader[1] = *(int32_t *)lparam;
 
       // control info field should be none
       // but "writev" does not allow this
       m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
-      m_PacketVector[1].iov_len = sizeof(__int32); //0;
+      m_PacketVector[1].iov_len = 4; //0;
 
       break;
 
@@ -201,7 +205,7 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
       // control info field should be none
       // but "writev" does not allow this
       m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
-      m_PacketVector[1].iov_len = sizeof(__int32); //0
+      m_PacketVector[1].iov_len = 4; //0
   
       break;
 
@@ -209,7 +213,7 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
       // control info field should be none
       // but "writev" does not allow this
       m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
-      m_PacketVector[1].iov_len = sizeof(__int32); //0
+      m_PacketVector[1].iov_len = 4; //0
 
       break;
 
@@ -224,13 +228,13 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
       // control info field should be none
       // but "writev" does not allow this
       m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
-      m_PacketVector[1].iov_len = sizeof(__int32); //0
+      m_PacketVector[1].iov_len = 4; //0
 
       break;
 
    case 7: //0111 - Message Drop Request
       // msg id 
-      m_nHeader[1] = *(__int32 *)lparam;
+      m_nHeader[1] = *(int32_t *)lparam;
 
       //first seq no, last seq no
       m_PacketVector[1].iov_base = (char *)rparam;
@@ -242,7 +246,7 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
       // for extended control packet
       // "lparam" contains the extneded type information for bit 4 - 15
       // "rparam" is the control information
-      m_nHeader[0] |= (*(__int32 *)lparam) << 16;
+      m_nHeader[0] |= (*(int32_t *)lparam) << 16;
 
       if (NULL != rparam)
       {
@@ -252,7 +256,7 @@ void CPacket::pack(const __int32& pkttype, void* lparam, void* rparam, const __i
       else
       {
          m_PacketVector[1].iov_base = (char *)&__pad;
-         m_PacketVector[1].iov_len = sizeof(__int32);
+         m_PacketVector[1].iov_len = 4;
       }
 
       break;
@@ -267,43 +271,43 @@ iovec* CPacket::getPacketVector()
    return m_PacketVector;
 }
 
-__int32 CPacket::getFlag() const
+int CPacket::getFlag() const
 {
    // read bit 0
    return m_nHeader[0] >> 31;
 }
 
-__int32 CPacket::getType() const
+int CPacket::getType() const
 {
    // read bit 1~15
    return (m_nHeader[0] >> 16) & 0x00007FFF;
 }
 
-__int32 CPacket::getExtendedType() const
+int CPacket::getExtendedType() const
 {
    // read bit 16~31
    return m_nHeader[0] & 0x0000FFFF;
 }
 
-__int32 CPacket::getAckSeqNo() const
+int32_t CPacket::getAckSeqNo() const
 {
    // read additional information field
    return m_nHeader[1];
 }
 
-__int32 CPacket::getMsgBoundary() const
+int CPacket::getMsgBoundary() const
 {
    // read [1] bit 0~1
    return m_nHeader[1] >> 30;
 }
 
-__int32 CPacket::getMsgOrderFlag() const
+bool CPacket::getMsgOrderFlag() const
 {
    // read [1] bit 2
-   return (m_nHeader[1] >> 29) & 1;
+   return (1 == ((m_nHeader[1] >> 29) & 1));
 }
 
-__int32 CPacket::getMsgSeq() const
+int32_t CPacket::getMsgSeq() const
 {
    // read [1] bit 3~31
    return m_nHeader[1] & 0x1FFFFFFF;

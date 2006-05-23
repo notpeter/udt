@@ -30,7 +30,7 @@ This header file contains the definition of UDT packet structure and operations.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 #ifndef __UDT_PACKET_H__
@@ -49,12 +49,12 @@ class CPacket
 friend class CChannel;
 
 public:
-   __int32& m_iSeqNo;           // alias: sequence number
-   __int32& m_iMsgNo;           // alias: message number
-   __int32& m_iTimeStamp;       // alias: timestamp
-   char*& m_pcData;             // alias: data/control information
+   int32_t& m_iSeqNo;                   // alias: sequence number
+   int32_t& m_iMsgNo;                   // alias: message number
+   int32_t& m_iTimeStamp;               // alias: timestamp
+   char*& m_pcData;                     // alias: data/control information
 
-   const static __int32 m_iPktHdrSize = 12;
+   static const int m_iPktHdrSize;	// packet header size
 
 public:
    CPacket();
@@ -67,7 +67,7 @@ public:
       // Returned value:
       //    the payload or the control information field length.
 
-   __int32 getLength() const;
+   int getLength() const;
 
       // Functionality:
       //    Set the payload or the control information field length.
@@ -76,7 +76,7 @@ public:
       // Returned value:
       //    None.
 
-   void setLength(const __int32& len);
+   void setLength(const int& len);
 
       // Functionality:
       //    Pack a Control packet.
@@ -88,7 +88,7 @@ public:
       // Returned value:
       //    None.
 
-   void pack(const __int32& pkttype, void* lparam = NULL, void* rparam = NULL, const __int32& size = 0);
+   void pack(const int& pkttype, void* lparam = NULL, void* rparam = NULL, const int& size = 0);
 
       // Functionality:
       //    Read the packet vector.
@@ -106,7 +106,7 @@ public:
       // Returned value:
       //    packet flag (0 or 1).
 
-   __int32 getFlag() const;
+   int getFlag() const;
 
       // Functionality:
       //    Read the packet type.
@@ -115,7 +115,7 @@ public:
       // Returned value:
       //    packet type filed (000 ~ 111).
 
-   __int32 getType() const;
+   int getType() const;
 
       // Functionality:
       //    Read the extended packet type.
@@ -124,7 +124,7 @@ public:
       // Returned value:
       //    extended packet type filed (0x000 ~ 0xFFF).
 
-   __int32 getExtendedType() const;
+   int getExtendedType() const;
 
       // Functionality:
       //    Read the ACK-2 seq. no.
@@ -133,7 +133,7 @@ public:
       // Returned value:
       //    packet header field (bit 16~31).
 
-   __int32 getAckSeqNo() const;
+   int32_t getAckSeqNo() const;
 
       // Functionality:
       //    Read the message boundary flag bit.
@@ -142,7 +142,7 @@ public:
       // Returned value:
       //    packet header field [1] (bit 0~1).
 
-   __int32 getMsgBoundary() const;
+   int getMsgBoundary() const;
 
       // Functionality:
       //    Read the message inorder delivery flag bit.
@@ -151,7 +151,7 @@ public:
       // Returned value:
       //    packet header field [1] (bit 2).
 
-   __int32 getMsgOrderFlag() const;
+   bool getMsgOrderFlag() const;
 
       // Functionality:
       //    Read the message sequence number.
@@ -160,13 +160,13 @@ public:
       // Returned value:
       //    packet header field [1] (bit 3~31).
 
-   __int32 getMsgSeq() const;
+   int32_t getMsgSeq() const;
 
 protected:
-   unsigned __int32 m_nHeader[3];       // The 96-bit header field
+   uint32_t m_nHeader[3];               // The 96-bit header field
    iovec m_PacketVector[2];             // The 2-demension vector of UDT packet [header, data]
 
-   __int32 __pad;
+   int32_t __pad;
 
    void operator = (const CPacket&) {}
 };
@@ -175,12 +175,12 @@ protected:
 
 struct CHandShake
 {
-   __int32 m_iVersion;          // UDT version
-   __int32 m_iType;             // UDT socket type
-   __int32 m_iISN;              // random initial sequence number
-   __int32 m_iMSS;              // maximum segment size
-   __int32 m_iFlightFlagSize;   // flow control window size
-   __int32 m_iReqType;          // connection request type: -1: response, 1: initial request, 0: rendezvous request
+   int32_t m_iVersion;          // UDT version
+   int32_t m_iType;             // UDT socket type
+   int32_t m_iISN;              // random initial sequence number
+   int32_t m_iMSS;              // maximum segment size
+   int32_t m_iFlightFlagSize;   // flow control window size
+   int32_t m_iReqType;          // connection request type: -1: response, 1: initial request, 0: rendezvous request
 };
 
 

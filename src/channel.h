@@ -30,7 +30,7 @@ This header file contains the definition of the UDP channel.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 #ifndef __UDT_CHANNEL_H__
@@ -45,7 +45,7 @@ class CChannel
 {
 public:
    CChannel();
-   CChannel(const __int32& version);
+   CChannel(const int& version);
    ~CChannel();
 
       // Functionality:
@@ -65,7 +65,7 @@ public:
       // Returned value:
       //    Actual size of data sent.
 
-   __int32 send(char* buffer, const __int32& size) const;
+   int send(char* buffer, const int& size) const;
 
       // Functionality:
       //    Receive data from the channel.
@@ -75,7 +75,7 @@ public:
       // Returned value:
       //    Actual size of data received.
 
-   __int32 recv(char* buffer, const __int32& size) const;
+   int recv(char* buffer, const int& size) const;
 
       // Functionality:
       //    Read the data from the channel but the data is not removed from UDP buffer.
@@ -85,7 +85,7 @@ public:
       // Returned value:
       //    Actual size of data received.
 
-   __int32 peek(char* buffer, const __int32& size) const;
+   int peek(char* buffer, const int& size) const;
 
       // Functionality:
       //    Send a packet through the channel.
@@ -113,7 +113,7 @@ public:
       // Returned value:
       //    Actual size of data sent.
 
-   __int32 sendto(CPacket& packet, const sockaddr* addr) const;
+   int sendto(CPacket& packet, const sockaddr* addr) const;
 
       // Functionality:
       //    Receive a packet from the channel and record the source address.
@@ -123,7 +123,7 @@ public:
       // Returned value:
       //    Actual size of data received.
 
-   __int32 recvfrom(CPacket& packet, sockaddr* addr) const;
+   int recvfrom(CPacket& packet, sockaddr* addr) const;
 
       // Functionality:
       //    Connect to the peer side whose address is in the sockaddr structure.
@@ -150,7 +150,7 @@ public:
       // Returned value:
       //    Current UDP sending buffer size.
 
-   __int32 getSndBufSize();
+   int getSndBufSize();
 
       // Functionality:
       //    Get the UDP receiving buffer size.
@@ -159,7 +159,7 @@ public:
       // Returned value:
       //    Current UDP receiving buffer size.
 
-   __int32 getRcvBufSize();
+   int getRcvBufSize();
 
       // Functionality:
       //    Set the UDP sending buffer size.
@@ -168,7 +168,7 @@ public:
       // Returned value:
       //    None.
 
-   void setSndBufSize(const __int32& size);
+   void setSndBufSize(const int& size);
 
       // Functionality:
       //    Set the UDP receiving buffer size.
@@ -177,7 +177,7 @@ public:
       // Returned value:
       //    None.
 
-   void setRcvBufSize(const __int32& size);
+   void setRcvBufSize(const int& size);
 
       // Functionality:
       //    Query the socket address that the channel is using.
@@ -198,18 +198,20 @@ public:
    void getPeerAddr(sockaddr* addr) const;
 
 private:
-   __int32 m_iIPversion;
+   int m_iIPversion;                    // IP version
 
    #ifndef WIN32
-      __int32 m_iSocket;                // socket descriptor
+      int m_iSocket;                    // socket descriptor
    #else
       SOCKET m_iSocket;
    #endif
 
-   __int32 m_iSndBufSize;               // UDP sending buffer size
-   __int32 m_iRcvBufSize;               // UDP receiving buffer size
+   int m_iSndBufSize;                   // UDP sending buffer size
+   int m_iRcvBufSize;                   // UDP receiving buffer size
 
    char* m_pcChannelBuf;                // buffer for temporally storage of in/out data
+
+   bool m_bEndianess;                   // endianess
 
 private:
    void setChannelOpt();

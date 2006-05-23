@@ -30,7 +30,7 @@ This header file contains the definition of UDT/CCC base class.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 
@@ -51,7 +51,7 @@ public:
    virtual ~CCC() {}
 
 public:
-   static const __int32 m_iCCID = 0;
+   //static const int m_iCCID = 0;
 
 public:
 
@@ -81,7 +81,7 @@ public:
       // Returned value:
       //    None.
 
-   virtual void onACK(const __int32&) {}
+   virtual void onACK(const int32_t&) {}
 
       // Functionality:
       //    Callback function to be called when a loss report is received.
@@ -91,7 +91,7 @@ public:
       // Returned value:
       //    None.
 
-   virtual void onLoss(const __int32*, const __int32&) {}
+   virtual void onLoss(const int32_t*, const int&) {}
 
       // Functionality:
       //    Callback function to be called when a timeout event occurs.
@@ -140,7 +140,7 @@ protected:
       // Returned value:
       //    None.
 
-   void setACKTimer(const __int32& msINT);
+   void setACKTimer(const int& msINT);
 
       // Functionality:
       //    Set packet-based acknowldging and the number of packets to send an ACK.
@@ -149,7 +149,7 @@ protected:
       // Returned value:
       //    None.
 
-   void setACKInterval(const __int32& pktINT);
+   void setACKInterval(const int& pktINT);
 
       // Functionality:
       //    Set RTO value.
@@ -158,7 +158,7 @@ protected:
       // Returned value:
       //    None.
 
-   void setRTO(const __int32& usRTO);
+   void setRTO(const int& usRTO);
 
       // Functionality:
       //    Send a user defined control packet.
@@ -185,9 +185,9 @@ protected:
 private:
    UDTSOCKET m_UDT;                     // The UDT entity that this congestion control algorithm is bound to
 
-   __int32 m_iACKPeriod;                // Periodical timer to send an ACK, in milliseconds
-   __int32 m_iACKInterval;              // How many packets to send one ACK, in packets
-   __int32 m_iRTO;                      // RTO value
+   int m_iACKPeriod;                    // Periodical timer to send an ACK, in milliseconds
+   int m_iACKInterval;                  // How many packets to send one ACK, in packets
+   int m_iRTO;                          // RTO value
    CPerfMon m_PerfInfo;                 // protocol statistics information
 };
 

@@ -30,7 +30,7 @@ This is the (only) header file of the UDT API, needed for programming with UDT.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 03/14/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 04/05/2006
 *****************************************************************************/
 
 #ifndef _UDT_H_
@@ -47,29 +47,30 @@ written by
 #include <fstream>
 #include <set>
 
-using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef WIN32
+#ifdef WIN32
    // Explicitly define 32-bit and 64-bit numbers
-   #define __int32 int
-   #define __int64 long long
+   typedef __int32 int32_t;
+   typedef __int64 int64_t;
+   typedef unsigned __int32 uint32_t;
+   typedef unsigned __int64 uint64_t;
 
-   #define UDT_API
-#else
    #ifdef UDT_EXPORTS
       #define UDT_API __declspec(dllexport)
    #else
       #define UDT_API __declspec(dllimport)
    #endif
+#else
+   #define UDT_API
 #endif
 
-typedef void (*UDT_MEM_ROUTINE)(char*, int);
+typedef void (*UDT_MEM_ROUTINE)(char*, int, void*);
 
 typedef int UDTSOCKET;
 
-typedef set<UDTSOCKET> ud_set;
+typedef std::set<UDTSOCKET> ud_set;
 #define UD_CLR(u, uset) ((uset)->erase(u))
 #define UD_ISSET(u, uset) ((uset)->find(u) != (uset)->end())
 #define UD_SET(u, uset) ((uset)->insert(u))
@@ -92,8 +93,8 @@ enum UDTOpt
    UDT_MAXMSG,          // maximum datagram message size
    UDT_MSGTTL,          // time-to-live of a datagram message
    UDT_RENDEZVOUS,      // rendezvous connection mode
-   UDT_SNDTIMEO,	// send() timeout
-   UDT_RCVTIMEO		// recv() timeout
+   UDT_SNDTIMEO,        // send() timeout
+   UDT_RCVTIMEO	        // recv() timeout
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,39 +102,39 @@ enum UDTOpt
 struct UDT_API CPerfMon
 {
    // global measurements
-   __int64 msTimeStamp;                 // time since the UDT entity is started, in milliseconds
-   __int64 pktSentTotal;                // total number of sent data packets, including retransmissions
-   __int64 pktRecvTotal;                // total number of received packets
-   __int32 pktSndLossTotal;             // total number of lost packets (sender side)
-   __int32 pktRcvLossTotal;             // total number of lost packets (receiver side)
-   __int32 pktRetransTotal;             // total number of retransmitted packets
-   __int32 pktSentACKTotal;             // total number of sent ACK packets
-   __int32 pktRecvACKTotal;             // total number of received ACK packets
-   __int32 pktSentNAKTotal;             // total number of sent NAK packets
-   __int32 pktRecvNAKTotal;             // total number of received NAK packets
+   long long int msTimeStamp;           // time since the UDT entity is started, in milliseconds
+   long long int pktSentTotal;          // total number of sent data packets, including retransmissions
+   long long int pktRecvTotal;          // total number of received packets
+   int pktSndLossTotal;                 // total number of lost packets (sender side)
+   int pktRcvLossTotal;                 // total number of lost packets (receiver side)
+   int pktRetransTotal;                 // total number of retransmitted packets
+   int pktSentACKTotal;                 // total number of sent ACK packets
+   int pktRecvACKTotal;                 // total number of received ACK packets
+   int pktSentNAKTotal;                 // total number of sent NAK packets
+   int pktRecvNAKTotal;                 // total number of received NAK packets
 
    // local measurements
-   __int64 pktSent;                     // number of sent data packets, including retransmissions
-   __int64 pktRecv;                     // number of received packets
-   __int32 pktSndLoss;                  // number of lost packets (sender side)
-   __int32 pktRcvLoss;                  // number of lost packets (receiverer side)
-   __int32 pktRetrans;                  // number of retransmitted packets
-   __int32 pktSentACK;                  // number of sent ACK packets
-   __int32 pktRecvACK;                  // number of received ACK packets
-   __int32 pktSentNAK;                  // number of sent NAK packets
-   __int32 pktRecvNAK;                  // number of received NAK packets
-   double mbpsSendRate;                 // sending rate in Mbps
-   double mbpsRecvRate;                 // receiving rate in Mbps
+   long long int pktSent;               // number of sent data packets, including retransmissions
+   long long int pktRecv;               // number of received packets
+   int pktSndLoss;                      // number of lost packets (sender side)
+   int pktRcvLoss;                      // number of lost packets (receiverer side)
+   int pktRetrans;                      // number of retransmitted packets
+   int pktSentACK;                      // number of sent ACK packets
+   int pktRecvACK;                      // number of received ACK packets
+   int pktSentNAK;                      // number of sent NAK packets
+   int pktRecvNAK;                      // number of received NAK packets
+   double mbpsSendRate;                 // sending rate in Mb/s
+   double mbpsRecvRate;                 // receiving rate in Mb/s
 
    // instant measurements
    double usPktSndPeriod;               // packet sending period, in microseconds
-   __int32 pktFlowWindow;               // flow window size, in number of packets
-   __int32 pktCongestionWindow;         // congestion window size, in number of packets
-   __int32 pktFlightSize;               // number of packets on flight
+   int pktFlowWindow;                   // flow window size, in number of packets
+   int pktCongestionWindow;             // congestion window size, in number of packets
+   int pktFlightSize;                   // number of packets on flight
    double msRTT;                        // RTT, in milliseconds
-   double mbpsBandwidth;                // estimated bandwidth, in Mbps
-   __int32 byteAvailSndBuf;             // available UDT sender buffer size
-   __int32 byteAvailRcvBuf;             // available UDT receiver buffer size
+   double mbpsBandwidth;                // estimated bandwidth, in Mb/s
+   int byteAvailSndBuf;                 // available UDT sender buffer size
+   int byteAvailRcvBuf;                 // available UDT receiver buffer size
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -141,7 +142,7 @@ struct UDT_API CPerfMon
 class UDT_API CUDTException
 {
 public:
-   CUDTException(__int32 major = 0, __int32 minor = 0, __int32 err = -1);
+   CUDTException(int major = 0, int minor = 0, int err = -1);
    CUDTException(const CUDTException& e);
    virtual ~CUDTException();
 
@@ -161,10 +162,10 @@ public:
       // Returned value:
       //    errno.
 
-   virtual const __int32 getErrorCode() const;
+   virtual const int getErrorCode() const;
 
 private:
-   __int32 m_iMajor;    // major exception categories
+   int m_iMajor;        // major exception categories
 
 // 0: correct condition
 // 1: network setup exception
@@ -174,9 +175,9 @@ private:
 // 5: method not supported
 // 6+: undefined error
 
-   __int32 m_iMinor;    // for specific error reasons
+   int m_iMinor;        // for specific error reasons
 
-   __int32 m_iErrno;    // errno returned by the system if there is any
+   int m_iErrno;        // errno returned by the system if there is any
 
    char m_pcMsg[1024];  // text error message
 };
@@ -216,17 +217,17 @@ UDT_API int setsockopt(UDTSOCKET u, int level, SOCKOPT optname, const void* optv
 
 UDT_API int shutdown(UDTSOCKET u, int how);
 
-UDT_API int send(UDTSOCKET u, const char* buf, int len, int flags = 0, int* handle = NULL, UDT_MEM_ROUTINE routine = NULL);
+UDT_API int send(UDTSOCKET u, const char* buf, int len, int flags = 0, int* handle = NULL, UDT_MEM_ROUTINE routine = NULL, void* context = NULL);
 
-UDT_API int recv(UDTSOCKET u, char* buf, int len, int flags = 0, int* handle = NULL, UDT_MEM_ROUTINE routine = NULL);
+UDT_API int recv(UDTSOCKET u, char* buf, int len, int flags = 0, int* handle = NULL, UDT_MEM_ROUTINE routine = NULL, void* context = NULL);
 
 UDT_API int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl = -1, bool inorder = false);
 
 UDT_API int recvmsg(UDTSOCKET u, char* buf, int len);
 
-UDT_API __int64 sendfile(UDTSOCKET u, ifstream& ifs, const __int64& offset, __int64& size, const int& block = 366000);
+UDT_API long long int sendfile(UDTSOCKET u, std::ifstream& ifs, const long long int& offset, long long int& size, const int& block = 366000);
 
-UDT_API __int64 recvfile(UDTSOCKET u, ofstream& ofs, const __int64& offset, __int64& size, const int& block = 7320000);
+UDT_API long long int recvfile(UDTSOCKET u, std::ofstream& ofs, const long long int& offset, long long int& size, const int& block = 7320000);
 
 UDT_API bool getoverlappedresult(UDTSOCKET u, int handle, int& progress, bool wait = false);
 

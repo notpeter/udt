@@ -30,7 +30,7 @@ This header file contains the definitions of common types and utility classes.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 03/20/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 #ifndef __UDT_COMMON_H__
@@ -58,7 +58,7 @@ written by
 
    struct iovec
    {
-      __int32 iov_len;
+      int iov_len;
       char* iov_base;
    };
 
@@ -80,7 +80,7 @@ public:
       // Returned value:
       //    None.
 
-   void sleep(const unsigned __int64& interval);
+   void sleep(const uint64_t& interval);
 
       // Functionality:
       //    Seelp until CC "nexttime".
@@ -89,7 +89,7 @@ public:
       // Returned value:
       //    None.
 
-   void sleepto(const unsigned __int64& nexttime);
+   void sleepto(const uint64_t& nexttime);
 
       // Functionality:
       //    Stop the sleep() or sleepto() methods.
@@ -109,7 +109,7 @@ public:
       // Returned value:
       //    None.
 
-   static void rdtsc(unsigned __int64 &x);
+   static void rdtsc(uint64_t &x);
 
       // Functionality:
       //    return the CPU frequency.
@@ -118,14 +118,14 @@ public:
       // Returned value:
       //    CPU frequency.
 
-   static unsigned __int64 getCPUFrequency();
+   static uint64_t getCPUFrequency();
 
 private:
-   unsigned __int64 m_ullSchedTime;             // next schedulled time
+   uint64_t m_ullSchedTime;             // next schedulled time
 
 private:
-   static unsigned __int64 s_ullCPUFrequency;   // CPU frequency : clock cycles per microsecond
-   static unsigned __int64 readCPUFrequency();
+   static uint64_t s_ullCPUFrequency;	// CPU frequency : clock cycles per microsecond
+   static uint64_t readCPUFrequency();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -137,8 +137,8 @@ public:
    ~CGuard();
 
 private:
-   pthread_mutex_t& m_Mutex;    // Alias name of the mutex to be protected
-   __int32 m_iLocked;           // Locking status
+   pthread_mutex_t& m_Mutex;            // Alias name of the mutex to be protected
+   int m_iLocked;                       // Locking status
 
    void operator = (const CGuard&) {}
 };
@@ -157,13 +157,13 @@ private:
 class CSeqNo
 {
 public:
-   inline static const __int32 seqcmp(const __int32& seq1, const __int32& seq2)
+   inline static const int seqcmp(const int32_t& seq1, const int32_t& seq2)
    {return (abs(seq1 - seq2) < m_iSeqNoTH) ? (seq1 - seq2) : (seq2 - seq1);}
 
-   inline static const __int32 seqlen(const __int32& seq1, const __int32& seq2)
+   inline static const int seqlen(const int32_t& seq1, const int32_t& seq2)
    {return (seq1 <= seq2) ? (seq2 - seq1 + 1) : (seq2 - seq1 + 1 + m_iMaxSeqNo);}
 
-   inline static const __int32 seqoff(const __int32& seq1, const __int32& seq2)
+   inline static const int seqoff(const int32_t& seq1, const int32_t& seq2)
    {
       if (abs(seq1 - seq2) < m_iSeqNoTH)
          return seq2 - seq1;
@@ -174,18 +174,18 @@ public:
       return seq2 - seq1 + m_iMaxSeqNo;
    }
 
-   inline static const __int32 incseq(const __int32& seq)
+   inline static const int32_t incseq(const int32_t seq)
    {return (seq == m_iMaxSeqNo - 1) ? 0 : seq + 1;}
 
-   inline static const __int32 decseq(const __int32& seq)
+   inline static const int32_t decseq(const int32_t& seq)
    {return (seq == 0) ? m_iMaxSeqNo - 1 : seq - 1;}
 
-   inline static const __int32 incseq(const __int32& seq, const __int32& inc)
+   inline static const int32_t incseq(const int32_t& seq, const int32_t& inc)
    {return (m_iMaxSeqNo - seq > inc) ? seq + inc : seq - m_iMaxSeqNo + inc;}
 
 public:
-   static const __int32 m_iSeqNoTH = 0x3FFFFFFF;        // threshold for comparing seq. no.
-   static const __int32 m_iMaxSeqNo = 0x7FFFFFFF;       // maximum sequence number used in UDT
+   static const int32_t m_iSeqNoTH;             // threshold for comparing seq. no.
+   static const int32_t m_iMaxSeqNo;            // maximum sequence number used in UDT
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -195,11 +195,11 @@ public:
 class CAckNo
 {
 public:
-   inline static const __int32 incack(const __int32& ackno)
+   inline static const int32_t incack(const int32_t& ackno)
    {return (ackno == m_iMaxAckSeqNo - 1) ? 0 : ackno + 1;}
 
 public:
-   static const __int32 m_iMaxAckSeqNo = 0x7FFFFFFF;    // maximum ACK sub-sequence number used in UDT
+   static const int32_t m_iMaxAckSeqNo;         // maximum ACK sub-sequence number used in UDT
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -209,13 +209,13 @@ public:
 class CMsgNo
 {
 public:
-   inline static const __int32 msgcmp(const __int32& msgno1, const __int32& msgno2)
+   inline static const int msgcmp(const int32_t& msgno1, const int32_t& msgno2)
    {return (abs(msgno1 - msgno2) < m_iMsgNoTH) ? (msgno1 - msgno2) : (msgno2 - msgno1);}
 
-   inline static const __int32 msglen(const __int32& msgno1, const __int32& msgno2)
+   inline static const int msglen(const int32_t& msgno1, const int32_t& msgno2)
    {return (msgno1 <= msgno2) ? (msgno2 - msgno1 + 1) : (msgno2 - msgno1 + m_iMaxMsgNo);}
 
-   inline static const __int32 msgoff(const __int32& msgno1, const __int32& msgno2)
+   inline static const int msgoff(const int32_t& msgno1, const int32_t& msgno2)
    {
       if (abs(msgno1 - msgno2) < m_iMsgNoTH)
          return msgno2 - msgno1;
@@ -226,12 +226,12 @@ public:
       return msgno2 - msgno1 + m_iMaxMsgNo;
    }
 
-   inline static const __int32 incmsg(const __int32& msgno)
+   inline static const int32_t incmsg(const int32_t& msgno)
    {return (msgno == m_iMaxMsgNo - 1) ? 0 : msgno + 1;}
 
 public:
-   static const __int32 m_iMsgNoTH = 0xFFFFFFF;         // threshold for comparing msg. no.
-   static const __int32 m_iMaxMsgNo = 0x1FFFFFFF;       // maximum message number used in UDT
+   static const int32_t m_iMsgNoTH;             // threshold for comparing msg. no.
+   static const int32_t m_iMaxMsgNo;            // maximum message number used in UDT
 };
 
 

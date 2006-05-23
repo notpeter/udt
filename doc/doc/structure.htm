@@ -406,10 +406,9 @@ trace information. Its member attributes can be read directly by applications.</
     </table>
 <H4><font face="Verdana" size="2"><a name="MEM"></a>UDT_MEM_ROUTINE</font></H4>
 <p><font face="Verdana" size="2">The UDT_MEM_ROUTINE is defined as 
-<font color="#0000FF">void (UDT_MEME_ROUTINE*)(char*, 
-int)</font> and it is used to automatically process the data buffer after an overlapped 
-IO is completed. The first parameter is a pointer to the buffer to be processed,
-and the second parameter is the length of the buffer.</font></p>
+<font color="#0000FF">void (UDT_MEME_ROUTINE*)(char*, int, void*)</font> and it is used to automatically process the data buffer after an overlapped 
+IO is completed. The first parameter is a pointer to the buffer to be processed, the second parameter is the length of the
+buffer, and the last parameter is a pointer to the application context.</font></p>
 <H4><font face="Verdana" size="2">See Also</font></H4>
 <P>
 <b><font face="Verdana" size="2"><a href="function.htm">UDT Sockets Functions</a></font></b></P>

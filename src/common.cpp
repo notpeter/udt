@@ -31,7 +31,7 @@ mutex facility, and exception processing.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 03/16/2006
+   Yunhong Gu [ygu@cs.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 
@@ -61,7 +61,7 @@ written by
       }
       else
       {
-         unsigned __int64 ft;
+         uint64_t ft;
          GetSystemTimeAsFileTime((FILETIME *)&ft);
          tv->tv_sec = (long)(ft / 10000000);
          tv->tv_usec = (long)((ft % 10000000) / 10);
@@ -90,9 +90,9 @@ written by
    }
 #endif
 
-unsigned __int64 CTimer::s_ullCPUFrequency = CTimer::readCPUFrequency();
+uint64_t CTimer::s_ullCPUFrequency = CTimer::readCPUFrequency();
 
-void CTimer::rdtsc(unsigned __int64 &x)
+void CTimer::rdtsc(uint64_t &x)
 {
    #ifdef WIN32
       if (!QueryPerformanceCounter((LARGE_INTEGER *)&x))
@@ -107,7 +107,7 @@ void CTimer::rdtsc(unsigned __int64 &x)
 
       // on Windows
       /*
-         unsigned __int32 a, b;
+         unsigned int a, b;
          __asm 
          {
             __emit 0x0f
@@ -122,7 +122,7 @@ void CTimer::rdtsc(unsigned __int64 &x)
    #elif IA64
       __asm__ volatile ("mov %0=ar.itc" : "=r"(x) :: "memory");
    #elif AMD64
-      unsigned __int32 lval, hval;
+      unsigned int lval, hval;
       __asm__ volatile ("rdtsc" : "=a" (lval), "=d" (hval));
       x = hval;
       x = (x << 32) | lval;
@@ -134,10 +134,10 @@ void CTimer::rdtsc(unsigned __int64 &x)
    #endif
 }
 
-unsigned __int64 CTimer::readCPUFrequency()
+uint64_t CTimer::readCPUFrequency()
 {
    #ifdef WIN32
-      __int64 ccf;
+      int64_t ccf;
       if (QueryPerformanceFrequency((LARGE_INTEGER *)&ccf))
          return ccf / 1000000;
       else
@@ -145,7 +145,7 @@ unsigned __int64 CTimer::readCPUFrequency()
    #elif IA32 || IA64 || AMD64
       // alternative: read /proc/cpuinfo
 
-      unsigned __int64 t1, t2;
+      uint64_t t1, t2;
 
       rdtsc(t1);
       usleep(100000);
@@ -158,26 +158,26 @@ unsigned __int64 CTimer::readCPUFrequency()
    #endif
 }
 
-unsigned __int64 CTimer::getCPUFrequency()
+uint64_t CTimer::getCPUFrequency()
 {
    return s_ullCPUFrequency;
 }
 
-void CTimer::sleep(const unsigned __int64& interval)
+void CTimer::sleep(const uint64_t& interval)
 {
-   unsigned __int64 t;
+   uint64_t t;
    rdtsc(t);
 
    // sleep next "interval" time
    sleepto(t + interval);
 }
 
-void CTimer::sleepto(const unsigned __int64& nexttime)
+void CTimer::sleepto(const uint64_t& nexttime)
 {
    // Use class member such that the method can be interrupted by others
    m_ullSchedTime = nexttime;
 
-   unsigned __int64 t;
+   uint64_t t;
    rdtsc(t);
 
    while (t < m_ullSchedTime)
@@ -228,7 +228,7 @@ CGuard::~CGuard()
 }
 
 //
-CUDTException::CUDTException(__int32 major, __int32 minor, __int32 err):
+CUDTException::CUDTException(int major, int minor, int err):
 m_iMajor(major),
 m_iMinor(minor)
 {
@@ -505,7 +505,7 @@ const char* CUDTException::getErrorMessage()
    return m_pcMsg;
 }
 
-const __int32 CUDTException::getErrorCode() const
+const int CUDTException::getErrorCode() const
 {
    return m_iMajor * 1000 + m_iMinor;
 }

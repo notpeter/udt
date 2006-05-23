@@ -43,8 +43,8 @@ int main(int argc, char* argv[])
 
    UDT::listen(serv, 1);
 
-   int namelen;
    sockaddr_in their_addr;
+   int namelen = sizeof(their_addr);
 
    UDTSOCKET fhandle;
 
@@ -79,12 +79,12 @@ int main(int argc, char* argv[])
    ifstream ifs(file, ios::in | ios::binary);
 
    ifs.seekg(0, ios::end);
-   __int64 size = ifs.tellg();
+   long long size = ifs.tellg();
    ifs.seekg(0, ios::beg);
 
 
    // send file size information
-   if (UDT::ERROR == UDT::send(fhandle, (char*)&size, sizeof(__int64), 0))
+   if (UDT::ERROR == UDT::send(fhandle, (char*)&size, sizeof(long long), 0))
    {
       cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;

@@ -30,7 +30,7 @@ This header file contains the definition of Window structures used in UDT.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 02/14/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
 #ifndef __UDT_WINDOW_H__
@@ -48,7 +48,7 @@ class CACKWindow
 {
 public:
    CACKWindow();
-   CACKWindow(const __int32& size);
+   CACKWindow(const int& size);
    ~CACKWindow();
 
       // Functionality:
@@ -59,7 +59,7 @@ public:
       // Returned value:
       //    None.
 
-   void store(const __int32& seq, const __int32& ack);
+   void store(const int32_t& seq, const int32_t& ack);
 
       // Functionality:
       //    Search the ACK-2 "seq" in the window, find out the DATA "ack" and caluclate RTT .
@@ -69,16 +69,16 @@ public:
       // Returned value:
       //    RTT.
 
-   __int32 acknowledge(const __int32& seq, __int32& ack);
+   int acknowledge(const int32_t& seq, int32_t& ack);
 
 private:
-   __int32* m_piACKSeqNo;       // Seq. No. for the ACK packet
-   __int32* m_piACK;            // Data Seq. No. carried by the ACK packet
+   int32_t* m_piACKSeqNo;       // Seq. No. for the ACK packet
+   int32_t* m_piACK;            // Data Seq. No. carried by the ACK packet
    timeval* m_pTimeStamp;       // The timestamp when the ACK was sent
 
-   __int32 m_iSize;             // Size of the ACK history window
-   __int32 m_iHead;             // Pointer to the lastest ACK record
-   __int32 m_iTail;             // Pointer to the oldest ACK record
+   int m_iSize;                 // Size of the ACK history window
+   int m_iHead;                 // Pointer to the lastest ACK record
+   int m_iTail;                 // Pointer to the oldest ACK record
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ class CPktTimeWindow
 {
 public:
    CPktTimeWindow();
-   CPktTimeWindow(const __int32& s1, const __int32& s2, const __int32& s3);
+   CPktTimeWindow(const int& s1, const int& s2, const int& s3);
    ~CPktTimeWindow();
 
       // Functionality:
@@ -97,7 +97,7 @@ public:
       // Returned value:
       //    minimum packet sending interval (microseconds).
 
-   __int32 getMinPktSndInt() const;
+   int getMinPktSndInt() const;
 
       // Functionality:
       //    Calculate the packes arrival speed.
@@ -106,7 +106,7 @@ public:
       // Returned value:
       //    Packet arrival speed (packets per second).
 
-   __int32 getPktRcvSpeed() const;
+   int getPktRcvSpeed() const;
 
       // Functionality:
       //    Check if the rtt is increasing or not.
@@ -124,16 +124,16 @@ public:
       // Returned value:
       //    Estimated bandwidth (packets per second).
 
-   __int32 getBandwidth() const;
+   int getBandwidth() const;
 
       // Functionality:
       //    Record time information of a packet sending.
       // Parameters:
-      //    0) currtime: time stamp of the packet sending.
+      //    0) currtime: timestamp of the packet sending.
       // Returned value:
       //    None.
 
-   void onPktSent(const timeval& currtime);
+   void onPktSent(const int& currtime);
 
       // Functionality:
       //    Record time information of an arrived packet.
@@ -151,7 +151,7 @@ public:
       // Returned value:
       //    None.
 
-   void ack2Arrival(const __int32& rtt);
+   void ack2Arrival(const int& rtt);
 
       // Functionality:
       //    Record the arrival time of the first probing packet.
@@ -172,22 +172,22 @@ public:
    void probe2Arrival();
 
 private:
-   __int32 m_iAWSize;           // size of the packet arrival history window
-   __int32* m_piPktWindow;      // packet information window
-   __int32 m_iPktWindowPtr;     // position pointer of the packet info. window.
+   int m_iAWSize;               // size of the packet arrival history window
+   int* m_piPktWindow;          // packet information window
+   int m_iPktWindowPtr;         // position pointer of the packet info. window.
 
-   __int32 m_iRWSize;           // size of RTT history window size
-   __int32* m_piRTTWindow;      // RTT history window
-   __int32* m_piPCTWindow;      // PCT (pairwise comparison test) history window
-   __int32* m_piPDTWindow;      // PDT (pairwise difference test) history window
-   __int32 m_iRTTWindowPtr;     // position pointer to the 3 windows above
+   int m_iRWSize;               // size of RTT history window size
+   int* m_piRTTWindow;          // RTT history window
+   int* m_piPCTWindow;          // PCT (pairwise comparison test) history window
+   int* m_piPDTWindow;          // PDT (pairwise difference test) history window
+   int m_iRTTWindowPtr;         // position pointer to the 3 windows above
 
-   __int32 m_iPWSize;           // size of probe history window size
-   __int32* m_piProbeWindow;    // record inter-packet time for probing packet pairs
-   __int32 m_iProbeWindowPtr;   // position pointer to the probing window
+   int m_iPWSize;               // size of probe history window size
+   int* m_piProbeWindow;        // record inter-packet time for probing packet pairs
+   int m_iProbeWindowPtr;       // position pointer to the probing window
 
-   timeval m_LastSentTime;      // last packet sending time
-   __int32 m_iMinPktSndInt;     // Minimum packet sending interval
+   int m_iLastSentTime;         // last packet sending time
+   int m_iMinPktSndInt;         // Minimum packet sending interval
 
    timeval m_LastArrTime;       // last packet arrival time
    timeval m_CurrArrTime;       // current packet arrival time
