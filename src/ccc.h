@@ -194,6 +194,8 @@ private:
 class CCCVirtualFactory
 {
 public:
+   virtual ~CCCVirtualFactory() {}
+
    virtual CCC* create() = 0;
    virtual CCCVirtualFactory* clone() = 0;
 };
@@ -202,6 +204,8 @@ template <class T>
 class CCCFactory: public CCCVirtualFactory
 {
 public:
+   virtual ~CCCFactory() {}
+
    virtual CCC* create() {return new T;}
    virtual CCCVirtualFactory* clone() {return new CCCFactory<T>;}
 };

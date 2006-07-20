@@ -39,7 +39,6 @@ written by
 
 #include <cstring>
 #include <cmath>
-#include "common.h"
 #include "buffer.h"
 
 

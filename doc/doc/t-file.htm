@@ -37,7 +37,7 @@ standard class to handle the files. The following examples show the usage of
     <p style="margin-top: 0; margin-bottom: 0">
     <font size="1" face="Courier New">ifs.seekg(0, ios::end);</font></p>
     <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">streampos size = ifs.tellg();</font></p>
+    <font face="Courier New" size="1">int64_t size = ifs.tellg();</font></p>
     <p style="margin-top: 0; margin-bottom: 0">
     <font size="1" face="Courier New">ifs.seekg(0, ios::beg);</font></p>
 	<p style="margin-top: 0; margin-bottom: 0">
@@ -80,7 +80,9 @@ standard class to handle the files. The following examples show the usage of
 <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2">Note 
 that a sent file is not necessarily received by <a href="recvfile.htm">recvfile</a>, 
-and vice versa.</font></p>
+and vice versa. Also note that fstream in GCC 3.0 does NOT support large file
+(&gt; 2GB) and please use other versions of GCC to compile UDT if you need large
+file support.</font></p>
 
 </body>
 

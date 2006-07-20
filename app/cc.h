@@ -680,7 +680,7 @@ private:
    double m_dRequestRate;
 
    timeval m_LastGCTime;
-   __int64 m_llLastRecvPkt;
+   int64_t m_llLastRecvPkt;
    int m_iLastRcvLoss;
    int m_iRTT;
 

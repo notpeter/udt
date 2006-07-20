@@ -79,12 +79,12 @@ int main(int argc, char* argv[])
    ifstream ifs(file, ios::in | ios::binary);
 
    ifs.seekg(0, ios::end);
-   long long size = ifs.tellg();
+   int64_t size = ifs.tellg();
    ifs.seekg(0, ios::beg);
 
 
    // send file size information
-   if (UDT::ERROR == UDT::send(fhandle, (char*)&size, sizeof(long long), 0))
+   if (UDT::ERROR == UDT::send(fhandle, (char*)&size, sizeof(int64_t), 0))
    {
       cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;

@@ -42,7 +42,7 @@ all: libudt.so libudt.a udt
 	$(C++) $(CCFLAGS) $< -c
 
 libudt.so: $(OBJS)
-ifneq ($(os), BSD)
+ifneq ($(os), OSX)
 	$(C++) -shared -o $@ $^
 else
 	$(C++) -dynamiclib -o libudt.dylib -lstdc++ -lpthread -lm $^

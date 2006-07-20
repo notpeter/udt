@@ -30,7 +30,7 @@ This header file contains the definition of UDT packet structure and operations.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 06/22/2006
 *****************************************************************************/
 
 #ifndef __UDT_PACKET_H__
@@ -181,6 +181,7 @@ struct CHandShake
    int32_t m_iMSS;              // maximum segment size
    int32_t m_iFlightFlagSize;   // flow control window size
    int32_t m_iReqType;          // connection request type: -1: response, 1: initial request, 0: rendezvous request
+   int32_t m_iPort;		// new socket port
 };
 
 

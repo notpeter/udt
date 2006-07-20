@@ -32,7 +32,7 @@ reference: UDT programming manual and socket programming reference
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 04/07/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 07/20/2006
 *****************************************************************************/
 
 #ifndef WIN32
@@ -253,11 +253,16 @@ int CUDTUnited::newConnection(const UDTSOCKET listen, const sockaddr* peer, CHan
       else if (hs->m_iISN == ns->m_pUDT->m_iPeerISN)
       {
          // connection already exist, this is a repeated connection request
-         // pass the hand shake packet to the UDT entity
-         CPacket cr;
-         cr.pack(0, NULL, hs, sizeof(CHandShake));
+         // respond with existing HS information
 
-         ns->m_pUDT->processCtrl(cr);
+         hs->m_iISN = ns->m_pUDT->m_iISN;
+         hs->m_iMSS = ns->m_pUDT->m_iMSS;
+         hs->m_iFlightFlagSize = ns->m_pUDT->m_iFlightFlagSize;
+         hs->m_iReqType = -1;
+         if (AF_INET == ls->m_iIPversion)
+            hs->m_iPort = ntohs(((sockaddr_in*)ns->m_pSelfAddr)->sin_port);
+         else
+            hs->m_iPort = ntohs(((sockaddr_in6*)ns->m_pSelfAddr)->sin6_port);
 
          return 0;
 
@@ -375,10 +380,11 @@ int CUDTUnited::newConnection(const UDTSOCKET listen, const sockaddr* peer, CHan
       return -1;
    }
 
-   //connection is ready to complete, send hs to peer via the new UDT socket
-   CPacket initpkt;
-   initpkt.pack(0, NULL, hs, sizeof(CHandShake));
-   *(ns->m_pUDT->m_pChannel) << initpkt;
+   // complete the response HS information with port number
+   if (AF_INET == ls->m_iIPversion)
+      hs->m_iPort = ntohs(((sockaddr_in*)ns->m_pSelfAddr)->sin_port);
+   else
+      hs->m_iPort = ntohs(((sockaddr_in6*)ns->m_pSelfAddr)->sin6_port);
 
    // wake up a waiting accept() call
    #ifndef WIN32
@@ -1302,7 +1308,7 @@ int CUDT::recvmsg(UDTSOCKET u, char* buf, int len)
    }
 }
 
-long long int CUDT::sendfile(UDTSOCKET u, ifstream& ifs, const long long int& offset, long long int& size, const int& block)
+int64_t CUDT::sendfile(UDTSOCKET u, ifstream& ifs, const int64_t& offset, int64_t& size, const int& block)
 {
    try
    {
@@ -1327,7 +1333,7 @@ long long int CUDT::sendfile(UDTSOCKET u, ifstream& ifs, const long long int& of
    }
 }
 
-long long int CUDT::recvfile(UDTSOCKET u, ofstream& ofs, const long long int& offset, long long int& size, const int& block)
+int64_t CUDT::recvfile(UDTSOCKET u, ofstream& ofs, const int64_t& offset, int64_t& size, const int& block)
 {
    try
    {
@@ -1515,12 +1521,12 @@ int recvmsg(UDTSOCKET u, char* buf, int len)
    return CUDT::recvmsg(u, buf, len);
 }
 
-long long int sendfile(UDTSOCKET u, ifstream& ifs, const long long int& offset, long long int& size, const int& block)
+int64_t sendfile(UDTSOCKET u, ifstream& ifs, const int64_t& offset, int64_t& size, const int& block)
 {
    return CUDT::sendfile(u, ifs, offset, size, block);
 }
 
-long long int recvfile(UDTSOCKET u, ofstream& ofs, const long long int& offset, long long int& size, const int& block)
+int64_t recvfile(UDTSOCKET u, ofstream& ofs, const int64_t& offset, int64_t& size, const int& block)
 {
    return CUDT::recvfile(u, ofs, offset, size, block);
 }

@@ -56,9 +56,9 @@ int main(int argc, char* argv[])
 
 
    // get size information
-   long long size;
+   int64_t size;
 
-   if (UDT::ERROR == UDT::recv(fhandle, (char*)&size, sizeof(long long), 0))
+   if (UDT::ERROR == UDT::recv(fhandle, (char*)&size, sizeof(int64_t), 0))
    {
       cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 
    // receive the file
    ofstream ofs(argv[4], ios::out | ios::binary | ios::trunc);
-   long long recvsize; 
+   int64_t recvsize; 
 
    if (UDT::ERROR == (recvsize = UDT::recvfile(fhandle, ofs, 0, size)))
    {

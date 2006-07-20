@@ -30,7 +30,7 @@ This header file contains the definition of UDT buffer structure and operations.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 04/05/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 07/20/2006
 *****************************************************************************/
 
 #ifndef __UDT_CORE_H__
@@ -76,8 +76,8 @@ public: //API
    static int recv(UDTSOCKET u, char* buf, int len, int flags = 0, int* handle = NULL, UDT_MEM_ROUTINE routine = NULL, void* context = NULL);
    static int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl = -1, bool inorder = false);
    static int recvmsg(UDTSOCKET u, char* buf, int len);
-   static long long int sendfile(UDTSOCKET u, std::ifstream& ifs, const long long int& offset, long long int& size, const int& block = 366000);
-   static long long int recvfile(UDTSOCKET u, std::ofstream& ofs, const long long int& offset, long long int& size, const int& block = 7320000);
+   static int64_t sendfile(UDTSOCKET u, std::ifstream& ifs, const int64_t& offset, int64_t& size, const int& block = 366000);
+   static int64_t recvfile(UDTSOCKET u, std::ofstream& ofs, const int64_t& offset, int64_t& size, const int& block = 7320000);
    static bool getoverlappedresult(UDTSOCKET u, int handle, int& progress, bool wait = false);
    static int select(int nfds, ud_set* readfds, ud_set* writefds, ud_set* exceptfds, const timeval* timeout);
    static CUDTException& getlasterror();
@@ -200,7 +200,7 @@ private:
       // Returned value:
       //    Actual size of data sent.
 
-   long long int sendfile(std::ifstream& ifs, const long long int& offset, const long long int& size, const int& block = 366000);
+   int64_t sendfile(std::ifstream& ifs, const int64_t& offset, const int64_t& size, const int& block = 366000);
 
       // Functionality:
       //    Request UDT to receive data into a file described as "fd", starting from "offset", with expected size of "size".
@@ -212,7 +212,7 @@ private:
       // Returned value:
       //    Actual size of data received.
 
-   long long int recvfile(std::ofstream& ofs, const long long int& offset, const long long int& size, const int& block = 7320000);
+   int64_t recvfile(std::ofstream& ofs, const int64_t& offset, const int64_t& size, const int& block = 7320000);
 
       // Functionality:
       //    Configure UDT options.
@@ -432,8 +432,8 @@ private: // Generation and processing of control packet
 
 private: // Trace
    timeval m_StartTime;                         // timestamp when the UDT entity is started
-   long long int m_llSentTotal;                 // total number of sent data packets, including retransmissions
-   long long int m_llRecvTotal;                 // total number of received packets
+   int64_t m_llSentTotal;                       // total number of sent data packets, including retransmissions
+   int64_t m_llRecvTotal;                       // total number of received packets
    int m_iSndLossTotal;                         // total number of lost packets (sender side)
    int m_iRcvLossTotal;                         // total number of lost packets (receiver side)
    int m_iRetransTotal;                         // total number of retransmitted packets
@@ -443,8 +443,8 @@ private: // Trace
    int m_iRecvNAKTotal;                         // total number of received NAK packets
 
    timeval m_LastSampleTime;                    // last performance sample time
-   long long int m_llTraceSent;                 // number of pakctes sent in the last trace interval
-   long long int m_llTraceRecv;                 // number of pakctes received in the last trace interval
+   int64_t m_llTraceSent;                       // number of pakctes sent in the last trace interval
+   int64_t m_llTraceRecv;                       // number of pakctes received in the last trace interval
    int m_iTraceSndLoss;                         // number of lost packets in the last trace interval (sender side)
    int m_iTraceRcvLoss;                         // number of lost packets in the last trace interval (receiver side)
    int m_iTraceRetrans;                         // number of retransmitted packets in the last trace interval

@@ -30,7 +30,7 @@ This is the (only) header file of the UDT API, needed for programming with UDT.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 04/05/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 07/20/2006
 *****************************************************************************/
 
 #ifndef _UDT_H_
@@ -55,7 +55,12 @@ written by
    typedef __int32 int32_t;
    typedef __int64 int64_t;
    typedef unsigned __int32 uint32_t;
-   typedef unsigned __int64 uint64_t;
+   #if _MSC_VER >= 1300
+      typedef unsigned __int64 uint64_t;
+   #else
+      // VC 6.0 does not support unsigned __int64: may bring potential problems.
+      typedef __int64 uint64_t;
+   #endif
 
    #ifdef UDT_EXPORTS
       #define UDT_API __declspec(dllexport)
@@ -102,9 +107,9 @@ enum UDTOpt
 struct UDT_API CPerfMon
 {
    // global measurements
-   long long int msTimeStamp;           // time since the UDT entity is started, in milliseconds
-   long long int pktSentTotal;          // total number of sent data packets, including retransmissions
-   long long int pktRecvTotal;          // total number of received packets
+   int64_t msTimeStamp;                 // time since the UDT entity is started, in milliseconds
+   int64_t pktSentTotal;                // total number of sent data packets, including retransmissions
+   int64_t pktRecvTotal;                // total number of received packets
    int pktSndLossTotal;                 // total number of lost packets (sender side)
    int pktRcvLossTotal;                 // total number of lost packets (receiver side)
    int pktRetransTotal;                 // total number of retransmitted packets
@@ -114,8 +119,8 @@ struct UDT_API CPerfMon
    int pktRecvNAKTotal;                 // total number of received NAK packets
 
    // local measurements
-   long long int pktSent;               // number of sent data packets, including retransmissions
-   long long int pktRecv;               // number of received packets
+   int64_t pktSent;                     // number of sent data packets, including retransmissions
+   int64_t pktRecv;                     // number of received packets
    int pktSndLoss;                      // number of lost packets (sender side)
    int pktRcvLoss;                      // number of lost packets (receiverer side)
    int pktRetrans;                      // number of retransmitted packets
@@ -225,9 +230,9 @@ UDT_API int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl = -1, bool in
 
 UDT_API int recvmsg(UDTSOCKET u, char* buf, int len);
 
-UDT_API long long int sendfile(UDTSOCKET u, std::ifstream& ifs, const long long int& offset, long long int& size, const int& block = 366000);
+UDT_API int64_t sendfile(UDTSOCKET u, std::ifstream& ifs, const int64_t& offset, int64_t& size, const int& block = 366000);
 
-UDT_API long long int recvfile(UDTSOCKET u, std::ofstream& ofs, const long long int& offset, long long int& size, const int& block = 7320000);
+UDT_API int64_t recvfile(UDTSOCKET u, std::ofstream& ofs, const int64_t& offset, int64_t& size, const int& block = 7320000);
 
 UDT_API bool getoverlappedresult(UDTSOCKET u, int handle, int& progress, bool wait = false);
 

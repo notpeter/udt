@@ -23,10 +23,10 @@ CONTENT:
 To make: 
      make -e os=XXX arch=YYY 
 
-XXX: [LINUX(default), BSD] 
+XXX: [LINUX(default), BSD, OSX] 
 YYY: [IA32(default), POWERPC, IA64, AMD64] 
 
-For example, on OS X, you need to do "make -e os=BSD arch=POWERPC"; on 32-bit 
+For example, on OS X, you need to do "make -e os=OSX arch=POWERPC"; on 32-bit 
 Linux system, simply use "make".
 
 On Windows systems, use the Visual Studio .NET project files in ./win directory.

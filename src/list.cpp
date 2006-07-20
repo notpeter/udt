@@ -36,7 +36,6 @@ written by
    Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
 *****************************************************************************/
 
-#include "common.h"
 #include "list.h"
 
 

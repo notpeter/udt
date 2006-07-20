@@ -30,7 +30,7 @@ This header file contains the definition of the UDP channel.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 06/13/2006
 *****************************************************************************/
 
 #ifndef __UDT_CHANNEL_H__
@@ -210,8 +210,6 @@ private:
    int m_iRcvBufSize;                   // UDP receiving buffer size
 
    char* m_pcChannelBuf;                // buffer for temporally storage of in/out data
-
-   bool m_bEndianess;                   // endianess
 
 private:
    void setChannelOpt();

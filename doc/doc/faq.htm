@@ -76,6 +76,13 @@ license issues shall I be aware of when using UDT? </a> </font></p>
 <a href="#18">18. What background knowledge is necessary in 
 order to use UDT?</a></font></p>
 
+<p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2"><a href="#19">19.
+Why UDT consumes so much memory even if I just send a small file?</a></font></p>
+
+<p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2"><a href="#20">20.
+When I try to start the example application, an error of &quot;No buffer space
+available&quot; occurs, what happened?</a></font></p>
+
 <p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
 
 <hr>
@@ -221,6 +228,22 @@ order to use UDT? </font></h4>
 <p style="margin-top: 0; margin-bottom: 0"><font face="Verdana" size="2">
 Knowledge on socket programming and C++ is necessary. Knowledge on TCP is a 
 plus.</font></p>
+
+<h4><font face="Verdana" size="2"><a name="19"></a>Why UDT consumes so much
+memory even if I just send a small file?</font></h4>
+
+<p><font face="Verdana" size="2">Because UDT was originally designed for transferring
+very large dataset over high speed long distance networks, the default buffer
+size is set to 20MB, just enough for most bandwidth-delay product in these environments.
+You can, however, use &quot;setsockopt&quot; to set a smaller buffer size should
+your application works only in relatively low bandwidth (&lt;10Mb/s) environments.</font></p>
+<h4><font face="Verdana" size="2"><a name="20"></a>When I try to start the
+example application, an error of &quot;No buffer space available&quot; occurs,
+what happened?</font></h4>
+<p>This error usually happens on BSD systems. The default maximum socket buffer
+size on BSD systems is usually much smaller that the default UDT socket buffer
+size. To eliminate this error, either use &quot;setsockopt&quot; to set a
+smaller UDT buffer size, or change the default OS value to a larger one.</p>
 
 </body>
 

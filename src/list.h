@@ -38,6 +38,7 @@ written by
 
 
 #include "udt.h"
+#include "common.h"
 
 
 class CSndLossList
