@@ -299,7 +299,7 @@ void CSndLossList::remove(const int32_t& seqno)
       {
          // target node is not empty, remove part/all of the seqno in the node.
          int temp = loc;
-         loc = (loc + 1) % m_iSize;         
+         loc = (loc + 1) % m_iSize;
 
          if (-1 == m_piData2[temp])
             m_iHead = m_piNext[temp];

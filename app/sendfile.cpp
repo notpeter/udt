@@ -56,7 +56,6 @@ int main(int argc, char* argv[])
 
    UDT::close(serv);
 
-
    // aquiring file name information from client
    char file[1024];
    int len;
@@ -74,7 +73,6 @@ int main(int argc, char* argv[])
    }
    file[len] = '\0';
 
-
    // open the file
    ifstream ifs(file, ios::in | ios::binary);
 
@@ -82,14 +80,12 @@ int main(int argc, char* argv[])
    int64_t size = ifs.tellg();
    ifs.seekg(0, ios::beg);
 
-
    // send file size information
    if (UDT::ERROR == UDT::send(fhandle, (char*)&size, sizeof(int64_t), 0))
    {
       cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
-
 
    UDT::TRACEINFO trace;
    UDT::perfmon(fhandle, &trace);
@@ -105,6 +101,8 @@ int main(int argc, char* argv[])
    cout << "speed = " << trace.mbpsSendRate << endl;
 
    UDT::close(fhandle);
+
+   ifs.close();
 
    return 1;
 }

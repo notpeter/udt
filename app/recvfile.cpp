@@ -38,7 +38,6 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-
    // send name information of the requested file
    int len = strlen(argv[3]);
 
@@ -54,7 +53,6 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-
    // get size information
    int64_t size;
 
@@ -63,7 +61,6 @@ int main(int argc, char* argv[])
       cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
-
 
    // receive the file
    ofstream ofs(argv[4], ios::out | ios::binary | ios::trunc);
@@ -75,8 +72,9 @@ int main(int argc, char* argv[])
       return 0;
    }
 
-
    UDT::close(fhandle);
+
+   ofs.close();
 
    return 1;
 }

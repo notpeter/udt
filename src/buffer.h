@@ -30,7 +30,7 @@ This header file contains the definition of UDT buffer structure and operations.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 04/05/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 09/07/2006
 *****************************************************************************/
 
 #ifndef __UDT_BUFFER_H__
@@ -346,8 +346,9 @@ private:
    char* m_pcData;                      // pointer to the protocol buffer
    int m_iSize;                         // size of the protocol buffer
 
-   int m_iStartPos;                     // the head position for I/O
-   int m_iLastAckPos;                   // the last ACKed position
+   int m_iStartPos;                     // the head position for I/O (inclusive)
+   int m_iLastAckPos;                   // the last ACKed position (exclusive)
+					// EMPTY: m_iStartPos = m_iLastAckPos   FULL: m_iStartPos = m_iLastAckPos + 1
    int m_iMaxOffset;                    // the furthest "dirty" position (absolute distance from m_iLastAckPos)
 
    char* m_pcUserBuf;                   // pointer to the user registered buffer

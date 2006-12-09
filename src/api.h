@@ -30,7 +30,7 @@ This header file contains the definition of structures related to UDT API.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 03/23/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 10/25/2006
 *****************************************************************************/
 
 #ifndef __UDT_API_H__
@@ -151,7 +151,7 @@ private:
 
 private:
    pthread_key_t m_TLSError;                         // thread local error record (last error)
-   static void TLSDestroy(void* e) {delete (CUDTException*)e;}
+   static void TLSDestroy(void* e) {if (NULL != e) delete (CUDTException*)e;}
 
 private:
    CUDTSocket* locate(const UDTSOCKET u);

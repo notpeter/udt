@@ -34,7 +34,7 @@ The receiving buffer is a logically circular memeory block.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 05/05/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 12/01/2006
 *****************************************************************************/
 
 #include <cstring>
@@ -136,9 +136,9 @@ void CSndBuffer::addBuffer(const char* data, const int& len, const int& handle, 
          m_pCurrSendBlk = m_pLastBlock;
    }
 
-   m_iCurrBufSize += len;
-
    m_iNextMsgNo = CMsgNo::incmsg(m_iNextMsgNo);
+
+   m_iCurrBufSize += len;
 }
 
 int CSndBuffer::readData(char** data, const int& len, int32_t& msgno)
@@ -409,18 +409,19 @@ bool CRcvBuffer::nextDataPos(char** data, int offset, const int& len)
       m_iMaxOffset = offset + len;
 
    if (m_iLastAckPos >= m_iStartPos)
+   {
       if (m_iLastAckPos + offset + len <= m_iSize)
       {
          *data = m_pcData + m_iLastAckPos + offset;
          return true;
       }
-      else if ((m_iLastAckPos + offset > m_iSize) && (offset - (m_iSize - m_iLastAckPos) + len <= m_iStartPos))
+      else if ((m_iLastAckPos + offset > m_iSize) && (m_iLastAckPos + offset - m_iSize + len < m_iStartPos))
       {
          *data = m_pcData + offset - (m_iSize - m_iLastAckPos);
          return true;
       }
-
-   if (m_iLastAckPos + offset + len <= m_iStartPos)
+   }
+   else if (m_iLastAckPos + offset + len < m_iStartPos)
    {
       *data = m_pcData + m_iLastAckPos + offset;
       return true;
@@ -462,27 +463,28 @@ bool CRcvBuffer::addData(char** data, int offset, int len)
       m_iMaxOffset = offset + len;
 
    if (m_iLastAckPos >= m_iStartPos)
+   {
       if (m_iLastAckPos + offset + len <= m_iSize)
       {
          memcpy(m_pcData + m_iLastAckPos + offset, *data, len);
          *data = m_pcData + m_iLastAckPos + offset;
          return true;
       }
-      else if ((m_iLastAckPos + offset < m_iSize) && (len - (m_iSize - m_iLastAckPos - offset) <= m_iStartPos))
+      else if ((m_iLastAckPos + offset < m_iSize) && (m_iLastAckPos + offset + len - m_iSize < m_iStartPos))
       {
          memcpy(m_pcData + m_iLastAckPos + offset, *data, m_iSize - m_iLastAckPos - offset);
-         memcpy(m_pcData, *data + m_iSize - m_iLastAckPos - offset, len - (m_iSize - m_iLastAckPos - offset));
+         memcpy(m_pcData, *data + m_iSize - m_iLastAckPos - offset, m_iLastAckPos + offset + len - m_iSize);
          *data = m_pcData + m_iLastAckPos + offset;
          return true;
       }
-      else if ((m_iLastAckPos + offset >= m_iSize) && (offset - (m_iSize - m_iLastAckPos) + len <= m_iStartPos))
+      else if ((m_iLastAckPos + offset >= m_iSize) && (m_iLastAckPos + offset + len - m_iSize < m_iStartPos))
       {
-         memcpy(m_pcData + offset - (m_iSize - m_iLastAckPos), *data, len);
-         *data = m_pcData + offset - (m_iSize - m_iLastAckPos);
+         memcpy(m_pcData + m_iLastAckPos + offset - m_iSize, *data, len);
+         *data = m_pcData + m_iLastAckPos + offset - m_iSize;
          return true;
       }
-
-   if (m_iLastAckPos + offset + len <= m_iStartPos)
+   }
+   else if (m_iLastAckPos + offset + len < m_iStartPos)
    {
       memcpy(m_pcData + m_iLastAckPos + offset, *data, len);
       *data = m_pcData + m_iLastAckPos + offset;
@@ -561,7 +563,7 @@ void CRcvBuffer::moveData(int offset, const int& len)
    // Move data in protocol buffer.
    if (m_iLastAckPos + m_iMaxOffset <= m_iSize)
       memmove(m_pcData + m_iLastAckPos + offset, m_pcData + m_iLastAckPos + offset + len, m_iMaxOffset - offset - len);
-   else if (m_iLastAckPos + offset > m_iSize)
+   else if (m_iLastAckPos + offset >= m_iSize)
       memmove(m_pcData + m_iLastAckPos + offset - m_iSize, m_pcData + m_iLastAckPos + offset + len - m_iSize, m_iMaxOffset - offset - len);
    else if (m_iLastAckPos + offset + len <= m_iSize)
    {
@@ -599,7 +601,7 @@ bool CRcvBuffer::readBuffer(char* data, const int& len)
    {
       if (m_iStartPos + len < m_iSize)
       {
-         // Data is not cover the ohysical boundary of the buffer
+         // Data is not cover the physical boundary of the buffer
          memcpy(data, m_pcData + m_iStartPos, len);
          m_iStartPos += len;
          return true;
@@ -614,7 +616,7 @@ bool CRcvBuffer::readBuffer(char* data, const int& len)
       }
    }
 
-   // Not enough data to read
+   // No enough data to read
    return false;
 }
 

@@ -22,13 +22,13 @@ ifeq ($(arch), IA64)
    CCFLAGS += -DIA64
 endif
 
-LDFLAGS = -L../src -ludt -lstdc++ -lpthread -lm
+LDFLAGS = -L../src -ludt -lstdc++ -lpthread -lm #-static
 
 ifeq ($(os), UNIX)
    LDFLAGS += -lsocket
 endif
 
-OBJS = appserver.o appclient.o sendfile.o recvfile.o msgserver.o msgclient.o
+OBJS = appserver.o appclient.o sendfile.o recvfile.o
 
 DIR = $(shell pwd)
 
@@ -48,7 +48,7 @@ recvfile: recvfile.o
 
 clean:
 	rm -f *.o
-	rm -f appserver appclient sendfile recvfile msgserver msgclient
+	rm -f appserver appclient sendfile recvfile
 
 install:
 	export PATH=$(DIR):$$PATH
