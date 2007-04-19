@@ -1,8 +1,8 @@
 /*****************************************************************************
-Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-UDP-based Data Transfer Library (UDT) version 2
+UDP-based Data Transfer Library (UDT) version 3
 
 Laboratory for Advanced Computing (LAC)
 National Center for Data Mining (NCDM)
@@ -31,7 +31,7 @@ mutex facility, and exception processing.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 03/23/2006
+   Yunhong Gu [ygu@cs.uic.edu], last updated 02/07/2007
 *****************************************************************************/
 
 
@@ -69,26 +69,8 @@ written by
 
       return 0;
    }
-
-   int readv(SOCKET s, const iovec* vector, int count)
-   {
-      DWORD rsize = 0;
-      DWORD flag = 0;
-
-      WSARecv(s, (LPWSABUF)vector, count, &rsize, &flag, NULL, NULL);
-
-      return rsize;
-   }
-
-   int writev(SOCKET s, const iovec* vector, int count)
-   {
-      DWORD ssize = 0;
-
-      WSASend(s, (LPWSABUF)vector, count, &ssize, 0, NULL, NULL);
-
-      return ssize;
-   }
 #endif
+
 
 uint64_t CTimer::s_ullCPUFrequency = CTimer::readCPUFrequency();
 
@@ -130,7 +112,7 @@ void CTimer::rdtsc(uint64_t &x)
       // use system call to read time clock for other archs
       timeval t;
       gettimeofday(&t, 0);
-      x = t.tv_sec * 1000000 + t.tv_usec;
+      x = (uint64_t)t.tv_sec * (uint64_t)1000000 + (uint64_t)t.tv_usec;
    #endif
 }
 

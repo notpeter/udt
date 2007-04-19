@@ -185,7 +185,7 @@ public:
       // Functionality:
       //    Write data into the buffer.
       // Parameters:
-      //    0) [in/out] data: [in] pointer to data to be copied, [out] pointer to the protoco buffer location where the data is added.
+      //    0) [in/out] data: [in] pointer to data to be copied, [out] pointer to the protocol buffer location where the data is added.
       //    1) [in] offset: offset from last ACK point.
       //    2) [in] len: size of data to be written.
       // Returned value:

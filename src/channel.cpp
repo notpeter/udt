@@ -160,8 +160,11 @@ const CChannel& CChannel::operator<<(CPacket& packet) const
    packet.m_nHeader[0] = htonl(packet.m_nHeader[0]);
    packet.m_nHeader[1] = htonl(packet.m_nHeader[1]);
 
-   #ifdef UNIX
+   #if defined (UNIX)
       while (0 == writev(m_iSocket, packet.getPacketVector(), 2)) {}
+   #elif defined (WIN32)
+      DWORD ssize = 0;
+      WSASend(m_iSocket, (LPWSABUF)(packet.getPacketVector()), 2, &ssize, 0, NULL, NULL);
    #else
       writev(m_iSocket, packet.getPacketVector(), 2);
    #endif
@@ -180,7 +183,14 @@ const CChannel& CChannel::operator<<(CPacket& packet) const
 const CChannel& CChannel::operator>>(CPacket& packet) const
 {
    // Packet length indicates if the packet is successfully received
-   packet.setLength(readv(m_iSocket, packet.getPacketVector(), 2) - CPacket::m_iPktHdrSize);
+   #ifndef WIN32
+      packet.setLength(readv(m_iSocket, packet.getPacketVector(), 2) - CPacket::m_iPktHdrSize);
+   #else
+      DWORD rsize = 0;
+      DWORD flag = 0;
+      WSARecv(m_iSocket, (LPWSABUF)(packet.getPacketVector()), 2, &rsize, &flag, NULL, NULL);
+      packet.setLength(rsize - CPacket::m_iPktHdrSize);
+   #endif
 
    #ifdef UNIX
       //simulating RCV_TIMEO

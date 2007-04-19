@@ -77,7 +77,7 @@
 				AdditionalIncludeDirectories="../src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				MinimalRebuild="FALSE"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"

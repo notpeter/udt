@@ -80,7 +80,7 @@
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
 				SmallerTypeCheck="FALSE"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				StructMemberAlignment="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"

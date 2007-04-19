@@ -3,19 +3,14 @@ All Rights Reserved.
 
 Please read the COPYRIGHT information in the current directory carefully.
 
-Visit http://udt.sf.net for most recent news about UDT.
-
-Tarball releases on SourceForge will have the most recent, thoroughly tested 
-version of the software. However, you may go to the SourceForge CVS area for 
-more current, but still in progress, versions. Be aware that although these 
-versions will contain the most recent bug fixes to date, they have not been 
-fully tested at this point. 
+Visit http://udt.sf.net or http://sourceforge.net/projects/udt/ 
+for most recent news about UDT.
 
 
 CONTENT: 
 ./src:     UDT source code 
-./app:     Example programs 
-./sim:     NS-2 module and simulation scripts 
+./app:     Example programs
+./sim:     NS-2 simulation scripts 
 ./doc:     UDT documentation (HTML) and Internet Draft 
 ./win:     VS.Net project files for the Windows version of UDT 
 
@@ -40,22 +35,6 @@ Read index.htm in ./doc. The documentation is in HTML format and requires your
 browser to support JavaScript.
 
 
-To report bugs, request new features, or make a contribution to the software: 
-visit http://sourceforge.net/projects/udt/ 
-
-
-Join the discussion mailing list or post to the discussion forum: 
-http://lists.sourceforge.net/lists/listinfo/udt-general 
-http://sourceforge.net/forum/?group_id=115059
-
-
-NOTE:
-In order to help more users to easily find answers about UDT usage and help to 
-increase the activity of this project, please send all general questions to the 
-mailing list or post it to the forum. The mailing list and forum is monitored by 
-the UDT developer and your questions will be replied as soon as possible (
-usually within 24 hours.)
-
-However, if you are one of our collaborators or if your questions contain 
-sensitive information about your projects, feel free to send emails to the 
-developer directly.
+Questions? please post to the udt-help forum or the udt-general mailing list:
+http://sourceforge.net/forum/forum.php?forum_id=393037
+http://sourceforge.net/mailarchive/forum.php?forum_id=44580

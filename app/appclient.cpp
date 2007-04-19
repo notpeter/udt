@@ -78,7 +78,8 @@ int main(int argc, char* argv[])
 #ifndef WIN32
    pthread_create(new pthread_t, NULL, monitor, &client);
 #else
-   CreateThread(NULL, 0, monitor, &client, 0, NULL);
+   DWORD threadID;
+   CreateThread(NULL, 0, monitor, &client, 0, &threadID);
 #endif
 
    for (int i = 0; i < 1000; i ++)

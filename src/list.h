@@ -177,8 +177,6 @@ public:
 private:
    int32_t* m_piData1;                  // sequence number starts
    int32_t* m_piData2;                  // sequence number ends
-   timeval* m_pLastFeedbackTime;        // last feedback time of the node
-   int* m_piCount;                      // report counter
    int* m_piNext;                       // next node in the list
    int* m_piPrior;                      // prior node in the list;
 
@@ -186,6 +184,8 @@ private:
    int m_iTail;                         // last node in the list;
    int m_iLength;                       // loss length
    int m_iSize;                         // size of the static array
+
+   timeval m_TimeStamp;			// last list update time or NAK feedback time
 };
 
 ////////////////////////////////////////////////////////////////////////////////

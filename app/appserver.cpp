@@ -99,7 +99,8 @@ int main(int argc, char* argv[])
       pthread_create(&rcvthread, NULL, recvdata, new UDTSOCKET(recver));
       pthread_detach(rcvthread);
 #else
-      CreateThread(NULL, 0, recvdata, new UDTSOCKET(recver), 0, NULL);
+      DWORD threadID;
+      CreateThread(NULL, 0, recvdata, new UDTSOCKET(recver), 0, &threadID);
 #endif
    }
 

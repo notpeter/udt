@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright © 2001 - 2006, The Board of Trustees of the University of Illinois.
+Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer Library (UDT) version 3
@@ -34,7 +34,7 @@ The receiving buffer is a logically circular memeory block.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 12/01/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/14/2007
 *****************************************************************************/
 
 #include <cstring>
@@ -647,6 +647,10 @@ int CRcvBuffer::ackData(const int& len)
          m_iUserBufSize = 0;
          if (NULL != m_pPendingBlock)
          {
+            //TODO
+            // release as many buffer as possible, until there is no enough data left for one buffer
+            // change return value to int, and signal as many waiting recv() call
+
             registerUserBuf(m_pPendingBlock->m_pcData, m_pPendingBlock->m_iLength, m_pPendingBlock->m_iHandle, m_pPendingBlock->m_pMemRoutine, m_pPendingBlock->m_pContext);
             m_iPendingSize -= m_pPendingBlock->m_iLength;
             m_pPendingBlock = m_pPendingBlock->m_next;
@@ -716,10 +720,10 @@ int CRcvBuffer::registerUserBuf(char* buf, const int& len, const int& handle, co
       else
       {
          memcpy(m_pcUserBuf, m_pcData + m_iStartPos, len);
-         m_iMaxOffset -= len;
+         m_iMaxOffset -= m_iStartPos + len - m_iLastAckPos;
       }
    else
-      if (m_iSize - (m_iStartPos - currwritepos) <= len)
+      if (m_iSize + currwritepos - m_iStartPos <= len)
       {
          memcpy(m_pcUserBuf, m_pcData + m_iStartPos, m_iSize - m_iStartPos);
          memcpy(m_pcUserBuf + m_iSize - m_iStartPos, m_pcData, currwritepos);
@@ -734,7 +738,8 @@ int CRcvBuffer::registerUserBuf(char* buf, const int& len, const int& handle, co
          }
          else
             memcpy(m_pcUserBuf, m_pcData + m_iStartPos, len);
-         m_iMaxOffset -= len;
+
+         m_iMaxOffset = m_iSize + currwritepos - m_iStartPos - len;
       }
 
    // Update the user buffer pointer
@@ -743,8 +748,9 @@ int CRcvBuffer::registerUserBuf(char* buf, const int& len, const int& handle, co
    else
       m_iUserBufAck += m_iSize - m_iStartPos + m_iLastAckPos;
 
-   // update the protocol buffer pointer
+   // update the protocol buffer pointer, step up by "len"
    m_iStartPos = (m_iStartPos + len) % m_iSize;
+   // assume there is no enough data for the user buffer, ie, ACK - Start < len
    m_iLastAckPos = m_iStartPos;
 
    return m_iUserBufAck;
@@ -803,7 +809,7 @@ int CRcvBuffer::getPendingQueueSize() const
 
 void CRcvBuffer::initMsgList()
 {
-   // the message list should contain the most possible number of messages: when each packet is a message
+   // the message list should contain the maximum possible number of messages: when each packet is a message
    m_iMsgInfoSize = m_iSize / m_iMSS + 1;
 
    m_pMessageList = new MsgInfo[m_iMsgInfoSize];
@@ -823,7 +829,6 @@ void CRcvBuffer::initMsgList()
       m_pMessageList[i].m_bValid = false;
       m_pMessageList[i].m_bDropped = false;
       m_pMessageList[i].m_bInOrder = false;
-      m_pMessageList[i].m_iMsgNo = -1;
    }
 }
 
@@ -840,13 +845,13 @@ void CRcvBuffer::checkMsg(const int& type, const int32_t& msgno, const int32_t& 
    }
    else
    {
-      pos = m_iPtrFirstMsg + CMsgNo::msgoff(m_pMessageList[m_iPtrFirstMsg].m_iMsgNo, msgno);
+      pos = CMsgNo::msgoff(m_pMessageList[m_iPtrFirstMsg].m_iMsgNo, msgno);
 
-      if (pos >= m_iMsgInfoSize)
-         pos -= m_iMsgInfoSize;
-      else if (pos < 0)
+      if (pos >= 0)
+         pos = (m_iPtrFirstMsg + pos) % m_iMsgInfoSize;
+      else
       {
-         pos += m_iMsgInfoSize;
+         pos = (m_iPtrFirstMsg + pos + m_iMsgInfoSize) % m_iMsgInfoSize;
          m_iPtrFirstMsg = pos;
       }
    }
@@ -857,7 +862,7 @@ void CRcvBuffer::checkMsg(const int& type, const int32_t& msgno, const int32_t& 
 
    switch (type)
    {
-   case 3:
+   case 3: // 11
       // single packet message
       p->m_pcData = (char*)ptr;
       p->m_iStartSeq = p->m_iEndSeq = seqno;
@@ -866,7 +871,7 @@ void CRcvBuffer::checkMsg(const int& type, const int32_t& msgno, const int32_t& 
 
       break;
 
-   case 2:
+   case 2: // 10
       // first packet of the message
       p->m_pcData = (char*)ptr;
       p->m_iStartSeq = seqno;
@@ -874,7 +879,7 @@ void CRcvBuffer::checkMsg(const int& type, const int32_t& msgno, const int32_t& 
 
       break;
 
-   case 1:
+   case 1: // 01
       // last packet of the message
       p->m_iEndSeq = seqno;
       p->m_iSizeDiff = diff;
@@ -1018,7 +1023,10 @@ int CRcvBuffer::readMsg(char* data, const int& len)
          memcpy(data + size - partial, m_pcData, partial);
       }
 
+      // already read, will not be read again
       m_pMessageList[ptr].m_bValid = false;
+      // mark this msg as dropped so that it will not be set to valid again in checkMsg()
+      m_pMessageList[ptr].m_bDropped = true;
 
       -- m_iValidMsgCount;
    }
