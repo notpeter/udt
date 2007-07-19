@@ -1,143 +1,83 @@
-<html>
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="Content-Language" content="en-us">
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<title>UDT Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title> UDT Reference</title>
+<link rel="stylesheet" href="udtdoc.css" type="text/css" />
 </head>
 
 <body>
+<div class="ref_head">&nbsp;UDT Reference: Functions</div>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
+<h4 class="func_name"><strong>recvfile</strong></h4>
+<p>The <b>recvfile</b> method reads certain amount of data into a local file.</p>
+
+<div class="code">int64_t recvfile(<br />
+&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
+&nbsp; ofstream& <font color="#FFFFFF">ofs</font>,<br />
+&nbsp; int64_t <font color="#FFFFFF">offset</font>,<br />
+&nbsp; int64_t <font color="#FFFFFF">size</font>,<br />
+&nbsp; int <font color="#FFFFFF">block</font> = 366000<br />
+);</div>
+
+<h5>Parameters</h5>
+<dl>
+  <dt><i>u</i></dt>
+  <dd>[in] Descriptor identifying a connected socket.</dd>
+  <dt><em>ofs</em></dt>
+  <dd>[in] C++ ofstream descriptor for the file to store incoming data.</dd>
+  <dt><em>offset</em></dt>
+  <dd>[in] The offset position from where the data is written into the file.</dd>
+  <dt><em>size</em></dt>
+  <dd>[in] The total size to be received.</dd>
+  <dt><em>block</em></dt>
+  <dd>[in] Optional. The size of every data block for file IO.</dd>
+</dl>
+
+<h5>Return Value</h5>
+<p>On success, <b>recvfile</b> returns the actual size of received data. Otherwise UDT::ERROR is returned and specific error information can be retrieved by <a 
+href="error.htm">getlasterror</a>.</p>
+
+<table width="100%" border="1" cellpadding="2" cellspacing="0" bordercolor="#CCCCCC">
   <tr>
-    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT Functions</i></font></td>
+    <td width="17%" class="table_headline"><strong>Error Name</strong></td>
+    <td width="17%" class="table_headline"><strong>Error Code</strong></td>
+    <td width="83%" class="table_headline"><strong>Comment</strong></td>
+  </tr>
+  <tr>
+    <td>ECONNLOST</td>
+    <td>2001</td>
+    <td>connection has been broken and no data left in receiver buffer.</td>
+  </tr>
+  <tr>
+    <td>ENOCONN</td>
+    <td>2002</td>
+    <td><i>u</i> is not connected.</td>
+  </tr>
+  <tr>
+    <td>EFILE</td>
+    <td>4000</td>
+    <td>File or disk system errors.</td>
+  </tr>
+  <tr>
+    <td>EINVSOCK</td>
+    <td>5004</td>
+    <td><i>u</i> is not an valid socket.</td>
+  </tr>
+  <tr>
+    <td>EDGRAMILL</td>
+    <td>5010</td>
+    <td>cannot use <i>recvfile</i> in SOCK_DGRAM mode.</td>
   </tr>
 </table>
 
-<h1 style='margin-bottom:0in;margin-bottom:.0001pt'><font face="Verdana" size="4">recvfile</font></h1>
+<h5>Description</h5>
+<p>The <strong>recvfile</strong> method reads certain amount of data and write it into a local file. It is always in blocking mode and will not return until the exact amount of data is 
+received or the connection is broken. Neither UDT_RCVSYN nor UDT_RCVTIMEO affects this method.</p>
 
-<p><span style='font-size:10.0pt;font-family:Verdana'>The <b>recvfile </b>method
-sends out a file stream.</span></p>
-
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
-  <tr>
-    <td width="100%">
-  <p style='margin:0in;margin-bottom:.0001pt'><font face="Courier New" size="1">__int64 recvfile(</font></p>
-  <p style='margin:0in;margin-bottom:.0001pt'><font face="Courier New" size="1">&nbsp;&nbsp; UDTSOCKET u,<br>
-  &nbsp;&nbsp; ofstream&amp; <span style='color:white'>ofs</span>,</font></p>
-  <p style='margin:0in;margin-bottom:.0001pt'><font face="Courier New" size="1">&nbsp;&nbsp; const __int64&amp; <span
-  style='color:white'>offset</span>,</font></p>
-  <p style='margin:0in;margin-bottom:.0001pt'><font face="Courier New" size="1">&nbsp;&nbsp; const __int64&amp; <span
-  style='color:white'>size,</span></font></p>
-  <p style='margin:0in;margin-bottom:.0001pt'><font face="Courier New" size="1">&nbsp;&nbsp; const int&amp; <span
-  style='color:white'>block</span> = 367000<br>
-  );</font></p>
-    </td>
-  </tr>
-</table>
-<h4><font face="Verdana" size="2">Parameters</font></h4>
-
-<p style="margin-top: 0; margin-bottom: 0"><i><font face="Verdana" size="2">u</font></i></p>
-
-<p style='margin-left:.5in; margin-top:0; margin-bottom:0'><font face="Verdana" size="2">[in] Handle to a connected socket.</font></p>
-
-<p style="margin-top: 0; margin-bottom: 0"><i><font face="Verdana" size="2">ofs</font></i></p>
-
-<p style='margin-left:.5in; margin-top:0; margin-bottom:0'><font face="Verdana" size="2">[out] ofstream descriptor of the file to store the
-incoming data.</font></p>
-
-<p style="margin-top: 0; margin-bottom: 0"><i><font face="Verdana" size="2">offset</font></i></p>
-
-<p style='margin-left:.5in; margin-top:0; margin-bottom:0'><font face="Verdana" size="2">[in] the position from where file is overwritten.</font></p>
-
-<p style="margin-top: 0; margin-bottom: 0"><i><font face="Verdana" size="2">size</font></i></p>
-
-<p style='margin-left:.5in; margin-top:0; margin-bottom:0'><font face="Verdana" size="2">[in] the total size to be received.</font></p>
-
-<p style="margin-top: 0; margin-bottom: 0"><i><font face="Verdana" size="2">block</font></i></p>
-
-<p style='margin-left:.5in; margin-top:0; margin-bottom:0'><font face="Verdana" size="2">[in] Optional. data block size for each receiving and
-writing.</font></p>
-
-<h4><font face="Verdana" size="2">Return Values</font></h4>
-
-<p><font face="Verdana" size="2">On success, the actual
-size of data received is returned. Otherwise, UDT::ERROR is returned and the
-specific error information can be retrieved using <a href="error.htm">getlasterror</a>.</font></p>
-
-<table border=1 cellspacing=0 cellpadding=0 width="100%" style='width:100.0%;
- border-collapse:collapse;' id=table3
- bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0">
- <tr>
-  <td width=133 style='width:99.75pt;background:silver;padding:0in 0in 0in 0in'>
-  <p align=center style='text-align:center'><b><font face="Verdana" size="2">Error Code</font></b></p>
-  </td>
-  <td width=812 style='width:609.0pt;background:silver;padding:0in 0in 0in 0in'>
-  <p align=center style='text-align:center'><b><font face="Verdana" size="2">Comment</font></b></p>
-  </td>
- </tr>
- <tr>
-  <td width=133 style='width:99.75pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2">2001</font></p>
-  </td>
-  <td width=812 style='width:609.0pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2">connection is broken before the IO completes.</font></p>
-  </td>
- </tr>
- <tr>
-  <td width=133 style='width:99.75pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2">2002</font></p>
-  </td>
-  <td width=812 style='width:609.0pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2"><i>u</i> is not connected.</font></p>
-  </td>
- </tr>
- <tr>
-  <td width=133 style='width:99.75pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2">5000</font></p>
-  </td>
-  <td width=812 style='width:609.0pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2">file system error.</font></p>
-  </td>
- </tr>
- <tr>
-  <td width=133 style='width:99.75pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2">5004</font></p>
-  </td>
-  <td width=812 style='width:609.0pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2"><i>u</i> is an invalid UDT socket.</font></p>
-  </td>
- </tr>
- <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="2">
-		5010</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="2">
-		cannot use <i>recvfile</i> in SOCK_DGRAM mode.</font></td>
-    </tr>
- <tr>
-  <td width=133 style='width:99.75pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2">6004</font></p>
-  </td>
-  <td width=812 style='width:609.0pt;padding:0in 0in 0in 0in'>
-  <p style='margin-top:1;margin-bottom:1'><font face="Verdana" size="2">a non-blocking overlapped recv is in progress.</font></p>
-  </td>
- </tr>
-</table>
-
-<h4><font face="Verdana" size="2">Description</font></h4>
-
-<p><font face="Verdana" size="2">The <b>recvfile </b>method
-reads data directly into a file stream. It is always in blocking mode. The <a
-href="opt.htm">UDT_RCVSYN</a> option only affects <a href="send.htm">recv</a>. In
-addition, <a href="opt.htm">UDT_SNDTIMEO</a> does not apply to this method.</font></p>
-
-<h4><font face="Verdana" size="2">See Also</font></h4>
-
-<p><b><font face="Verdana" size="2"><a href="send.htm">send</a>,
-<a href="sendfile.htm">sendfile</a>, <a href="recv.htm">recv</a></font></b></p>
+<h5>See Also</h5>
+<p><strong><a href="send.htm">send</a>, <a href="sendfile.htm">sendfile</a>, <a href="recv.htm">recv</a></strong></p>
+<p>&nbsp;</p>
 
 </body>
-
 </html>

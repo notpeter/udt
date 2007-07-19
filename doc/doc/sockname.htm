@@ -1,91 +1,67 @@
-<html>
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="Content-Language" content="en-us">
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<title>UDT Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title> UDT Reference</title>
+<link rel="stylesheet" href="udtdoc.css" type="text/css" />
 </head>
 
 <body>
+<div class="ref_head">&nbsp;UDT Reference: Functions</div>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#99CCFF" bordercolor="#99CCFF">
-  <tr>
-    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT 
-	Functions</i></font></td>
-  </tr>
-</table>
-<h1><font face="Verdana" size="4">getsockname</font></h1>
-<p><font face="Verdana" size="2">The <b>getsockname</b> function retrieves the 
-local address associated to a socket.</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table3" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
-  <tr>
-    <td width="100%">
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">int getsockname(<br>
-&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,</font><p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; struct sockaddr *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">name</a></font>,</font><p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; int *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">namelen</a></font></font><p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">);</font></td>
-  </tr>
-</table>
-<h4><font face="Verdana" size="2">Parameters</font></h4>
+<h4 class="func_name"><strong>getsockname</strong></h4>
+<p>The <b>getsockname</b> method retrieves the local address associated with a UDT socket.</p>
+
+<div class="code">int getsockname(<br />
+&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
+&nbsp; struct sockaddr* <font color="#FFFFFF">name</font>,<br />
+&nbsp; int* <font color="#FFFFFF">namelen</font><br />
+);</div>
+
+<h5>Parameters</h5>
 <dl>
-	<dt><font face="Verdana"><i><font size="2">u</font></i></font></dt>
-	<dd><font face="Verdana" size="2">[in] Descriptor identifying a connected 
-	socket.</font></dd>
-	<dt><font face="Verdana"><i><font size="2">name</font></i></font></dt>
-	<dd><font face="Verdana" size="2">[out] The structure that receives the 
-		name of the peer.</font></dd>
-	<dt><font face="Verdana"><i><font size="2">namelen</font></i></font></dt>
-	<dd><font face="Verdana" size="2">[in, out] Pointer to the size of the 
-		name structure.</font></dd>
+  <dt><i>u</i></dt>
+  <dd>[in] Descriptor identifying a connected socket.</dd>
+  <dt><em>name</em></dt>
+  <dd>[out] The structure to store the local address.</dd>
+  <dt><em>addrlen</em></dt>
+  <dd>[in, out] pointer to the size of the <i>name</i> structure.</dd>
 </dl>
-<h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">On success, 0 is returned; Otherwise, UDT::ERROR 
-is returned and the specific error information can be retrieved by 
-<a href="error.htm">getlasterror</a>.</font></p>
-  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table4" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
-    <tr>
-      <th align="center" bgcolor="#C0C0C0" width="133">
-		<font face="Verdana" size="2">Error Code</font></th>
-      <th align="center" bgcolor="#C0C0C0" width="812"><b>
-      <font face="Verdana" size="2">Comment</font></b></th>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5003</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		invalid parameters.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5004</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		<i>u</i> 
-		is an invalid UDT socket.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5005</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		<i>u</i> is not bound or connected yet.</font></td>
-    </tr>
-    </table>
-<H4><font face="Verdana" size="2">Description</font></H4>
-<P><font face="Verdana" size="2">The <b>getsockname</b> method retrieves the 
-local address associated to the socket. Before the socket is associated with any 
-address (through <a href="bind.htm">bind</a> or <a href="connect.htm">connect</a>), this method will fail because there is no 
-meaningful address bound to the socket. </font></P>
-<p></p>
-<H4><font face="Verdana" size="2">See Also</font></H4>
-<P><b><font face="Verdana" size="2"><a href="bind.htm">bind</a></font></b><font face="Verdana" size="2"><b>, <a href="connect.htm">connect</a></b></font></P>
+
+<h5>Return Value</h5>
+<p>On success, <strong>getlasterror</strong> returns 0 and the local address information is stored in <i>name</i>; otherwise it returns UDT::ERROR and the specific error information can be 
+retrieved using <a href="error.htm">getlasterror</a>.</p>
+
+<table width="100%" border="1" cellpadding="1" cellspacing="0" bordercolor="#CCCCCC">
+  <tr>
+    <td width="17%" class="table_headline"><strong>Error Name</strong></td>
+    <td width="17%" class="table_headline"><strong>Error Code</strong></td>
+    <td width="83%" class="table_headline"><strong>Comment</strong></td>
+  </tr>
+  <tr>
+    <td>&nbsp;</td>
+    <td>EINVPARAM</td>
+    <td>Invalid parameters.</td>
+  </tr>
+  <tr>
+    <td>EINVSOCK</td>
+    <td>5004</td>
+    <td><i>u</i> is an invailid UDT socket.</td>
+  </tr>
+  <tr>
+    <td>EUNBOUNDSOCK</td>
+    <td>5005</td>
+    <td><i>u</i> is not bound to a local address yet.</td>
+  </tr>
+</table>
+
+<h5>Description</h5>
+<p>The <strong>getsockname</strong> retrieves the local address associated with the socket. The UDT socket must be bound explicitly (via <strong>bind</strong>) or implicitly (via 
+<strong>connect</strong>), otherwise this method will fail because there is no meaningful address bound to the socket.</p>
+
+<h5>See Also</h5>
+<p><strong><a href="bind.htm">listen</a>, <a href="connect.htm">connect</a></strong></p>
+<p>&nbsp;</p>
 
 </body>
-
 </html>

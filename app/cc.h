@@ -3,7 +3,7 @@ DISCLAIMER: The algorithms implemented using UDT/CCC in this file may be
 modified. These modifications may NOT necessarily reflect the view of
 the algorithms' original authors.
 
-Written by: Yunhong Gu <ygu@cs.uic.edu>, last updated on Mar 02, 2005.
+Written by: Yunhong Gu <gu@lac.uic.edu>, last updated on July 15, 2007.
 *****************************************************************************/
 
 #ifndef WIN32
@@ -15,11 +15,8 @@ Written by: Yunhong Gu <ygu@cs.uic.edu>, last updated on Mar 02, 2005.
 #include <vector>
 #include <algorithm>
 
-#include <window.h>
 #include <ccc.h>
 #include <udt.h>
-
-using namespace std;
 
 
 /*****************************************************************************
@@ -298,20 +295,22 @@ reference:
 http://www.cs.ucla.edu/NRL/hpi/tcpw/
 *****************************************************************************/
 
+// UDT timing utility class CTimer is reused here, defined in src/common.h
+#include <common.h>
+
 class CWestwood: public CTCP
 {
 public:
    CWestwood(): m_dBWE(1), m_dLastBWE(1), m_dBWESample(1), m_dLastBWESample(1)
    {
-      gettimeofday(&m_LastACKTime, 0);
+      m_LastACKTime = CTimer::getTime();
    }
 
    virtual void onACK(const int& ack)
    {
-      timeval currtime;
-      gettimeofday(&currtime, 0);
+      uint64_t currtime = CTimer::getTime();
 
-      m_dBWESample = double(ack - m_iLastACK) / double((currtime.tv_sec - m_LastACKTime.tv_sec) * 1000.0 + (currtime.tv_usec - m_LastACKTime.tv_usec) / 1000.0);
+      m_dBWESample = double(ack - m_iLastACK) * 1000 / (currtime - m_LastACKTime);
       m_dBWE = 19.0/21.0 * m_dLastBWE + 1.0/21.0 * (m_dBWESample + m_dLastBWESample);
 
       m_LastACKTime = currtime;
@@ -360,7 +359,7 @@ public:
 private:
    double m_dBWE, m_dLastBWE;
    double m_dBWESample, m_dLastBWESample;
-   timeval m_LastACKTime;
+   uint64_t m_LastACKTime;
 };
 
 
@@ -375,6 +374,9 @@ Note:
 This class can be used to derive new delay based approaches, e.g., FAST.
 *****************************************************************************/
 
+// A RTT calculating utility class is reused here, defined src/windows.h
+#include <window.h>
+
 class CVegas: public CTCP
 {
 public:
@@ -383,7 +385,7 @@ public:
       m_iSSRound = 1;
       m_iRTT = 1000000;
       m_iBaseRTT = 1000000;
-      gettimeofday(&m_LastCCTime, 0);
+      m_LastCCTime = CTimer::getTime();
       m_iPktSent = 0;
       m_pAckWindow = new CACKWindow(100000);
    }
@@ -401,14 +403,12 @@ public:
       if (rtt > 0)
          m_iRTT = (m_iRTT * 15 + rtt) >> 4;
 
-      timeval currtime;
-      gettimeofday(&currtime, 0);
-
-      if ((currtime.tv_sec - m_LastCCTime.tv_sec) * 1000000 + (currtime.tv_usec - m_LastCCTime.tv_usec) < m_iRTT)
+      uint64_t currtime = CTimer::getTime();
+      if ((currtime - m_LastCCTime) < (uint64_t)m_iRTT)
          return;
 
       expected = m_dCWndSize * 1000.0 / m_iBaseRTT;
-      actual = m_iPktSent / ((currtime.tv_sec - m_LastCCTime.tv_sec) * 1000.0 + (currtime.tv_usec - m_LastCCTime.tv_usec) / 1000.0);
+      actual = m_iPktSent * 1000.0 / (currtime - m_LastCCTime);
       diff = expected - actual;
 
       if (m_bSlowStart)
@@ -429,7 +429,7 @@ public:
             m_dCWndSize -= 1.0;
       }
 
-      gettimeofday(&m_LastCCTime, 0);
+      m_LastCCTime = CTimer::getTime();
       m_iPktSent = 0;
       if (m_iBaseRTT > m_iRTT)
          m_iBaseRTT = m_iRTT;
@@ -450,7 +450,7 @@ protected:
 
    int m_iRTT;
    int m_iBaseRTT;
-   timeval m_LastCCTime;
+   uint64_t m_LastCCTime;
 
    int m_iPktSent;
 
@@ -513,10 +513,8 @@ public:
       if (rtt > 0)
          m_iRTT = (m_iRTT * 7 + rtt) >> 3;
 
-      timeval currtime;
-      gettimeofday(&currtime, 0);
-
-      if ((currtime.tv_sec - m_LastCCTime.tv_sec) * 1000000 + (currtime.tv_usec - m_LastCCTime.tv_usec) < 2 * m_iRTT)
+      uint64_t currtime = CTimer::getTime();
+      if ((currtime - m_LastCCTime) < 2 * (uint64_t)m_iRTT)
          return;
 
       m_dNewWin = 0.5 * (m_dOldWin + (double(m_iBaseRTT) / m_iRTT) * m_dCWndSize + alpha);
@@ -531,7 +529,7 @@ public:
 
       m_dOldWin = m_dCWndSize;
 
-      gettimeofday(&m_LastCCTime, 0);
+      m_LastCCTime = CTimer::getTime();
       m_iPktSent = 0;
       if (m_iBaseRTT > m_iRTT)
          m_iBaseRTT = m_iRTT;
@@ -553,7 +551,7 @@ private:
 Reliable UDP Blast
 
 Note:
-The class demostrates the simplest control mechanism. The sending rate can
+This class demostrates the simplest control mechanism. The sending rate can
 be set at any time by using setRate().
 *****************************************************************************/
 
@@ -569,242 +567,6 @@ public:
 public:
    void setRate(int mbps)
    {
-      m_dPktSndPeriod = (m_iSMSS * 8.0) / mbps;
-   }
-
-protected:
-  static const int m_iSMSS = 1500;
-};
-
-
-/*****************************************************************************
-Group Transport Protocol
-Reference:
-Ryan X. Wu, and Andrew Chien, "GTP: Group Transport Protocol for 
-Lambda-Grids", in Proceedings of the 4th IEEE/ACM International Symposium on 
-Cluster Computing and the Grid (CCGrid), April 2004
-
-Note:
-This is a demotration showing how to use UDT/CCC to implement group-based
-control mechanisms, such GTP and CM.
-*****************************************************************************/
-
-struct gtpcomp;
-
-class CGTP: public CCC
-{
-friend struct gtpcomp;
-
-public:
-   virtual void init()
-   {
-      m_dRequestRate = 1;
-
-      m_llLastRecvPkt = 0;
-      gettimeofday(&m_LastGCTime, 0);
-
-      m_GTPSet.insert(this);
-      rateAlloc();
-   }
-
-   virtual void close()
-   {
-      m_GTPSet.erase(this);
-      rateAlloc();
-   }
-
-   virtual void onPktReceived()
-   {
-      timeval currtime;
-      gettimeofday(&currtime, 0);
-
-      int interval = (currtime.tv_sec - m_LastGCTime.tv_sec) * 1000000 + currtime.tv_usec - m_LastGCTime.tv_usec;
-
-      if (interval < 2 * m_iRTT)
-         return;
-
-      const UDT::TRACEINFO* info = getPerfInfo();
-      
-      double realrate, lossrate = 0;
-      realrate = (info->pktRecvTotal - m_llLastRecvPkt) * 1500 * 8.0 / interval;
-      if (info->pktRecvTotal != m_llLastRecvPkt)
-         lossrate = double(info->pktRcvLossTotal - m_iLastRcvLoss) / (info->pktRecvTotal - m_llLastRecvPkt);
-
-      if (0 == lossrate)
-         m_dRequestRate *= 1.02;
-      else if (lossrate * 0.5 < 0.125)
-         m_dRequestRate *= (1 - lossrate * 0.5); 
-      else
-         m_dRequestRate *= 0.875;
-
-      if (m_dRequestRate > m_dTargetRate)
-         m_dRequestRate = m_dTargetRate;
-
-      requestRate(int(m_dRequestRate));
-
-      m_llLastRecvPkt = info->pktRecvTotal;
-      m_iLastRcvLoss = info->pktRcvLossTotal;
-      m_LastGCTime = currtime;
-      m_iRTT = int(info->msRTT * 1000);
-   }
-
-   virtual void processCustomPkt(CPacket* pkt)
-   {
-      if (m_iGTPPktType != pkt->getExtendedType())
-         return;
-
-      m_dPktSndPeriod = (1500 * 8.0) / *(int *)(pkt->m_pcData);
-   }
-
-public:
-   void setBandwidth(const double& mbps)
-   {
-      m_dBandwidth = mbps;
-   }
-
-private:
-   void rateAlloc();
-
-   void requestRate(int mbps)
-   {
-      CPacket pkt;
-      pkt.pack(0x111, const_cast<void*>((void*)&m_iGTPPktType), &mbps, sizeof(int));
-
-      sendCustomMsg(pkt);
-   }
-
-private:
-   double m_dTargetRate;
-   double m_dBandwidth;
-
-   double m_dRequestRate;
-
-   timeval m_LastGCTime;
-   int64_t m_llLastRecvPkt;
-   int m_iLastRcvLoss;
-   int m_iRTT;
-
-private:
-   static set<CGTP*> m_GTPSet;
-   static const int m_iGTPPktType = 0xFFF;
-};
-
-set<CGTP*> CGTP::m_GTPSet;
-struct gtpcomp
-{
-  bool operator()(const CGTP* g1, const CGTP* g2) const
-  {
-    return g1->m_dBandwidth < g2->m_dBandwidth;
-  }
-};
-
-void CGTP::rateAlloc()
-{
-   if (0 == m_GTPSet.size())
-      return;
-
-   vector<CGTP*> GTPVec;
-   copy(m_GTPSet.begin(), m_GTPSet.end(), GTPVec.begin());
-   sort(GTPVec.begin(), GTPVec.end(), gtpcomp());
-
-   int N = GTPVec.size();
-   int n = 0;
-   vector<CGTP*>::iterator i = GTPVec.begin();
-   double availbw = (*(i + N - 1))->m_dBandwidth;
-   double fairshare = availbw / N;
-
-   while ((n < N) && ((*i)->m_dBandwidth < fairshare))
-   {
-      (*i)->m_dTargetRate = (*i)->m_dBandwidth;
-      availbw -= (*i)->m_dTargetRate;
-      fairshare = availbw / (N - n);
-
-      ++ n;
-      ++ i;
-   }
-
-   for (; i != GTPVec.end(); ++ i)
-      (*i)->m_dTargetRate = fairshare;
-}
-
-
-/*****************************************************************************
-Protocol using reliable control channel
-
-Note:
-The feedback method using sendCustomMsg() as shown in CGTP sends data
-using unreliable channel. If some protocol nees reliable channel to 
-transfer control message, a seperate TCP connection can be sarted.
-The CReliableChannel class below can be used to derive such protocols.
-*****************************************************************************/
-
-class CReliableChannel: public CCC
-{
-public:
-   int startTCPServer(sockaddr* addr)
-   {
-      if (-1 == (m_TCPSocket = socket(AF_INET, SOCK_STREAM, 0)))
-         return -1;
-
-      if (-1 == (bind(m_TCPSocket, addr, sizeof(sockaddr_in))))
-         return -1;
-
-      if (-1 == (listen(m_TCPSocket, 10)))
-         return -1;
-
-      if (-1 == (m_TCPSocket = accept(m_TCPSocket, NULL, NULL)))
-         return -1;
-
-      #ifndef WIN32
-         pthread_create(&m_TCPThread, NULL, TCPProcessing, this);
-      #endif
-
-      return 0;
-   }
-
-   int startTCPClient(sockaddr* addr)
-   {
-      if (-1 == (m_TCPSocket = socket(AF_INET, SOCK_STREAM, 0)))
-         return -1;
-
-      if (-1 == (connect(m_TCPSocket, addr, sizeof(sockaddr_in))))
-         return -1;
-
-      #ifndef WIN32
-         pthread_create(&m_TCPThread, NULL, TCPProcessing, this);
-      #endif
-
-      return 0;
-   }
-
-   int sendReliableMsg(const char* data, const int& size)
-   {
-      return send(m_TCPSocket, data, size, 0);
-   }
-
-
-protected:
-   virtual void processRealiableMsg()
-   {
-      char data[1500];
-
-      while (true)
-      {
-         recv(m_TCPSocket, data, 1500, 0);
-         //process data
-      }
-   }
-
-protected:
-   int m_TCPSocket;
-
-   pthread_t m_TCPThread;
-
-private:
-   static void* TCPProcessing(void* self)
-   {
-      ((CReliableChannel*)self)->processRealiableMsg();
-      return NULL;
+      m_dPktSndPeriod = (m_iMSS * 8.0) / mbps;
    }
 };
-

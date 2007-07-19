@@ -18,22 +18,18 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/RTC1"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;UDT_EXPORTS;TRACE;NO_BUSY_WAITING"
-				StringPooling="TRUE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;UDT_EXPORTS"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				SmallerTypeCheck="TRUE"
+				SmallerTypeCheck="FALSE"
 				RuntimeLibrary="3"
 				StructMemberAlignment="0"
 				BufferSecurityCheck="TRUE"
-				EnableFunctionLevelLinking="TRUE"
-				EnableEnhancedInstructionSet="2"
 				UsePrecompiledHeader="0"
 				BrowseInformation="1"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				CompileOnly="TRUE"
-				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -80,7 +76,7 @@
 				InlineFunctionExpansion="2"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;UDT_EXPORTS;TRACE;NO_BUSY_WAITING"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;UDT_EXPORTS"
 				MinimalRebuild="FALSE"
 				BasicRuntimeChecks="0"
 				SmallerTypeCheck="FALSE"
@@ -146,6 +142,9 @@
 				RelativePath="..\src\common.cpp">
 			</File>
 			<File
+				RelativePath="..\src\control.cpp">
+			</File>
+			<File
 				RelativePath="..\src\core.cpp">
 			</File>
 			<File
@@ -153,6 +152,9 @@
 			</File>
 			<File
 				RelativePath="..\src\packet.cpp">
+			</File>
+			<File
+				RelativePath="..\src\queue.cpp">
 			</File>
 			<File
 				RelativePath="..\src\window.cpp">
@@ -177,6 +179,9 @@
 				RelativePath="..\src\common.h">
 			</File>
 			<File
+				RelativePath="..\src\control.h">
+			</File>
+			<File
 				RelativePath="..\src\core.h">
 			</File>
 			<File
@@ -184,6 +189,9 @@
 			</File>
 			<File
 				RelativePath="..\src\packet.h">
+			</File>
+			<File
+				RelativePath="..\src\queue.h">
 			</File>
 			<File
 				RelativePath="..\src\udt.h">

@@ -1,44 +1,35 @@
-<html>
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="Content-Language" content="en-us">
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<title>UDT Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title> UDT Reference</title>
+<link rel="stylesheet" href="udtdoc.css" type="text/css" />
 </head>
 
 <body>
+<div class="ref_head">&nbsp;UDT Reference: Functions</div>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table1" bgcolor="#99CCFF" bordercolor="#99CCFF">
-  <tr>
-    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT Functions</i></font></td>
-  </tr>
-</table>
-<h1><font face="Verdana" size="4">getlasterror</font></h1>
-<p><font face="Verdana" size="2">The <b>getlasterror</b> method retrieves the last UDT error in the thread.</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
-  <tr>
-    <td width="100%">
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font size="1" face="Courier New">UDTERROR&amp; getlasterror(<br>
-	);</font></p></td>
-  </tr>
-</table>
-<h4><font face="Verdana" size="2">Parameters</font></h4>
-<h4><span style="font-weight: 400"><font face="Verdana" size="2">None.</font></span></h4>
-<h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">The latest UDT error in the same thread is 
-retrieved and stored in the <a href="structure.htm">ERRORINFO</a> structure.</font></p>
-<H4><font face="Verdana" size="2">Descriptions</font></H4>
-<p><font face="Verdana" size="2">The <b>getlasterror</b> method reads the latest 
-UDT error occurred in the thread where this method is called. This method will 
-always succeed. If there is no error ever occurred, the method returns the
-ERRORINFO structure indicating a successful state.</font></p>
-<P>
-<p></p>
-<H4><font face="Verdana" size="2">See Also</font></H4>
-<P><font face="Verdana" size="2"><b>
-<a href="structure.htm">UDT Sockets Structure</a>, <a href="ecode.htm">Error Code List</a></b></font></P>
+<h4 class="func_name"><strong>getlasterror</strong></h4>
+<p>The <b>getlasterror</b> method the last UDT error within the same thread.</p>
+
+<div class="code">ERRORINFO&amp; getlasterror(<br />
+);</div>
+
+<h5>Parameters</h5>
+<dl>
+  <dd>None.</dd>
+</dl>
+
+<h5>Return Value</h5>
+<p>The last UDT error within the same thread is retrieved and returned in an <a href = "structure.htm">ERRORINFO</a> structure. If there is no error, a special SUCCESS code (0) will be 
+returned. The <strong>getlasterror</strong> will always succeed. The returned value is a reference to the internal UDT ERRORINFO structure and application may clear it if necessary. </p>
+
+<h5>Description</h5>
+<p>The <strong>getlasterror</strong> method reads the last UDT error in the thread where this method is called. The error information is stored in thread specific storage.</p>
+
+<h5>See Also</h5>
+<p><strong><a href="ecode.htm">Error Code List</a></strong>, <a href="t-error.htm"><strong>Error Handling</strong></a> </p>
+<p>&nbsp;</p>
 
 </body>
-
 </html>

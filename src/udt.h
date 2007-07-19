@@ -1,36 +1,26 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
-All rights reserved.
+Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
+All Rights Reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+UDP-based Data Transfer Library (UDT) version 4
 
-* Redistributions of source code must retain the above
-  copyright notice, this list of conditions and the
-  following disclaimer.
+National Center for Data Mining (NCDM)
+University of Illinois at Chicago
+http://www.ncdm.uic.edu/
 
-* Redistributions in binary form must reproduce the
-  above copyright notice, this list of conditions
-  and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or (at
+your option) any later version.
 
-* Neither the name of the University of Illinois
-  nor the names of its contributors may be used to
-  endorse or promote products derived from this
-  software without specific prior written permission.
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+General Public License for more details.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 *****************************************************************************/
 
 /*****************************************************************************
@@ -39,7 +29,7 @@ This is the (only) header file of the UDT API, needed for programming with UDT.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 05/15/2007
+   Yunhong Gu [gu@lac.uic.edu], last updated 07/15/2007
 *****************************************************************************/
 
 #ifndef _UDT_H_
@@ -76,11 +66,11 @@ written by
    #else
       #define UDT_API __declspec(dllimport)
    #endif
+
+   #define NO_BUSY_WAITING
 #else
    #define UDT_API
 #endif
-
-typedef void (*UDT_MEM_ROUTINE)(char*, int, void*);
 
 typedef int UDTSOCKET;
 
@@ -98,7 +88,7 @@ enum UDTOpt
    UDT_SNDSYN,          // if sending is blocking
    UDT_RCVSYN,          // if receiving is blocking
    UDT_CC,              // custom congestion control algorithm
-   UDT_FC,              // deprecated, for compatibility only
+   UDT_FC,		// Flight flag size (window size)
    UDT_SNDBUF,          // maximum buffer in sending queue
    UDT_RCVBUF,          // UDT receiving buffer size
    UDT_LINGER,          // waiting for unsent data when closing
@@ -108,7 +98,8 @@ enum UDTOpt
    UDT_MSGTTL,          // time-to-live of a datagram message
    UDT_RENDEZVOUS,      // rendezvous connection mode
    UDT_SNDTIMEO,        // send() timeout
-   UDT_RCVTIMEO	        // recv() timeout
+   UDT_RCVTIMEO,        // recv() timeout
+   UDT_REUSEADDR	// reuse an existing port or create a new one
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -178,6 +169,15 @@ public:
 
    virtual const int getErrorCode() const;
 
+      // Functionality:
+      //    Clear the error code.
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    None.
+
+   virtual void clear();
+
 private:
    int m_iMajor;        // major exception categories
 
@@ -190,10 +190,42 @@ private:
 // 6+: undefined error
 
    int m_iMinor;        // for specific error reasons
-
    int m_iErrno;        // errno returned by the system if there is any
-
    char m_pcMsg[1024];  // text error message
+
+public: // Error Code
+   static const int SUCCESS;
+   static const int ECONNSETUP;
+   static const int ENOSERVER;
+   static const int ECONNREJ;
+   static const int ESOCKFAIL;
+   static const int ESECFAIL;
+   static const int ECONNFAIL;
+   static const int ECONNLOST;
+   static const int ENOCONN;
+   static const int ERESOURCE;
+   static const int ETHREAD;
+   static const int ENOBUF;
+   static const int EFILE;
+   static const int EINVRDOFF;
+   static const int ERDPERM;
+   static const int EINVWROFF;
+   static const int EWRPERM;
+   static const int EINVOP;
+   static const int EBOUNDSOCK;
+   static const int ECONNSOCK;
+   static const int EINVPARAM;
+   static const int EINVSOCK;
+   static const int EUNBOUNDSOCK;
+   static const int ENOLISTEN;
+   static const int ERDVNOSERV;
+   static const int ERDVUNBOUND;
+   static const int ESTREAMILL;
+   static const int EDGRAMILL;
+   static const int EASYNCFAIL;
+   static const int EASYNCSND;
+   static const int EASYNCRCV;
+   static const int EUNKNOWN;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,25 +261,21 @@ UDT_API int getsockopt(UDTSOCKET u, int level, SOCKOPT optname, void* optval, in
 
 UDT_API int setsockopt(UDTSOCKET u, int level, SOCKOPT optname, const void* optval, int optlen);
 
-UDT_API int shutdown(UDTSOCKET u, int how);
+UDT_API int send(UDTSOCKET u, const char* buf, int len, int flags);
 
-UDT_API int send(UDTSOCKET u, const char* buf, int len, int flags = 0, int* handle = NULL, UDT_MEM_ROUTINE routine = NULL, void* context = NULL);
-
-UDT_API int recv(UDTSOCKET u, char* buf, int len, int flags = 0, int* handle = NULL, UDT_MEM_ROUTINE routine = NULL, void* context = NULL);
+UDT_API int recv(UDTSOCKET u, char* buf, int len, int flags);
 
 UDT_API int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl = -1, bool inorder = false);
 
 UDT_API int recvmsg(UDTSOCKET u, char* buf, int len);
 
-UDT_API int64_t sendfile(UDTSOCKET u, std::ifstream& ifs, const int64_t& offset, const int64_t& size, const int& block = 366000);
+UDT_API int64_t sendfile(UDTSOCKET u, std::ifstream& ifs, int64_t offset, int64_t size, int block = 366000);
 
-UDT_API int64_t recvfile(UDTSOCKET u, std::ofstream& ofs, const int64_t& offset, const int64_t& size, const int& block = 7320000);
-
-UDT_API bool getoverlappedresult(UDTSOCKET u, int handle, int& progress, bool wait = false);
+UDT_API int64_t recvfile(UDTSOCKET u, std::ofstream& ofs, int64_t offset, int64_t size, int block = 7320000);
 
 UDT_API int select(int nfds, UDSET* readfds, UDSET* writefds, UDSET* exceptfds, const struct timeval* timeout);
 
-UDT_API ERRORINFO getlasterror();
+UDT_API ERRORINFO& getlasterror();
 
 UDT_API int perfmon(UDTSOCKET u, TRACEINFO* perf, bool clear = true);
 }

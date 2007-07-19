@@ -1,178 +1,84 @@
-<html>
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="Content-Language" content="en-us">
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<title>UDT Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title> UDT Reference</title>
+<link rel="stylesheet" href="udtdoc.css" type="text/css" />
 </head>
 
 <body>
+<div class="ref_head">&nbsp;UDT Reference: Functions</div>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
-  <tr>
-    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT 
-	Functions</i></font></td>
-  </tr>
-</table>
-<h1 style="margin-bottom: 0"><font face="Verdana" size="4">recv</font></h1>
-<p><font face="Verdana" size="2">The <b>recv </b>method receives certain size of 
-data into a local memory buffer.</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table1" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
-  <tr>
-    <td width="100%">
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font size="1" face="Courier New">int recv(<br>
-&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font size="1" face="Courier New">&nbsp; char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">buf</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font size="1" face="Courier New">&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">len</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font size="1" face="Courier New">&nbsp; int <a class="synParam" onclick="showTip(this)"><font color="#FFFFFF">flags</font>,</a></font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; int *<font color="#FFFFFF">handle </font>
-	= NULL,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; <a href="structure.htm#MEM">UDT_MEM_ROUTINE</a>
-	<font color="#FFFFFF">routine</font>&nbsp;= NULL,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; void* <font color="#FFFFFF">context
-    </font>
-	= NULL</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">);</font></p>
-    </td>
-  </tr>
-</table>
-<h4><font face="Verdana" size="2">Parameters</font></h4>
+<h4 class="func_name"><strong>recv</strong></h4>
+<p>The <b>recv</b> method reads certain amount of data into a local memory buffer.</p>
+
+<div class="code">int recv(<br />
+&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
+&nbsp; char* <font color="#FFFFFF">buf</font>,<br />
+&nbsp; int <font color="#FFFFFF">len</font>,<br />
+&nbsp; int <font color="#FFFFFF">flags</font><br />
+);</div>
+
+<h5>Parameters</h5>
 <dl>
-	<dt><font face="Verdana"><i><font size="2">u</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in] Descriptor identifying a connected 
-	socket. </font></dd>
-	<dt><font face="Verdana"><i><font size="2">buf</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[out] Buffer used to store the incoming 
-	data. </font></dd>
-	<dt><font face="Verdana"><i><font size="2">len</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in] Expected length of the data to be 
-	received. </font>
-	</dd>
-	<dt><font face="Verdana"><i><font size="2">flags</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in] Ignored. For compatibility use only.</font></dd>
-	<dt><font face="Verdana"><i><font size="2">handle</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[out] Optional. An descriptor to this <b>recv</b> call.</font></dd>
-	<dt><font face="Verdana"><i><font size="2">routine</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in] Optional. Function used to process the buffer (received data)
-	after the receiving is finished. </font></dd>
-	<dt><font size="2" face="Verdana"><i>context</i></font> </dt>
-	<dd><font face="Verdana" size="2">[in] Optional. Context parameter used in
-      the buffer process routine. </font></dd>
+  <dt><i>u</i></dt>
+  <dd>[in] Descriptor identifying a connected socket.</dd>
+  <dt><em>buf</em></dt>
+  <dd>[out] The buffer used to store incoming data.</dd>
+  <dt><em>len</em></dt>
+  <dd>[in] Length of the buffer.</dd>
+  <dt><em>flags</em></dt>
+  <dd>[in] Ignored. For compatibility only.</dd>
 </dl>
-<h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">On success, the actual size of received data is returned; Otherwise,
-UDT::ERROR 
-is returned and the specific error information can be retrieved by 
-<a href="error.htm">getlasterror</a>. If UDT_RCVTIMEO is set to a positive
-value, zero will be returned if no data is received before the timer expires.</font></p>
-  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table2" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
-    <tr>
-      <th align="center" bgcolor="#C0C0C0" width="133">
-		<font face="Verdana" size="2">Error Code</font></th>
-      <th align="center" bgcolor="#C0C0C0" width="812"><b>
-      <font face="Verdana" size="2">Comment</font></b></th>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		2001</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		connection broken before send is completed.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		2002</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		<i>u 
-		</i>is not connected.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5004</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		<i>u 
-		</i>is an invalid UDT socket.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5010</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		cannot use <i>recv</i> in SOCK_DGRAM mode.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		6002</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		no data is available to be received on a non-blocking socket.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <font face="Verdana" size="1">6003</font></td>
-      <td width="812">
-      <font face="Verdana" size="1">no buffer available for the non-blocking
-      recv call.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">6004</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-        an overlapped recv is in progress.</font></td>
-    </tr>
-    </table>
-<H4><font face="Verdana" size="2">Description</font></H4>
-<P><font face="Verdana" size="2">The <b>recv </b>method reads certain amount of 
-data from the protocol buffer. If there is not enough data in the buffer, <b>recv</b> 
-only reads the available data in the protocol buffer and returns. On 
-non-blocking socket, <b>recv</b> returns immediately, otherwise <b>recv</b> may wait until 
-some data is available to read.</font></P>
-<P><font face="Verdana" size="2">If the <i>handle</i> parameter is assigned, the <b>recv</b> 
-method is enabled with overlapped IO processing. On blocking mode, UDT will wait 
-until exact the same size of <i>len</i> data are received. On non-blocking mode, 
-<b>recv</b> 
-returns immediately but the successive data continue to be written into the user 
-buffer. In either case, after the IO is completed, the function pointed by 
-<i>routine</i> (if it is not NULL) will be called to process the buffer. Note
-that UDT does not duplicate the <i>context</i> parameter: it should remain valid
-until the <i>routine</i> is called, and it should be released (if necessary) by
-applications. The progress
-the overlapped <b>recv</b> can be queried by using <a href="overlap.htm">getoverlappedresult</a>.</font></P>
-<P><font face="Verdana" size="2">Non-blocking overlapped receiving is exclusive.
-If there is at least one non-blocking overlapped call in progress, all further
-regular <b>recv</b> (non overlapped), <a href="recvfile.htm">recvfile</a>, and
-blocking overlapped <b>recv</b> will be rejected with error number 6004. This is
-due to an implementation limitation.<br>
-<br>
-Note that, <a href="opt.htm">UDT_RCVTIMEO</a>
-does NOT apply to overlapped <b>recv</b>.</font></P>
-<H4><font face="Verdana" size="2">See Also</font></H4>
-<P><b><font face="Verdana" size="2"><a href="select.htm">select</a></font></b><font face="Verdana" size="2"><b>, 
-<a href="send.htm">send</a>, <a href="sendfile.htm">sendfile</a>, <a href="recvfile.htm">recvfile</a>,
-</b><a href="overlap.htm"><b>getoverlappedresult</b></a></font></P>
+
+<h5>Return Value</h5>
+<p>On success, <b>recv</b> returns the actual size of received data. Otherwise UDT::ERROR is returned and specific error information can be retrieved by <a 
+href="error.htm">getlasterror</a>. If UDT_RCVTIMEO is set to a positive value, zero will be returned if no data is received before the timer expires.</p>
+
+<table width="100%" border="1" cellpadding="2" cellspacing="0" bordercolor="#CCCCCC">
+  <tr>
+    <td width="17%" class="table_headline"><strong>Error Name</strong></td>
+    <td width="17%" class="table_headline"><strong>Error Code</strong></td>
+    <td width="83%" class="table_headline"><strong>Comment</strong></td>
+  </tr>
+  <tr>
+    <td>ECONNLOST</td>
+    <td>2001</td>
+    <td>connection has been broken and no data left in receiver buffer.</td>
+  </tr>
+  <tr>
+    <td>ENOCONN</td>
+    <td>2002</td>
+    <td><i>u</i> is not connected.</td>
+  </tr>
+  <tr>
+    <td>EINVSOCK</td>
+    <td>5004</td>
+    <td><i>u</i> is not an valid socket.</td>
+  </tr>
+  <tr>
+    <td>EDGRAMILL</td>
+    <td>5010</td>
+    <td>cannot use <i>recv</i> in SOCK_DGRAM mode.</td>
+  </tr>
+  <tr>
+    <td>EASYNCRCV</td>
+    <td>6002</td>
+    <td><i>u</i> is non-blocking (UDT_RCVSYN = false) but no data is available.</td>
+  </tr>
+</table>
+
+<h5>Description</h5>
+<p>The <strong>recv</strong> method reads certain amount of data from the protocol buffer. If there is not enough data in the buffer, <strong>recv</strong> only reads the available data 
+in the protocol buffer and returns the actual size of data received. However, <strong>recv</strong> will never read more data than the buffer size indicates by <i>len</i>.</p>
+<p>In blocking mode (default), <strong>recv</strong> waits until there is some data received into the receiver buffer. In non-blocking mode, <strong>recv</strong> returns immediately and 
+returns error if no data available.</p>
+<p>If UDT_RCVTIMEO is set and the socket is in blocking mode, <strong>recv</strong> only waits a limited time specified by UDT_RCVTIMEO option. If there is still no data available when 
+the timer expires, zero will be returned. UDT_RCVTIMEO has no effect for non-blocking socket.</p>
+
+<h5>See Also</h5>
+<p><strong><a href="select.htm">select</a>, <a href="send.htm">send</a>, <a href="sendfile.htm">sendfile</a>, <a href="recvfile.htm">recvfile</a></strong></p>
+<p>&nbsp;</p>
 
 </body>
-
 </html>

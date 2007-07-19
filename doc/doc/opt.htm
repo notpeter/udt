@@ -1,347 +1,194 @@
-<html>
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="Content-Language" content="en-us">
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<title>UDT Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title> UDT Reference</title>
+<link rel="stylesheet" href="udtdoc.css" type="text/css" />
 </head>
 
 <body>
+<div class="ref_head">&nbsp;UDT Reference: Functions</div>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber1" bgcolor="#99CCFF" bordercolor="#99CCFF">
-  <tr>
-    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT 
-	Functions</i></font></td>
-  </tr>
-</table>
-<h1 style="margin-bottom: 0"><font face="Verdana" size="4">getsockopt</font></h1>
-<h1 style="margin-top: 0"><font face="Verdana" size="4">setsockopt</font></h1>
-<p><font face="Verdana" size="2">The <b>getsockopt </b>and<b> setsockopt</b> methods 
-read and set up UDT options, respectively.</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
-  <tr>
-    <td width="100%">
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">int getsockopt(</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">level</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; SOCKOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optval</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; int *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optlen</a></font></font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">);</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    &nbsp;</p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">int setsockopt(</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">level</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; SOCKOPT <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optname</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; const char *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">optval</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">optlen</a></font></font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">);</font></p>
-    </td>
-  </tr>
-</table>
-<h4><font face="Verdana" size="2">Parameters</font></h4>
+<h4 class="func_name"><strong>getsockopt</strong></h4>
+<h4 class="func_name"><strong>setsockopt</strong></h4>
+<p>The <b>getsockopt</b> and <b>setsockopt</b> methods read and set UDT options, respectively.</p>
+
+<div class="code">
+  int getsockopt(<br />
+  &nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
+  &nbsp; int <font color="#FFFFFF">level</font>,<br />
+  &nbsp; SOCKOPT <font color="#FFFFFF">optname</font>,<br />
+  &nbsp; char* <font color="#FFFFFF">optval</font>,<br />
+  &nbsp; int* <font color="#FFFFFF">optlen</font><br />
+    );  <br><br />
+  int setsockopt(<br />
+  &nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
+  &nbsp; int <font color="#FFFFFF">level</font>,<br />
+  &nbsp; SOCKOPT <font color="#FFFFFF">optname</font>,<br />
+  &nbsp; const char* <font color="#FFFFFF">optval</font>,<br />
+  &nbsp; int <font color="#FFFFFF">optlen</font><br />
+    );
+</div>
+
+<h5>Parameters</h5>
 <dl>
-	<dt><i><font face="Verdana" size="2">u</font></i></dt>
-	<dd><font face="Verdana" size="2">[in] Descriptor identifying an listening 
-	socket. </font></dd>
-	<dt><i><font face="Verdana" size="2">level</font></i></dt>
-	<dd><font face="Verdana" size="2">[in] Ignored. For compatibility use only. </font></dd>
-	<dt><i><font face="Verdana" size="2">optName</font></i></dt>
-	<dd><font face="Verdana" size="2">[in] The <font color="#008000">enum</font> 
-  name of UDT option. The names and meanings are listed in the table below:</font></dd>
-	<dt>&nbsp;</dt>
-	<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="AutoNumber3" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
-		<tr>
-			<th align="center" bgcolor="#C0C0C0" width="133"><b>
-			<font face="Verdana" size="2">Name</font></b></th>
-			<th align="center" bgcolor="#C0C0C0" width="133"><b>
-			<font face="Verdana" size="2">Type</font></b></th>
-			<th align="center" bgcolor="#C0C0C0" width="323"><b>
-			<font face="Verdana" size="2">Meaning</font></b></th>
-			<th align="center" bgcolor="#C0C0C0" width="812"><b>
-			<font face="Verdana" size="2">Comment</font></b></th>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font size="1" face="Verdana">UDT_MSS</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">int</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">maximum packet size (bytes)</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">default value is <font color="#008000">1500.</font></font></td>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT_SNDSYN</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">bool</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Blocking mode of the data sending</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1"><font color="#008000">true</font>: blocking sending; 
-			<font color="#008000">false</font>: non-blocking sending. Default value is 
-			<font color="#008000">true</font>.</font></td>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT_RCVSYN</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">bool</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Blocking mode of the data receiving&nbsp; 
-			</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1"><font color="#008000">true</font>: blocking receiving;
-      		<font color="#008000">false</font>: non-blocking receiving. Default value 
-      is <font color="#008000">true</font>.</font></td>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT_CC</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">CCCFactory*</font><p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">CCC**</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Congestion control algorithm option</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1"><i>optval</i> is a pointer to a CCC 
-			Factory class. (for setsockopt)</font><p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1"><i>optval</i> is a pointer of pointer 
-			to a CCC class instance. (for getsockopt)</font></td>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT_FC</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">int</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Maximum flow window size</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Default value is <font color="#008000">25600</font>.</font></td>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT_SNDBUF</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">int</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT sending buffer size limit</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Default value is <font color="#008000">40960000</font> bytes.</font></td>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT_RCVBUF</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">int</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT receiving buffer size limit</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Default value is <font color="#008000">40960000</font> bytes.</font></td>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDP_SNDBUF</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">int</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDP sending buffer size</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Default value is <font color="#008000">65536</font> bytes.</font></td>
-		</tr>
-		<tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDP_RCVBUF</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">int</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDP receiving buffer size</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Default value is <font color="#008000">4194304</font> bytes.</font></td>
-		</tr>
-        <tr>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">UDT_LINGER</font></td>
-			<td width="133">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">linger</font></td>
-			<td width="323">
-			<p style="margin-top: 1; margin-bottom: 1">
-            <font face="Verdana" size="1">Linger time on close</font></td>
-			<td width="812">
-			<p style="margin-top: 1; margin-bottom: 1">
-			<font face="Verdana" size="1">Default value is <font color="#008000">
-			1</font> second linger time.</font></td>
-        </tr>
-        <tr>
-			<td width="133">
-            <font face="Verdana" size="1">UDT_RENDEZVOUS</font></td>
-			<td width="133">
-            <font face="Verdana" size="1">bool</font></td>
-			<td width="323">
-            <font face="Verdana" size="1">Use rendezvous connection setup method</font></td>
-			<td width="812">
-            <font face="Verdana" size="1">Default value is false (no rendezvous
-            setup).</font></td>
-        </tr>
-        <tr>
-			<td width="133">
-            <font face="Verdana" size="1">UDT_SNDTIMEO</font></td>
-			<td width="133">
-            <font face="Verdana" size="1">int</font></td>
-			<td width="323">
-            <font face="Verdana" size="1">sending timeout value</font></td>
-			<td width="812">
-            <font face="Verdana" size="1">Default value is -1 (infinite
-            timeout).</font></td>
-        </tr>
-        <tr>
-			<td width="133">
-            <font face="Verdana" size="1">UDT_RCVTIMEO</font></td>
-			<td width="133">
-            <font face="Verdana" size="1">int</font></td>
-			<td width="323">
-            <font face="Verdana" size="1">receiving timeout value</font></td>
-			<td width="812">
-            <font face="Verdana" size="1">Default value is -1 (infinite
-            timeout).</font></td>
-        </tr>
-	</table>
-	<dt>&nbsp;</dt>
-	<dt><font face="Verdana" size="2"><i>optval</i> </font></dt>
-	<dd><font face="Verdana" size="2">[in (set), out (get)] The pointer to the value of UDT option 
-  of optName.</font></dd>
-	<dt><font face="Verdana" size="2"><i>optlen </i></font></dt>
-	<dd><font face="Verdana" size="2">[in (set), in/out (get)] The length of 
-  the <i>optval</i>. </font></dd>
+  <dt><i>u</i></dt>
+  <dd>[in] Descriptor identifying a UDT socket.</dd>
+  <dt><em>level</em></dt>
+  <dd>[in] Unused. For compatibility only.</dd>
+  <dt><em>optName</em></dt>
+  <dd>[in] The enum name of UDT option. The names and meanings are listed in the table below.</dd>
+  <dt>&nbsp;</dt>
+  <table width="100%" border="1" cellpadding="2" cellspacing="0" bordercolor="#CCCCCC">
+    <tr>
+      <td width="12%" class="table_headline"><strong>Name</strong></td>
+      <td width="9%" class="table_headline"><strong>Type</strong></td>
+      <td width="27%" class="table_headline"><strong>Meaning</strong></td>
+      <td width="52%" class="table_headline"><strong>Comment</strong></td>
+    </tr>
+    <tr>
+      <td>UDT_MSS</td>
+      <td>int</td>
+      <td>Maximum packet size (bytes).</td>
+      <td>Including all UDT, UDP, and IP headers. Default 1500 bytes.</td>
+    </tr>
+    <tr>
+      <td>UDT_SNDSYN</td>
+      <td>bool</td>
+      <td>synchronization mode of data sending.</td>
+      <td>true for blocking sending; false for non-blocking sending. Default true.</td>
+    </tr>
+    <tr>
+      <td>UDT_RCVSYN</td>
+      <td>bool</td>
+      <td>synchronization mode for receiving.</td>
+      <td>true for blocking receiving; false for non-blocking receiving. Default true.</td>
+    </tr>
+    <tr>
+      <td>UDT_CC</td>
+      <td>CCCFactory*<br>CCC**</td>
+      <td>user defined congestion control algorithm.</td>
+      <td><i>optval</i> is a pointer to a CCC Factory class instance (for setsockopt).<br><i>optval</i> is a pointer of pointer to a CCC class instance (for getsockopt).</td>
+    </tr>
+    <tr>
+      <td>UDT_FC</td>
+      <td>int</td>
+      <td>Maximum window size (packets)</td>
+      <td>Default 25600.</td>
+    </tr>
+    <tr>
+      <td>UDT_SNDBUF</td>
+      <td>int</td>
+      <td>UDT sender buffer size limit (bytes)</td>
+      <td>Default 10MB (10240000).</td>
+    </tr>
+    <tr>
+      <td>UDT_RCVBUF</td>
+      <td>int</td>
+      <td>UDT receiver buffer size limit (bytes)</td>
+      <td>Default 10MB (10240000).</td>
+    </tr>
+    <tr>
+      <td>UDP_SNDBUF</td>
+      <td>int</td>
+      <td>UDP socket sender buffer size (bytes)</td>
+      <td>Default 1MB (1024000).</td>
+    </tr>
+    <tr>
+      <td>UDP_RCVBUF</td>
+      <td>int</td>
+      <td>UDP socket receiver buffer size (bytes)</td>
+      <td>Default 1MB (1024000).</td>
+    </tr>
+    <tr>
+      <td>UDT_LINGER</td>
+      <td>linger</td>
+      <td>Linger time on close().</td>
+      <td>Default 1 second.</td>
+    </tr>
+    <tr>
+      <td>UDT_RENDEZVOUS</td>
+      <td>bool</td>
+      <td>Rendezvous connection setup.</td>
+      <td>Default false (no rendezvous mode).</td>
+    </tr>
+    <tr>
+      <td>UDT_SNDTIMEO</td>
+      <td>int</td>
+      <td>sending call timeout (milliseconds).</td>
+      <td>Default -1 (infinite).</td>
+    </tr>
+    <tr>
+      <td>UDT_RCVTIMEO</td>
+      <td>int</td>
+      <td>receiving call timeout (milliseconds).</td>
+      <td>Default -1 (infinite).</td>
+    </tr>
+    <tr>
+      <td>UDT_REUSEADDR</td>
+      <td>bool</td>
+      <td>reuse an existing address or create a new one.</td>
+      <td>Default true (reuse).</td>
+    </tr>
+  </table>
+
+  <dt><em>optval</em></dt>
+  <dd>[in (set), out (get)] Pointer to the value of UDT option.</dd>
+  <dt><em>optlen</em></dt>
+  <dd>[in (set), in/out (get)] Pointer to the length of <i>optval</i>.</dd>
 </dl>
-<h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">On success, 0 is returned; Otherwise, UDT::ERROR 
-is returned and the specific error information can be retrieved by 
-<a href="error.htm">getlasterror</a>.</font></p>
-  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table1" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
-    <tr>
-      <th align="center" bgcolor="#C0C0C0" width="133">
-		<font face="Verdana" size="2">Error Code</font></th>
-      <th align="center" bgcolor="#C0C0C0" width="812"><b>
-      <font face="Verdana" size="2">Comment</font></b></th>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5001</font></td>
-      <td width="812">
-      <font face="Verdana" size="1">
-		the specific option cannot be set on a bound socket.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5002</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		the specific option cannot be set on a connected socket.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5003</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		the option value or option value length is invalid for setsockopt.</font></td>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5004</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		<i>u</i> 
-		is an invalid UDT socket.</font></td>
-    </tr>
-    </table>
-<h4><font face="Verdana" size="2">Description</font></h4>
-<P><font face="Verdana" size="2">The <b>setsockopt</b> method sets the UDT option <i>
-optName</i> with the value of <i>optval</i>. The parameter of <i>optlen</i> is 
-checked to verify the goodness of the option value. Not all options can be set 
-at any state of UDT.</font></P>
-<P><font face="Verdana" size="2">UDT_MSS can only be set before <b>bind</b>;
-UDT_CC and UDT_FC can only be set 
-before the <b>listen</b> or <b>connect</b> call.</font></P>
-<P><font face="Verdana" size="2">The <b>getsockopt</b> method reads the current 
-option value. The value is written into the buffer pointed by <i>optval</i> and 
-the length is returned in <i>optlen</i>.</font></P>
-<H4><font face="Verdana" size="2">Examples</font></H4>
-<P><font face="Verdana" size="2">To set data sending in non-blocking mode, the 
-codes can be like:</font></P>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="AutoNumber2" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+
+<h5>Return Value</h5>
+<p>On success, 0 is returned and proper UDT option is set or read; otherwise UDT::ERROR is returned and the specific error information can be retrieved using <a 
+href="error.htm">getlasterror</a>.</p>
+
+<table width="100%" border="1" cellpadding="2" cellspacing="0" bordercolor="#CCCCCC">
   <tr>
-    <td width="100%">
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font size="1" face="Courier New">UDTSOCKET u;</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">...</font></p>
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">bool block = false;</font></p>
-    <p><font face="Courier New" size="1">UDT::setsockopt(u, 0, UDT_SNDSYN, &amp;block, sizeof(bool));</font></td>
+    <td width="17%" class="table_headline"><strong>Error Name</strong></td>
+    <td width="17%" class="table_headline"><strong>Error Code</strong></td>
+    <td width="83%" class="table_headline"><strong>Comment</strong></td>
+  </tr>
+  <tr>
+    <td>EBOUNDSOCK</td>
+    <td>5001</td>
+    <td>the sepecific option cannot be set on a bound socket.</td>
+  </tr>
+  <tr>
+    <td>ECONNSOCK</td>
+    <td>5002</td>
+    <td>the specific option cannot be set on a connected socket.</td>
+  </tr>
+  <tr>
+    <td>EINVPARAM</td>
+    <td>5003</td>
+    <td>the option value or length is invalid.</td>
+  </tr>
+  <tr>
+    <td>EINVSOCK</td>
+    <td>5004</td>
+    <td><i>u</i> is an invalid UDT socket.</td>
   </tr>
 </table>
-<H4><font face="Verdana" size="2">See Also</font></H4>
-<P><b><font face="Verdana" size="2"><a href="t-config.htm">Configure UDT Options</a></font></b></P>
+
+<h5>Description</h5>
+<p>the <strong>setsockopt</strong> method sets the UDT option <i>optName</i> with the value of <i>optval</i>. The parameter of <i>optlen</i> is checked to verify the goodness of the 
+option value. Not all options can be set at any state of UDT. In fact, most options must be set before <strong>bind</strong> or <strong>connect</strong> is called, because these values 
+are necessary to initialize certain data structures when a UDT connection is created.</p>
+
+<p>The <strong>getsockopt</strong> method reads the current option value. The value is written into the buffer pointed by <i>optval</i> and the length is returned in <i>optlen</i>.</p>
+
+<h5>Example</h5>
+To send data sending in non-blocking mode, the code can be like:
+<div class="code">
+UDTSOCKET u;<br>
+...<br>
+bool block = false;<br>
+UDT::setsockopt(u, 0, UDT_SNDSYN, &block, sizeof(bool));
+</div>
+
+<h5>See Also</h5>
+<p><strong><a href="t-config.htm">Configure UDT Options</a></strong></p>
+<p>&nbsp;</p>
 
 </body>
-
 </html>

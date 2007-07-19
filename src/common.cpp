@@ -1,36 +1,26 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
-All rights reserved.
+Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
+All Rights Reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+UDP-based Data Transfer Library (UDT) version 4
 
-* Redistributions of source code must retain the above
-  copyright notice, this list of conditions and the
-  following disclaimer.
+National Center for Data Mining (NCDM)
+University of Illinois at Chicago
+http://www.ncdm.uic.edu/
 
-* Redistributions in binary form must reproduce the
-  above copyright notice, this list of conditions
-  and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or (at
+your option) any later version.
 
-* Neither the name of the University of Illinois
-  nor the names of its contributors may be used to
-  endorse or promote products derived from this
-  software without specific prior written permission.
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+General Public License for more details.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 *****************************************************************************/
 
 /*****************************************************************************
@@ -40,7 +30,7 @@ mutex facility, and exception processing.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [ygu@cs.uic.edu], last updated 02/07/2007
+   Yunhong Gu [gu@lac.uic.edu], last updated 06/07/2007
 *****************************************************************************/
 
 
@@ -56,67 +46,55 @@ written by
 #include <cmath>
 #include "common.h"
 
-
-#ifdef WIN32
-   int gettimeofday(timeval *tv, void*)
-   {
-      LARGE_INTEGER ccf;
-      if (QueryPerformanceFrequency(&ccf))
-      {
-         LARGE_INTEGER cc;
-         QueryPerformanceCounter(&cc);
-         tv->tv_sec = (long)(cc.QuadPart / ccf.QuadPart);
-         tv->tv_usec = (long)((cc.QuadPart % ccf.QuadPart) / (ccf.QuadPart / 1000000));
-      }
-      else
-      {
-         uint64_t ft;
-         GetSystemTimeAsFileTime((FILETIME *)&ft);
-         tv->tv_sec = (long)(ft / 10000000);
-         tv->tv_usec = (long)((ft % 10000000) / 10);
-      }
-
-      return 0;
-   }
+uint64_t CTimer::s_ullCPUFrequency = CTimer::readCPUFrequency();
+#ifndef WIN32
+   pthread_mutex_t CTimer::m_EventLock = PTHREAD_MUTEX_INITIALIZER;
+   pthread_cond_t CTimer::m_EventCond = PTHREAD_COND_INITIALIZER;
+#else
+   pthread_mutex_t CTimer::m_EventLock = CreateMutex(NULL, false, NULL);
+   pthread_cond_t CTimer::m_EventCond = CreateEvent(NULL, false, false, NULL);
 #endif
 
+CTimer::CTimer()
+{
+   #ifndef WIN32
+      pthread_mutex_init(&m_TickLock, NULL);
+      pthread_cond_init(&m_TickCond, NULL);
+   #else
+      m_TickLock = CreateMutex(NULL, false, NULL);
+      m_TickCond = CreateEvent(NULL, false, false, NULL);
+   #endif
+}
 
-uint64_t CTimer::s_ullCPUFrequency = CTimer::readCPUFrequency();
+CTimer::~CTimer()
+{
+   #ifndef WIN32
+      pthread_mutex_destroy(&m_TickLock);
+      pthread_cond_destroy(&m_TickCond);
+   #else
+      CloseHandle(m_TickLock);
+      CloseHandle(m_TickCond);
+   #endif
+}
 
 void CTimer::rdtsc(uint64_t &x)
 {
    #ifdef WIN32
       if (!QueryPerformanceCounter((LARGE_INTEGER *)&x))
-      {
-         timeval t;
-         gettimeofday(&t, 0);
-         x = t.tv_sec * 1000000 + t.tv_usec;
-      }
+         x = getTime();
    #elif IA32
-      // read CPU clock with RDTSC instruction on IA32 acrh
-      unsigned int lval, hval;
-      __asm__ volatile ("rdtsc" : "=a" (lval), "=d" (hval));
+      uint32_t lval, hval;
+      //asm volatile ("push %eax; push %ebx; push %ecx; push %edx");
+      //asm volatile ("xor %eax, %eax; cpuid");
+      asm volatile ("rdtsc" : "=a" (lval), "=d" (hval));
+      //asm volatile ("pop %edx; pop %ecx; pop %ebx; pop %eax");
       x = hval;
       x = (x << 32) | lval;
-
-      // on Windows
-      /*
-         unsigned int a, b;
-         __asm 
-         {
-            rdtsc
-            mov a, eax
-            mov b, ebx
-         }
-         x = b;
-         x = (x << 32) + a;
-      */
-
    #elif IA64
-      __asm__ volatile ("mov %0=ar.itc" : "=r"(x) :: "memory");
+      asm ("mov %0=ar.itc" : "=r"(x) :: "memory");
    #elif AMD64
-      unsigned int lval, hval;
-      __asm__ volatile ("rdtsc" : "=a" (lval), "=d" (hval));
+      uint32_t lval, hval;
+      asm ("rdtsc" : "=a" (lval), "=d" (hval));
       x = hval;
       x = (x << 32) | lval;
    #else
@@ -136,8 +114,6 @@ uint64_t CTimer::readCPUFrequency()
       else
          return 1;
    #elif IA32 || IA64 || AMD64
-      // alternative: read /proc/cpuinfo
-
       uint64_t t1, t2;
 
       rdtsc(t1);
@@ -175,16 +151,36 @@ void CTimer::sleepto(const uint64_t& nexttime)
 
    while (t < m_ullSchedTime)
    {
-      #ifdef IA32
-         //__asm__ volatile ("nop; nop; nop; nop; nop;");
-         __asm__ volatile ("pause; rep; nop; nop; nop; nop; nop;");
-      #elif IA64
-         __asm__ volatile ("nop 0; nop 0; nop 0; nop 0; nop 0;");
-      #elif AMD64
-         __asm__ volatile ("nop; nop; nop; nop; nop;");
+      #ifndef NO_BUSY_WAITING
+         #ifdef IA32
+            __asm__ volatile ("pause; rep; nop; nop; nop; nop; nop;");
+         #elif IA64
+            __asm__ volatile ("nop 0; nop 0; nop 0; nop 0; nop 0;");
+         #elif AMD64
+            __asm__ volatile ("nop; nop; nop; nop; nop;");
+         #endif
+      #else
+         #ifndef WIN32
+            timeval now;
+            timespec timeout;
+            gettimeofday(&now, 0);
+            if (now.tv_usec < 990000)
+            {
+               timeout.tv_sec = now.tv_sec;
+               timeout.tv_nsec = (now.tv_usec + 10000) * 1000;
+            }
+            else
+            {
+               timeout.tv_sec = now.tv_sec + 1;
+               timeout.tv_nsec = (now.tv_usec + 10000 - 1000000) * 1000;
+            }
+            pthread_mutex_lock(&m_TickLock);
+            pthread_cond_timedwait(&m_TickCond, &m_TickLock, &timeout);
+            pthread_mutex_unlock(&m_TickLock);
+         #else
+            WaitForSingleObject(m_TickCond, 1);
+         #endif
       #endif
-
-      // TODO: use high precision timer if it is available
 
       rdtsc(t);
    }
@@ -194,7 +190,75 @@ void CTimer::interrupt()
 {
    // schedule the sleepto time to the current CCs, so that it will stop
    rdtsc(m_ullSchedTime);
+
+   tick();
 }
+
+void CTimer::tick()
+{
+   #ifndef WIN32
+      pthread_cond_signal(&m_TickCond);
+   #else
+      SetEvent(m_TickCond);
+   #endif
+}
+
+uint64_t CTimer::getTime()
+{
+   #ifndef WIN32
+      timeval t;
+      gettimeofday(&t, 0);
+      return t.tv_sec * 1000000ULL + t.tv_usec;
+   #else
+      LARGE_INTEGER ccf;
+      if (QueryPerformanceFrequency(&ccf))
+      {
+         LARGE_INTEGER cc;
+         QueryPerformanceCounter(&cc);
+         return (cc.QuadPart / ccf.QuadPart) * 1000000ULL + (cc.QuadPart % ccf.QuadPart) / (ccf.QuadPart / 1000000);
+      }
+      else
+      {
+         FILETIME ft;
+         GetSystemTimeAsFileTime(&ft);
+         return ((((uint64_t)ft.dwHighDateTime) << 32) + ft.dwLowDateTime) / 10;
+      }
+   #endif
+}
+
+void CTimer::triggerEvent()
+{
+   #ifndef WIN32
+      pthread_cond_signal(&m_EventCond);
+   #else
+      SetEvent(m_EventCond);
+   #endif
+}
+
+void CTimer::waitForEvent()
+{
+   #ifndef WIN32
+      timeval now;
+      timespec timeout;
+      gettimeofday(&now, 0);
+      if (now.tv_usec < 990000)
+      {
+         timeout.tv_sec = now.tv_sec;
+         timeout.tv_nsec = (now.tv_usec + 10000) * 1000;
+      }
+      else
+      {
+         timeout.tv_sec = now.tv_sec + 1;
+         timeout.tv_nsec = (now.tv_usec + 10000 - 1000000) * 1000;
+      }
+      pthread_mutex_lock(&m_EventLock);
+      pthread_cond_timedwait(&m_EventCond, &m_EventLock, &timeout);
+      pthread_mutex_unlock(&m_EventLock);
+   #else
+      WaitForSingleObject(m_EventCond, 1);
+   #endif
+}
+
 
 //
 // Automatically lock in constructor
@@ -454,18 +518,6 @@ const char* CUDTException::getErrorMessage()
 
            break;
 
-        case 3:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "no buffer available for overlapped reading");
-
-           break;
-
-        case 4:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "non-blocking overlapped recv is on going");
-
-           break;
-
         default:
            break;
         }
@@ -501,4 +553,74 @@ const char* CUDTException::getErrorMessage()
 const int CUDTException::getErrorCode() const
 {
    return m_iMajor * 1000 + m_iMinor;
+}
+
+void CUDTException::clear()
+{
+   m_iMajor = 0;
+   m_iMinor = 0;
+   m_iErrno = 0;
+}
+
+const int CUDTException::SUCCESS = 0;
+const int CUDTException::ECONNSETUP = 1000;
+const int CUDTException::ENOSERVER = 1001;
+const int CUDTException::ECONNREJ = 1002;
+const int CUDTException::ESOCKFAIL = 1003;
+const int CUDTException::ESECFAIL = 1004;
+const int CUDTException::ECONNFAIL = 2000;
+const int CUDTException::ECONNLOST = 2001;
+const int CUDTException::ENOCONN = 2002;
+const int CUDTException::ERESOURCE = 3000;
+const int CUDTException::ETHREAD = 3001;
+const int CUDTException::ENOBUF = 3002;
+const int CUDTException::EFILE = 4000;
+const int CUDTException::EINVRDOFF = 4001;
+const int CUDTException::ERDPERM = 4002;
+const int CUDTException::EINVWROFF = 4003;
+const int CUDTException::EWRPERM = 4004;
+const int CUDTException::EINVOP = 5000;
+const int CUDTException::EBOUNDSOCK = 5001;
+const int CUDTException::ECONNSOCK = 5002;
+const int CUDTException::EINVPARAM = 5002;
+const int CUDTException::EINVSOCK = 5003;
+const int CUDTException::EUNBOUNDSOCK = 5004;
+const int CUDTException::ENOLISTEN = 5005;
+const int CUDTException::ERDVNOSERV = 5006;
+const int CUDTException::ERDVUNBOUND = 5007;
+const int CUDTException::ESTREAMILL = 5008;
+const int CUDTException::EDGRAMILL = 5009;
+const int CUDTException::EASYNCFAIL = 6000;
+const int CUDTException::EASYNCSND = 6001;
+const int CUDTException::EASYNCRCV = 6002;
+const int CUDTException::EUNKNOWN = -1;
+
+
+//
+bool CIPAddress::ipcmp(const sockaddr* addr1, const sockaddr* addr2, const int& ver)
+{
+   if (AF_INET == ver)
+   {
+      sockaddr_in* a1 = (sockaddr_in*)addr1;
+      sockaddr_in* a2 = (sockaddr_in*)addr2;
+
+      if ((a1->sin_port == a2->sin_port) && (a1->sin_addr.s_addr == a2->sin_addr.s_addr))
+         return true;
+   }
+   else
+   {
+      sockaddr_in6* a1 = (sockaddr_in6*)addr1;
+      sockaddr_in6* a2 = (sockaddr_in6*)addr2;
+
+      if (a1->sin6_port == a2->sin6_port)
+      {
+         for (int i = 0; i < 16; ++ i)
+            if (*((char*)&(a1->sin6_addr) + i) != *((char*)&(a1->sin6_addr) + i))
+               return false;
+
+         return true;
+      }
+   }
+
+   return false;
 }

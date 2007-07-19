@@ -9,7 +9,7 @@
 #endif
 #include <iostream>
 #include <udt.h>
-//#include "cc.h"
+#include "cc.h"
 
 using namespace std;
 
@@ -53,9 +53,9 @@ int main(int argc, char* argv[])
 
    // UDT Options
    //UDT::setsockopt(serv, 0, UDT_CC, new CCCFactory<CUDPBlast>, sizeof(CCCFactory<CUDPBlast>));
-   //UDT::setsockopt(serv, 0, UDT_MSS, new int(7500), sizeof(int));
-   //UDT::setsockopt(serv, 0, UDT_RCVBUF, new int(100000000), sizeof(int));
-   //UDT::setsockopt(serv, 0, UDP_RCVBUF, new int(100000000), sizeof(int));
+   //UDT::setsockopt(serv, 0, UDT_MSS, new int(9000), sizeof(int));
+   //UDT::setsockopt(serv, 0, UDT_RCVBUF, new int(10000000), sizeof(int));
+   //UDT::setsockopt(serv, 0, UDP_RCVBUF, new int(10000000), sizeof(int));
 
 
    if (UDT::ERROR == UDT::bind(serv, res->ai_addr, res->ai_addrlen))
@@ -94,14 +94,13 @@ int main(int argc, char* argv[])
       getnameinfo((sockaddr *)&clientaddr, addrlen, clienthost, sizeof(clienthost), clientservice, sizeof(clientservice), NI_NUMERICHOST|NI_NUMERICSERV);
       cout << "new connection: " << clienthost << ":" << clientservice << endl;
 
-#ifndef WIN32
-      pthread_t rcvthread;
-      pthread_create(&rcvthread, NULL, recvdata, new UDTSOCKET(recver));
-      pthread_detach(rcvthread);
-#else
-      DWORD threadID;
-      CreateThread(NULL, 0, recvdata, new UDTSOCKET(recver), 0, &threadID);
-#endif
+      #ifndef WIN32
+         pthread_t rcvthread;
+         pthread_create(&rcvthread, NULL, recvdata, new UDTSOCKET(recver));
+         pthread_detach(rcvthread);
+      #else
+         CreateThread(NULL, 0, recvdata, new UDTSOCKET(recver), 0, NULL);
+      #endif
    }
 
    UDT::close(serv);
@@ -119,28 +118,35 @@ DWORD WINAPI recvdata(LPVOID usocket)
    delete (UDTSOCKET*)usocket;
 
    char* data;
-   int size = 10000000;
+   int size = 100000;
    data = new char[size];
-
-   int handle;
 
    while (true)
    {
-      if (UDT::ERROR == UDT::recv(recver, data, size, 0, &handle))
-      //if (UDT::ERROR == UDT::recvmsg(recver, data, size))
+      int rsize = 0;
+      int rs;
+      while (rsize < size)
       {
-         cout << "recv:" << UDT::getlasterror().getErrorMessage() << endl;
-         break;
+         if (UDT::ERROR == (rs = UDT::recv(recver, data + rsize, size - rsize, 0)))
+         {
+            cout << "recv:" << UDT::getlasterror().getErrorMessage() << endl;
+            break;
+         }
+
+         rsize += rs;
       }
+
+      if (rsize < size)
+         break;
    }
 
    delete [] data;
 
    UDT::close(recver);
 
-#ifndef WIN32
-   return NULL;
-#else
-   return 0;
-#endif
+   #ifndef WIN32
+      return NULL;
+   #else
+      return 0;
+   #endif
 }

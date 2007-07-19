@@ -1,147 +1,104 @@
-<html>
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<meta http-equiv="Content-Language" content="en-us">
-<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<title>UDT Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title> UDT Reference</title>
+<link rel="stylesheet" href="udtdoc.css" type="text/css" />
 </head>
 
 <body>
+<div class="ref_head">&nbsp;UDT Reference: Functions</div>
 
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table2" bgcolor="#99CCFF" bordercolor="#99CCFF">
-  <tr>
-    <td width="100%"><font face="Verdana" size="2"><i>&nbsp;UDT Reference: UDT 
-	Functions</i></font></td>
-  </tr>
-</table>
-<h1 style="margin-bottom: 0"><font face="Verdana" size="4">select</font></h1>
-<p><font face="Verdana" size="2">The <b>select</b> method queries the status of a group of UDT sockets.</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table3" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
-  <tr>
-    <td width="100%">
-    <p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">int select(<br>
-&nbsp; int <font color="#FFFFFF"> <a class="synParam" onclick="showTip(this)">nfds</a></font>,<br>
-&nbsp; UDSET *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">readfds</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; UDSET *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">writefds</a></font>,<br>
-&nbsp; UDSET *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">exceptfds</a></font>,</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-    <font face="Courier New" size="1">&nbsp; const struct timeval *<font color="#FFFFFF"><a class="synParam" onclick="showTip(this)">timeout</a>&nbsp;
-	</font>
-	<br>
-	);</font></p>
-    </td>
-  </tr>
-</table>
-<h4><font face="Verdana" size="2">Parameters</font></h4>
+<h4 class="func_name"><strong>select</strong></h4>
+<p>The <b>select</b> method queries one or more groups of UDT sockets.</p>
+
+<div class="code">int select(<br />
+&nbsp; int <font color="#FFFFFF">nfds</font>,<br />
+&nbsp; UDSET* <font color="#FFFFFF">readfds</font>,<br />
+&nbsp; UDSET* <font color="#FFFFFF">writefds</font>,<br />
+&nbsp; UDSET* <font color="#FFFFFF">exceptfds</font>,<br />
+&nbsp; const struct timeval* <font color="#FFFFFF">timeout</font><br />
+);</div>
+
+<h5>Parameters</h5>
 <dl>
-	<dt><font face="Verdana"><i><font size="2">nfds</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in] Ignored. For compatibility purpose 
-	only. </font></dd>
-	<dt><font face="Verdana"><i><font size="2">readfds</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in, out] Optional pointer to a set of 
-	sockets to be checked for readability. </font></dd>
-	<dt><font face="Verdana"><i><font size="2">writefds</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in, out] Optional pointer to a set of 
-	sockets to be checked for writability </font></dd>
-	<dt><font face="Verdana"><i><font size="2">exceptfds</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in, out] Ignored. For compatibility 
-	purpose only. </font></dd>
-	<dt><font face="Verdana"><i><font size="2">timeout</font></i><font size="2">
-	</font></font> </dt>
-	<dd><font face="Verdana" size="2">[in] Maximum time for select to wait, 
-	provided in the form of a timeval
-	structure. Set the timeout parameter to NULL for blocking operation. </font>
-	</dd>
+  <dt><i>nfds</i></dt>
+  <dd>[in] Ignored. For compatibility only.</dd>
+  <dt><em>readfds</em></dt>
+  <dd>[in, out] Optional pointer to a set of sockets to be checked for readability.</dd>
+  <dt><em>writefds</em></dt>
+  <dd>[in, out] Optional pointer to a set of sockets to be checked for writability.</dd>
+  <dt><em>exceptfds</em></dt>
+  <dd>[in, out] Ignored. For compatibility only.</dd>
+  <dt><em>timeout</em></dt>
+  <dd>[in] The future time when this call should be timeout.</dd>
 </dl>
-<h4><font face="Verdana" size="2">Return Values</font></h4>
-<p><font face="Verdana" size="2">If any of the read/write/exception queries is 
-positive, select returns the number of UDT sockets that are ready; If no socket 
-is ready before timeout, 0 is returned; If there is any error, UDT::ERROR 
-is returned and the specific error information can be retrieved by
-<a href="error.htm">getlasterror</a>.</font></p>
-  <table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" id="table4" bordercolordark="#C0C0C0" bordercolorlight="#C0C0C0" width="100%">
-    <tr>
-      <th align="center" bgcolor="#C0C0C0" width="133">
-		<font face="Verdana" size="2">Error Code</font></th>
-      <th align="center" bgcolor="#C0C0C0" width="812"><b>
-      <font face="Verdana" size="2">Comment</font></b></th>
-    </tr>
-    <tr>
-      <td width="133">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		5003</font></td>
-      <td width="812">
-      <p style="margin-top: 1; margin-bottom: 1"><font face="Verdana" size="1">
-		all the three UDT socket descriptor sets are NULL, or at least one of 
-		them contains an invalid socket descriptor.</font></td>
-    </tr>
-    </table>
-<H4><font face="Verdana" size="2">Description</font></H4>
-<p><font size="2" face="Verdana">The UDSET is a structure to store the UDT 
-socket descriptors. It should be processed with the following macros.</font></p>
-<dl>
-	<dt><font face="Verdana"><font size="2"><b>U</b></font><b><font size="2">D_CLR(</font></b><i><font size="2">u</font></i><font size="2"><b>, *</b><i>set</i><b>)</b></font></font></dt>
-	<dd><font face="Verdana" size="2">Removes the 
-	descriptor s from set.</font></dd>
-	<dt><font face="Verdana"><font size="2"><b>U</b></font><b><font size="2">D_ISSET(</font></b><font size="2"><i>u</i><b>, *</b><i>set</i><b>)</b></font></font></dt>
-	<dd><font face="Verdana" size="2">Nonzero if s is a 
-	member of the set. Otherwise, zero.</font></dd>
-	<dt><font face="Verdana"><font size="2"><b>U</b></font><b><font size="2">D_SET(</font></b><i><font size="2">u</font></i><font size="2"><b>, *</b><i>set</i><b>)</b></font></font></dt>
-	<dd><font face="Verdana" size="2">Adds descriptor s 
-	to set.</font></dd>
-	<dt><font face="Verdana"><font size="2"><b>U</b></font><b><font size="2">D_ZERO(*</font></b><font size="2"><i>set</i><b>)</b></font></font></dt>
-	<dd><font face="Verdana" size="2">Initializes the 
-	set to the NULL set.</font></dd>
-</dl>
-<p><font size="2" face="Verdana">The UDT descriptors sets originally contain the 
-sockets whose status are to be queried. When select returns successfully 
-(returned value is greater than 0), the descriptors sets only contain the 
-sockets that are ready. UD_ISSET is used to query which one is ready.</font></p>
-<p><font face="Verdana" size="2"><i>readfds </i>detects if any socket in this 
-sets is available for reading (<a href="recv.htm">recv</a>), for accepting a new 
-connection (<a href="accept.htm">accept</a>), or the connection is broken. <i>
-writefds</i> detects if any socket in this sets has available buffer for sending 
-(<a href="send.htm">send</a>). <i>exceptfds</i> is currently not used.</font></p>
-<H4><font face="Verdana" size="2">Example</font></H4>
-<p><font face="Verdana" size="2">The following codes show how to send a whole 
-file to the remote node using UDT:</font></p>
-<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" id="table5" bgcolor="#C0C0C0" bordercolor="#C0C0C0">
+
+<h5>Return Value</h5>
+<p>If any of the read or write query is positive, <strong>select</strong> returns the number of UDT sockets that are read for read/write. If no socket is ready before timeout, zero is 
+returned. If there is any error, UDT::ERROR is returned and the specific error information can be retrieved using <a href="error.htm">getlasterror</a>. The <i>readfds</i> and/or 
+<i>writefds</i> will be updated to contain the ready sockets only.</p>
+
+
+<table width="100%" border="1" cellpadding="2" cellspacing="0" bordercolor="#CCCCCC">
   <tr>
-    <td width="100%">
-    <p style="margin-top: 0; margin-bottom: 0">
-	<font face="Courier New" size="1">UDTSOCKET u;</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">
-	<font face="Courier New" size="1">...</font></p>
-	<p style="margin-top: 0; margin-bottom: 0">&nbsp;</p>
-	<p style="margin-top: 0; margin-bottom: 0">
-	<font face="Courier New" size="1">timeval tv;<br>
-	UDSET readfds;<br>
-	<br>
-	tv.tv_sec = 1;<br>
-	tv.tv_usec = 0;<br>
-	<br>
-	UD_ZERO(&amp;readfds);<br>
-	UD_SET(u, &amp;readfds);<br>
-	<br>
-	int res =
-	select(0, &amp;readfds, NULL, NULL, &amp;tv);<br>
-	<br>
-	if ((res != UDT_ERROR) &amp;&amp; (UD_ISSET(u, &amp;readfds)))<br>
-&nbsp;&nbsp; // read data from u.<br>
-	else<br>
-&nbsp;&nbsp; // timeout or error</font></td>
+    <td width="17%" class="table_headline"><strong>Error Name</strong></td>
+    <td width="17%" class="table_headline"><strong>Error Code</strong></td>
+    <td width="83%" class="table_headline"><strong>Comment</strong></td>
+  </tr>
+  <tr>
+    <td>EINVPARAM</td>
+    <td>5003</td>
+    <td>All three socket sets are empty or at least one of the socket is invalid.</td>
   </tr>
 </table>
-<H4><font face="Verdana" size="2">See Also</font></H4>
-<P><font face="Verdana" size="2"><b>
-<a href="send.htm">send</a>, <a href="recv.htm">recv</a></b></font></P>
+
+<h5>Description</h5>
+<p>The UDSET is a structure to store the UDT socket descriptors. If should only be processed with the following macros.</p>
+<dl>
+  <dt><b>UD_CLR</b>(<i>u, *set</i>)</dt>
+  <dd>Removes the descriptor <i>u</i> from <i>set</i>.</dd>
+  <dt><b>UD_ISSET</b>(<i>u, *set</i>)</dt>
+  <dd>Nonzero if <i>u</i> is a member of <i>set</i>; otherwise zero.</dd>
+  <dt><b>UD_SET</b>(<i>u, *set</i>)</dt>
+  <dd>Add descriptor <i>u</i> to <i>set</i>.</dd>
+  <dt><b>UD_ZERO</b>(<i>*set</i>)</dt>
+  <dd>Initialize <i>set</i> to an empty set.</dd>
+</dl>
+
+<p>The UDT descriptors sets originaly contains the sockets whose status is to be queried. When <strong>select</strong> returns, the descriptors sets only contain the sockets that are 
+ready for IO. UD_ISSET can be used to check which one is ready.</p>
+<p><i>readfds</i> is used to detect if any socket in this set is available for reading (recv, recvmsg), for accepting a new connection (accept), or the associated connection is broken. 
+<i>writefds</i> is used to detect if any socket in this set has available buffer for sending (send, sendmsg). Currently <i>exceptfds</i> is not used.</p>
+
+<h5>Example</h5>
+<p>The following example shows how to check if a UDT socket is available for <strong>recv</strong>.</p>
+
+<div class="code">
+<p>
+UDTSOCKET u;<br>
+...<br>
+<br>
+timeval tv;<br>
+UDSET readfds;<br>
+<br>
+tv.tv_sec = 1;<br>
+tv.tv_usec = 0;<br>
+<br>
+UD_ZERO(&readfds);<br>
+UD_SET(u, &readfds);<br>
+<br>
+int res = UDT::select(0, &readfds, NULL, NULL, &tv);<br>
+<br>
+if ((res != UDT::ERROR) && (UD_ISSET(u, &readfds)))<br>
+&nbsp;&nbsp;&nbsp;// read data from u.<br>
+else<br>
+&nbsp;&nbsp;&nbsp;// timeout or error<br>
+</p>
+</div>
+
+
+<p>&nbsp;</p>
 
 </body>
-
 </html>

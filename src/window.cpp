@@ -1,36 +1,26 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
-All rights reserved.
+Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
+All Rights Reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
+UDP-based Data Transfer Library (UDT) version 4
 
-* Redistributions of source code must retain the above
-  copyright notice, this list of conditions and the
-  following disclaimer.
+National Center for Data Mining (NCDM)
+University of Illinois at Chicago
+http://www.ncdm.uic.edu/
 
-* Redistributions in binary form must reproduce the
-  above copyright notice, this list of conditions
-  and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or (at
+your option) any later version.
 
-* Neither the name of the University of Illinois
-  nor the names of its contributors may be used to
-  endorse or promote products derived from this
-  software without specific prior written permission.
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+General Public License for more details.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation, Inc.,
+59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 *****************************************************************************/
 
 /*****************************************************************************
@@ -39,7 +29,7 @@ This header file contains the definition of UDT buffer structure and operations.
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 04/07/2006
+   Yunhong Gu [gu@lac.uic.edu], last updated 03/17/2007
 *****************************************************************************/
 
 #include <cmath>
@@ -57,7 +47,7 @@ m_iTail(0)
 {
    m_piACKSeqNo = new int32_t[m_iSize];
    m_piACK = new int32_t[m_iSize];
-   m_pTimeStamp = new timeval[m_iSize];
+   m_pTimeStamp = new uint64_t[m_iSize];
 
    m_piACKSeqNo[0] = -1;
 }
@@ -72,7 +62,7 @@ m_iTail(0)
 {
    m_piACKSeqNo = new int32_t[m_iSize];
    m_piACK = new int32_t[m_iSize];
-   m_pTimeStamp = new timeval[m_iSize];
+   m_pTimeStamp = new uint64_t[m_iSize];
 
    m_piACKSeqNo[0] = -1;
 }
@@ -88,7 +78,7 @@ void CACKWindow::store(const int32_t& seq, const int32_t& ack)
 {
    m_piACKSeqNo[m_iHead] = seq;
    m_piACK[m_iHead] = ack;
-   gettimeofday(m_pTimeStamp + m_iHead, 0);
+   m_pTimeStamp[m_iHead] = CTimer::getTime();
 
    m_iHead = (m_iHead + 1) % m_iSize;
 
@@ -111,9 +101,7 @@ int CACKWindow::acknowledge(const int32_t& seq, int32_t& ack)
             ack = m_piACK[i];
 
             // calculate RTT
-            timeval currtime;
-            gettimeofday(&currtime, 0);
-            int rtt = (currtime.tv_sec - m_pTimeStamp[i].tv_sec) * 1000000 + currtime.tv_usec - m_pTimeStamp[i].tv_usec;
+            int rtt = int(CTimer::getTime() - m_pTimeStamp[i]);
             if (i == m_iHead)
             {
                m_iTail = m_iHead = 0;
@@ -139,9 +127,7 @@ int CACKWindow::acknowledge(const int32_t& seq, int32_t& ack)
          ack = m_piACK[j];
 
          // calculate RTT
-         timeval currtime;
-         gettimeofday((timeval *)&currtime, 0);
-         int rtt = (currtime.tv_sec - m_pTimeStamp[j].tv_sec) * 1000000 + currtime.tv_usec - m_pTimeStamp[j].tv_usec;
+         int rtt = int(CTimer::getTime() - m_pTimeStamp[j]);
          if (j == m_iHead)
          {
             m_iTail = m_iHead = 0;
@@ -179,7 +165,7 @@ m_piProbeWindow(NULL)
    m_iRTTWindowPtr = 0;
    m_iProbeWindowPtr = 0;
 
-   gettimeofday(&m_LastArrTime, 0);
+   m_LastArrTime = CTimer::getTime();
 
    m_iLastSentTime = 0;
    m_iMinPktSndInt = 1000000;
@@ -214,7 +200,7 @@ m_piProbeWindow(NULL)
    m_iRTTWindowPtr = 0;
    m_iProbeWindowPtr = 0;
 
-   gettimeofday(&m_LastArrTime, 0);
+   m_LastArrTime = CTimer::getTime();
 
    m_iLastSentTime = 0;
    m_iMinPktSndInt = 1000000;
@@ -343,10 +329,10 @@ void CPktTimeWindow::onPktSent(const int& currtime)
 
 void CPktTimeWindow::onPktArrival()
 {
-   gettimeofday(&m_CurrArrTime, 0);
+   m_CurrArrTime = CTimer::getTime();
 
    // record the packet interval between the current and the last one
-   m_piPktWindow[m_iPktWindowPtr] = (m_CurrArrTime.tv_sec - m_LastArrTime.tv_sec) * 1000000 + m_CurrArrTime.tv_usec - m_LastArrTime.tv_usec;
+   m_piPktWindow[m_iPktWindowPtr] = int(m_CurrArrTime - m_LastArrTime);
 
    // the window is logically circular
    m_iPktWindowPtr = (m_iPktWindowPtr + 1) % m_iAWSize;
@@ -368,15 +354,15 @@ void CPktTimeWindow::ack2Arrival(const int& rtt)
 
 void CPktTimeWindow::probe1Arrival()
 {
-   gettimeofday(&m_ProbeTime, 0);
+   m_ProbeTime = CTimer::getTime();
 }
 
 void CPktTimeWindow::probe2Arrival()
 {
-   gettimeofday(&m_CurrArrTime, 0);
+   m_CurrArrTime = CTimer::getTime();
 
    // record the probing packets interval
-   m_piProbeWindow[m_iProbeWindowPtr] = (m_CurrArrTime.tv_sec - m_ProbeTime.tv_sec) * 1000000 + m_CurrArrTime.tv_usec - m_ProbeTime.tv_usec;
+   m_piProbeWindow[m_iProbeWindowPtr] = int(m_CurrArrTime - m_ProbeTime);
    // the window is logically circular
    m_iProbeWindowPtr = (m_iProbeWindowPtr + 1) % m_iPWSize;
 }

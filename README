@@ -1,7 +1,7 @@
 Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-Please read the LICENSE information in the current directory carefully.
+Please read the COPYRIGHT information in the current directory carefully.
 
 Visit http://udt.sf.net or http://sourceforge.net/projects/udt/ 
 for most recent news about UDT.
@@ -9,8 +9,7 @@ for most recent news about UDT.
 
 CONTENT: 
 ./src:     UDT source code 
-./app:     Example programs
-./sim:     NS-2 simulation scripts 
+./app:     Example programs 
 ./doc:     UDT documentation (HTML) and Internet Draft 
 ./win:     VS.Net project files for the Windows version of UDT 
 
@@ -25,9 +24,6 @@ For example, on OS X, you need to do "make -e os=OSX arch=POWERPC"; on 32-bit
 Linux system, simply use "make".
 
 On Windows systems, use the Visual Studio .NET project files in ./win directory.
-
-For more compile options (NO_BUSY_WAITING and CUSTOM_CC), please see UDT 
-documenation: Installation.
 
 
 To use UDT in your application: 

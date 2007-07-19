@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
    UDT::setsockopt(serv, 0, UDT_MSS, &mss, sizeof(int));
 #endif
 
-   short port = 9000;
+   int port = 9000;
    if (2 == argc)
       port = atoi(argv[1]);
 
