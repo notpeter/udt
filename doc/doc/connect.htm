@@ -12,9 +12,9 @@
 <h4 class="func_name"><strong>connect</strong></h4>
 <p>The <b>connect</b> method connects to a server socket (in regular mode) or a peer socket (in rendezvous mode) to set up a UDT connection.</p>
 
-<div class="code">UDTSOCKET accept(<br />
+<div class="code">int connect(<br />
 &nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
-&nbsp; struct sockaddr* <font color="#FFFFFF">name</font>,<br />
+&nbsp; const struct sockaddr* <font color="#FFFFFF">name</font>,<br />
 &nbsp; int* <font color="#FFFFFF">namelen</font><br />
 );</div>
 

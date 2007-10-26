@@ -1,11 +1,11 @@
 #ifndef WIN32
-#include <unistd.h>
-#include <cstdlib>
-#include <cstring>
-#include <netdb.h>
+   #include <unistd.h>
+   #include <cstdlib>
+   #include <cstring>
+   #include <netdb.h>
 #else
-#include <winsock2.h>
-#include <Ws2tcpip.h>
+   #include <winsock2.h>
+   #include <ws2tcpip.h>
 #endif
 #include <iostream>
 #include <udt.h>
@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
    hints.ai_socktype = SOCK_STREAM;
    //hints.ai_socktype = SOCK_DGRAM;
 
-   if (0 != getaddrinfo(NULL, "0", &hints, &local))
+   if (0 != getaddrinfo(NULL, "9000", &hints, &local))
    {
       cout << "incorrect network address.\n" << endl;
       return 0;
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
       CreateThread(NULL, 0, monitor, &client, 0, NULL);
    #endif
 
-   for (int i = 0; i < 100000; i ++)
+   for (int i = 0; i < 100000000; i ++)
    {
       int ssize = 0;
       int ss;

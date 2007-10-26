@@ -1,39 +1,41 @@
 /*****************************************************************************
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
-All Rights Reserved.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+All rights reserved.
 
-UDP-based Data Transfer Library (UDT) version 4
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-National Center for Data Mining (NCDM)
-University of Illinois at Chicago
-http://www.ncdm.uic.edu/
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at
-your option) any later version.
+* Redistributions in binary form must reproduce the
+  above copyright notice, this list of conditions
+  and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-This library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
-General Public License for more details.
+* Neither the name of the University of Illinois
+  nor the names of its contributors may be used to
+  endorse or promote products derived from this
+  software without specific prior written permission.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this library; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-*****************************************************************************/
-
-/*****************************************************************************
-This file contains the implementation of UDT sending and receiving buffer
-management modules.
-
-The sending buffer is a linked list of application data to be sent.
-The receiving buffer is a logically circular memeory block.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 07/16/2007
+   Yunhong Gu, last updated 09/19/2007
 *****************************************************************************/
 
 #include <cstring>
@@ -92,7 +94,7 @@ void CSndBuffer::addBuffer(const char* data, const int& len, const int& ttl, con
       // Insert a block to the empty list   
   
       m_pBlock = new Block;
-      m_pBlock->m_pcData = const_cast<char *>(data);
+      m_pBlock->m_pcData = const_cast<char*>(data);
       m_pBlock->m_iLength = len;
       m_pBlock->m_OriginTime = CTimer::getTime();
       m_pBlock->m_iTTL = ttl;
@@ -116,7 +118,7 @@ void CSndBuffer::addBuffer(const char* data, const int& len, const int& ttl, con
 
       m_pLastBlock->m_next = new Block;
       m_pLastBlock = m_pLastBlock->m_next;
-      m_pLastBlock->m_pcData = const_cast<char *>(data);
+      m_pLastBlock->m_pcData = const_cast<char*>(data);
       m_pLastBlock->m_iLength = len;
       m_pLastBlock->m_OriginTime = CTimer::getTime();
       m_pLastBlock->m_iTTL = ttl;
@@ -197,7 +199,7 @@ int CSndBuffer::readData(char** data, const int offset, const int& len, int32_t&
 
    if (p->m_iTTL >= 0)
    {
-      if (int(CTimer::getTime() - p->m_OriginTime) > p->m_iTTL)
+      if ((CTimer::getTime() - p->m_OriginTime) / 1000 > (uint64_t)p->m_iTTL)
       {
          msgno = p->m_iMsgNo;
          seqno = p->m_iSeqNo;
@@ -246,7 +248,7 @@ void CSndBuffer::ackData(const int& len, const int& payloadsize)
 
       // Update the size error between regular and irregular packets
       if (0 != m_pCurrAckBlk->m_iLength % payloadsize)
-         m_iCurrAckPnt -= payloadsize - m_pCurrAckBlk->m_iLength % payloadsize;
+         m_iCurrAckPnt -= payloadsize - (m_pCurrAckBlk->m_iLength % payloadsize);
 
       m_iCurrBufSize -= m_pCurrAckBlk->m_iLength;
       m_pCurrAckBlk = m_pCurrAckBlk->m_next;
@@ -277,7 +279,7 @@ m_iSize(65536),
 m_pUnitQueue(queue),
 m_iStartPos(0),
 m_iLastAckPos(0),
-m_iMaxPos(0),
+m_iMaxPos(-1),
 m_iNotch(0)
 {
    m_pUnit = new CUnit* [m_iSize];
@@ -289,7 +291,7 @@ m_iSize(bufsize),
 m_pUnitQueue(queue),
 m_iStartPos(0),
 m_iLastAckPos(0),
-m_iMaxPos(0),
+m_iMaxPos(-1),
 m_iNotch(0)
 {
    m_pUnit = new CUnit* [m_iSize];
@@ -313,11 +315,9 @@ CRcvBuffer::~CRcvBuffer()
 
 int CRcvBuffer::addData(CUnit* unit, int offset)
 {
-   int pos = m_iLastAckPos + offset;
-   if (pos > m_iMaxPos)
-      m_iMaxPos = pos;
-
-   pos %= m_iSize;
+   int pos = (m_iLastAckPos + offset) % m_iSize;
+   if (offset > m_iMaxPos)
+      m_iMaxPos = offset;
 
    if (NULL != m_pUnit[pos])
       return -1;
@@ -406,7 +406,6 @@ int CRcvBuffer::readBufferToFile(ofstream& file, const int& len)
 void CRcvBuffer::ackData(const int& len)
 {
    m_iLastAckPos = (m_iLastAckPos + len) % m_iSize;
-
    m_iMaxPos -= len;
 
    CTimer::triggerEvent();
@@ -428,16 +427,64 @@ int CRcvBuffer::getRcvDataSize() const
 
 void CRcvBuffer::dropMsg(const int32_t& msgno)
 {
-   for (int i = 0, n = m_iMaxPos + getRcvDataSize(); i < n; ++ i)
+   for (int i = m_iStartPos, n = (m_iLastAckPos + m_iMaxPos) % m_iSize; i != n; i = (i + 1) % m_iSize)
       if ((NULL != m_pUnit[i]) && (msgno == m_pUnit[i]->m_Packet.m_iMsgNo))
          m_pUnit[i]->m_iFlag = 3;
 }
 
 int CRcvBuffer::readMsg(char* data, const int& len)
 {
-   // empty buffer
-   if (m_iStartPos == m_iLastAckPos)
+   int p, q;
+   bool passack;
+   if (!scanMsg(p, q, passack))
       return 0;
+
+   int rs = len;
+   while (p != (q + 1) % m_iSize)
+   {
+      int unitsize = m_pUnit[p]->m_Packet.getLength();
+      if ((rs >= 0) && (unitsize > rs))
+         unitsize = rs;
+
+      if (unitsize > 0)
+      {
+         memcpy(data, m_pUnit[p]->m_Packet.m_pcData, unitsize);
+         data += unitsize;
+         rs -= unitsize;
+      }
+
+      if (!passack)
+      {
+         CUnit* tmp = m_pUnit[p];
+         m_pUnit[p] = NULL;
+         tmp->m_iFlag = 0;
+         -- m_pUnitQueue->m_iCount;
+      }
+      else
+         m_pUnit[p]->m_iFlag = 2;
+
+      if (++ p == m_iSize)
+         p = 0;
+   }
+
+   if (!passack)
+      m_iStartPos = (q + 1) % m_iSize;
+
+   return len - rs;
+}
+
+int CRcvBuffer::getRcvMsgNum()
+{
+   int p, q;
+   bool passack;
+   return scanMsg(p, q, passack) ? 1 : 0;
+}
+
+bool CRcvBuffer::scanMsg(int& p, int& q, bool& passack)
+{
+   // empty buffer
+   if ((m_iStartPos == m_iLastAckPos) && (0 == m_iMaxPos))
+      return false;
 
    //skip all bad msgs at the beginning
    while (m_iStartPos != m_iLastAckPos)
@@ -454,13 +501,13 @@ int CRcvBuffer::readMsg(char* data, const int& len)
          m_iStartPos = 0;
    }
 
-   int p = -1;			// message head
-   int q = m_iStartPos;		// message tail
+   p = -1;                  // message head
+   q = m_iStartPos;         // message tail
+   passack = m_iStartPos == m_iLastAckPos;
    bool found = false;
-   bool passack = false;
 
    // looking for the first message
-   for (int i = 0, n = m_iMaxPos + getRcvDataSize(); i < n; ++ i)
+   for (int i = 0, n = m_iMaxPos + getRcvDataSize(); i <= n; ++ i)
    {
       if ((NULL != m_pUnit[q]) && (1 == m_pUnit[q]->m_iFlag))
       {
@@ -506,40 +553,9 @@ int CRcvBuffer::readMsg(char* data, const int& len)
    if (!found)
    {
       // if the message is larger than the receiver buffer, return part of the message
-      if ((p == -1) || ((q + 1) % m_iSize != p))
-         return 0;
+      if ((p != -1) && ((q + 1) % m_iSize == p))
+         found = true;
    }
 
-   int rs = len;
-   while (p != (q + 1) % m_iSize)
-   {
-      int unitsize = m_pUnit[p]->m_Packet.getLength();
-      if ((rs >= 0) && (unitsize > rs))
-         unitsize = rs;
-
-      if (unitsize > 0)
-      {
-         memcpy(data, m_pUnit[p]->m_Packet.m_pcData, unitsize);
-         data += unitsize;
-         rs -= unitsize;
-      }
-
-      if (!passack)
-      {
-         CUnit* tmp = m_pUnit[p];
-         m_pUnit[p] = NULL;
-         tmp->m_iFlag = 0;
-         -- m_pUnitQueue->m_iCount;
-      }
-      else
-         m_pUnit[p]->m_iFlag = 2;
-
-      if (++ p == m_iSize)
-         p = 0;
-   }
-
-   if (!passack)
-      m_iStartPos = (q + 1) % m_iSize;
-
-   return len - rs;
+   return found;
 }

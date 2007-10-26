@@ -1,35 +1,41 @@
 /*****************************************************************************
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
-All Rights Reserved.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+All rights reserved.
 
-UDP-based Data Transfer Library (UDT) version 4
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-National Center for Data Mining (NCDM)
-University of Illinois at Chicago
-http://www.ncdm.uic.edu/
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at
-your option) any later version.
+* Redistributions in binary form must reproduce the
+  above copyright notice, this list of conditions
+  and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-This library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
-General Public License for more details.
+* Neither the name of the University of Illinois
+  nor the names of its contributors may be used to
+  endorse or promote products derived from this
+  software without specific prior written permission.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this library; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-*****************************************************************************/
-
-/*****************************************************************************
-This header file contains the definition of UDT multiplexer.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 07/16/2007
+   Yunhong Gu, last updated 10/11/2007
 *****************************************************************************/
 
 
@@ -40,6 +46,7 @@ written by
 #include "packet.h"
 #include "channel.h"
 #include <vector>
+#include <map>
 
 class CUDT;
 
@@ -231,41 +238,11 @@ public:
 
    void update(const int32_t& id);
 
-      // Functionality:
-      //    Insert a new UDT instance to the new entry list.
-      // Parameters:
-      //    1) [in] u: pointer to the UDT instance
-      // Returned value:
-      //    None.
-
-   void newEntry(CUDT* u);
-
-      // Functionality:
-      //    Check if there is a new entry to be inserted to the rcv u list
-      // Parameters:
-      //    None.
-      // Returned value:
-      //    True if yes, otherwise false.
-
-   bool ifNewEntry();
-
-      // Functionality:
-      //    Pick the first new entry on the waiting list.
-      // Parameters:
-      //    None.
-      // Returned value:
-      //    Pointer to a UDT instance.
-
-   CUDT* newEntry();
-
 public:
    CUDTList* m_pUList;		// the head node
 
 private:
    CUDTList* m_pLast;		// the last node
-
-   std::vector<CUDT*> m_vNewEntry;	// newly added entries, to be inserted
-   pthread_mutex_t m_ListLock;
 };
 
 class CHash
@@ -295,26 +272,6 @@ public:
    CUDT* lookup(const int32_t& id);
 
       // Functionality:
-      //    Retrive a received packet that is temporally stored in the hash table.
-      // Parameters:
-      //    1) [in] id: socket ID
-      //    2) [out] packet: the returned packet
-      // Returned value:
-      //    Data length of the packet, or -1.
-
-   int retrieve(const int32_t& id, CPacket& packet);
-
-      // Functionality:
-      //    Store a packet in the hash table.
-      // Parameters:
-      //    1) [in] id: socket ID
-      //    2) [in] unit: information for the packet
-      // Returned value:
-      //    None.
-
-   void setUnit(const int32_t& id, CUnit* unit);
-
-      // Functionality:
       //    Insert an entry to the hash table.
       // Parameters:
       //    1) [in] id: socket ID
@@ -340,8 +297,6 @@ private:
       CUDT* m_pUDT;		// Socket instance
 
       CBucket* m_pNext;		// next bucket
-
-      CUnit* m_pUnit;		// tempory buffer for a received packet
    } **m_pBucket;		// list of buckets (the hash table)
 
    int m_iHashSize;		// size of hash table
@@ -354,9 +309,9 @@ public:
    ~CRendezvousQueue();
 
 public:
-   void insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr);
+   void insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr, CUDT* u);
    void remove(const UDTSOCKET& id);
-   bool retrieve(const sockaddr* addr, UDTSOCKET& id, const UDTSOCKET& peerid);
+   bool retrieve(const sockaddr* addr, UDTSOCKET& id, const UDTSOCKET& peerid, CUDT*& u);
 
 private:
    struct CRL
@@ -365,6 +320,7 @@ private:
       UDTSOCKET m_iPeerID;
       int m_iIPversion;
       sockaddr* m_pPeerAddr;
+      CUDT* m_pUDT;
    };
    std::vector<CRL> m_vRendezvousID;         // The sockets currently in rendezvous mode
 
@@ -468,22 +424,38 @@ private:
    pthread_t m_WorkerThread;
 
 private:
-   CUnitQueue m_UnitQueue;	// The received packet queue
+   CUnitQueue m_UnitQueue;		// The received packet queue
 
-   CRcvUList* m_pRcvUList;	// List of UDT instances that will read packets from the queue
-   CHash* m_pHash;		// Hash table for UDT socket looking up
-   CChannel* m_pChannel;	// UDP channel for receving packets
-   CTimer* m_pTimer;		// shared timer with the snd queue
+   CRcvUList* m_pRcvUList;		// List of UDT instances that will read packets from the queue
+   CHash* m_pHash;			// Hash table for UDT socket looking up
+   CChannel* m_pChannel;		// UDP channel for receving packets
+   CTimer* m_pTimer;			// shared timer with the snd queue
 
-   pthread_mutex_t m_PassLock;
-   pthread_cond_t m_PassCond;
+   int m_iPayloadSize;                  // packet payload size
 
-   volatile UDTSOCKET m_ListenerID;		// The only listening socket that is associated to the queue, if there is one
+   volatile bool m_bClosing;            // closing the workder
+
+private:
+   int setListener(const CUDT* u);
+   void removeListener(const CUDT* u);
+
+   void setNewEntry(CUDT* u);
+   bool ifNewEntry();
+   CUDT* getNewEntry();
+
+   void storePkt(const int32_t& id, CPacket* pkt);
+
+private:
+   pthread_mutex_t m_LSLock;
+   volatile CUDT* m_pListener;			// pointer to the (unique, if any) listening UDT entity
    CRendezvousQueue* m_pRendezvousQueue;	// The list of sockets in rendezvous mode
 
-   int m_iPayloadSize;			// packet payload size
+   std::vector<CUDT*> m_vNewEntry;              // newly added entries, to be inserted
+   pthread_mutex_t m_IDLock;
 
-   volatile bool m_bClosing;		// closing the workder
+   std::map<int32_t, CPacket*> m_mBuffer;	// temporary buffer for rendezvous connection request
+   pthread_mutex_t m_PassLock;
+   pthread_cond_t m_PassCond;
 };
 
 

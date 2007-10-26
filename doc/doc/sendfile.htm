@@ -12,12 +12,12 @@
 <h4 class="func_name"><strong>sendfile</strong></h4>
 <p>The <b>sendfile</b> method sends out part or the whole of a local file.</p>
 
-<div class="code">int64_t recvfile(<br />
+<div class="code">int64_t sendfile(<br />
 &nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
 &nbsp; ifstream& <font color="#FFFFFF">ifs</font>,<br />
-&nbsp; int64_t <font color="#FFFFFF">offset</font>,<br />
-&nbsp; int64_t <font color="#FFFFFF">size</font>,<br />
-&nbsp; int <font color="#FFFFFF">block</font> = 7320000<br />
+&nbsp; const int64_t <font color="#FFFFFF">offset</font>,<br />
+&nbsp; const int64_t <font color="#FFFFFF">size</font>,<br />
+&nbsp; const int <font color="#FFFFFF">block</font> = 7320000<br />
 );</div>
 
 <h5>Parameters</h5>

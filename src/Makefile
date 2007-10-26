@@ -10,8 +10,6 @@ endif
 
 CCFLAGS = -fPIC -Wall -D$(os) -finline-functions -O3 #-msse3
 
-CCFLAGS += -DNO_BUSY_WAITING
-
 ifeq ($(arch), IA32)
    CCFLAGS += -DIA32
 endif

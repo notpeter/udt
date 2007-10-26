@@ -1,40 +1,41 @@
 /*****************************************************************************
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
-All Rights Reserved.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+All rights reserved.
 
-UDP-based Data Transfer Library (UDT) version 4
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-National Center for Data Mining (NCDM)
-University of Illinois at Chicago
-http://www.ncdm.uic.edu/
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at
-your option) any later version.
+* Redistributions in binary form must reproduce the
+  above copyright notice, this list of conditions
+  and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-This library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
-General Public License for more details.
+* Neither the name of the University of Illinois
+  nor the names of its contributors may be used to
+  endorse or promote products derived from this
+  software without specific prior written permission.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this library; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-*****************************************************************************/
-
-/*****************************************************************************
-This file contains the implementation of main algorithms of UDT protocol and
-the implementation of core UDT interfaces.
-
-Reference:
-UDT programming manual
-UDT protocol specification (draft-gg-udt-xx.txt)
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 07/17/2007
+   Yunhong Gu, last updated 10/18/2007
 *****************************************************************************/
 
 #ifndef WIN32
@@ -85,6 +86,10 @@ CUDT::CUDT()
    m_pRcvTimeWindow = NULL;
 
    m_pSndQueue = NULL;
+   m_pRcvQueue = NULL;
+   m_pPeerAddr = NULL;
+   m_pSNode = NULL;
+   m_pRNode = NULL;
 
    // Initilize mutex and condition variables
    initSynch();
@@ -94,12 +99,12 @@ CUDT::CUDT()
    m_bSynSending = true;
    m_bSynRecving = true;
    m_iFlightFlagSize = 25600;
-   m_iSndQueueLimit = 10000000;
-   m_iUDTBufSize = 25600;
+   m_iSndQueueLimit = 20000000;
+   m_iUDTBufSize = 8192;
    m_Linger.l_onoff = 1;
    m_Linger.l_linger = 180;
-   m_iUDPSndBufSize = 1000000;
-   m_iUDPRcvBufSize = 1000000;
+   m_iUDPSndBufSize = 65536;
+   m_iUDPRcvBufSize = m_iUDTBufSize * m_iMSS;
    m_iIPversion = AF_INET;
    m_bRendezvous = false;
    m_iSndTimeOut = -1;
@@ -110,18 +115,13 @@ CUDT::CUDT()
    m_pCC = NULL;
    m_pController = NULL;
 
-   m_iRTT = 10 * m_iSYNInterval;
-   m_iRTTVar = m_iRTT >> 1;
-   m_ullCPUFrequency = CTimer::getCPUFrequency();
-
    // Initial status
    m_bOpened = false;
+   m_bListening = false;
    m_bConnected = false;
+   m_bClosing = false;
+   m_bShutdown = false;
    m_bBroken = false;
-
-   m_pPeerAddr = NULL;
-   m_pSNode = NULL;
-   m_pRNode = NULL;
 }
 
 CUDT::CUDT(const CUDT& ancestor)
@@ -135,6 +135,10 @@ CUDT::CUDT(const CUDT& ancestor)
    m_pRcvTimeWindow = NULL;
 
    m_pSndQueue = NULL;
+   m_pRcvQueue = NULL;
+   m_pPeerAddr = NULL;
+   m_pSNode = NULL;
+   m_pRNode = NULL;
 
    // Initilize mutex and condition variables
    initSynch();
@@ -160,18 +164,13 @@ CUDT::CUDT(const CUDT& ancestor)
    m_pCC = NULL;
    m_pController = ancestor.m_pController;
 
-   m_iRTT = ancestor.m_iRTT;
-   m_iRTTVar = ancestor.m_iRTTVar;
-   m_ullCPUFrequency = ancestor.m_ullCPUFrequency;
-
    // Initial status
    m_bOpened = false;
+   m_bListening = false;
    m_bConnected = false;
+   m_bClosing = false;
+   m_bShutdown = false;
    m_bBroken = false;
-
-   m_pPeerAddr = NULL;
-   m_pSNode = NULL;
-   m_pRNode = NULL;
 }
 
 CUDT::~CUDT()
@@ -211,6 +210,12 @@ void CUDT::setOpt(UDTOpt optName, const void* optval, const int&)
 
       m_iMSS = *(int*)optval;
 
+      // Packet size cannot be greater than UDP buffer size
+      if (m_iMSS > m_iUDPSndBufSize)
+         m_iMSS = m_iUDPSndBufSize;
+      if (m_iMSS > m_iUDPRcvBufSize)
+         m_iMSS = m_iUDPRcvBufSize;
+
       break;
 
    case UDT_SNDSYN:
@@ -222,7 +227,7 @@ void CUDT::setOpt(UDTOpt optName, const void* optval, const int&)
       break;
 
    case UDT_CC:
-      if (m_bOpened)
+      if (m_bConnected)
          throw CUDTException(5, 1, 0);
       if (NULL != m_pCCFactory)
          delete m_pCCFactory;
@@ -276,6 +281,10 @@ void CUDT::setOpt(UDTOpt optName, const void* optval, const int&)
          throw CUDTException(5, 1, 0);
 
       m_iUDPSndBufSize = *(int*)optval;
+
+      if (m_iUDPSndBufSize < m_iMSS)
+         m_iUDPSndBufSize = m_iMSS;
+
       break;
 
    case UDP_RCVBUF:
@@ -283,6 +292,10 @@ void CUDT::setOpt(UDTOpt optName, const void* optval, const int&)
          throw CUDTException(5, 1, 0);
 
       m_iUDPRcvBufSize = *(int*)optval;
+
+      if (m_iUDPRcvBufSize < m_iMSS)
+         m_iUDPRcvBufSize = m_iMSS;
+
       break;
 
    case UDT_RENDEZVOUS:
@@ -403,44 +416,15 @@ void CUDT::open()
 {
    CGuard cg(m_ConnectionLock);
 
-   // Initial status
-   m_bClosing = false;
-   m_bShutdown = false;
-   m_bListening = false;
-   m_iEXPCount = 1;
-   m_iBandwidth = 1;
-
    // Initial sequence number, loss, acknowledgement, etc.
    m_iPktSize = m_iMSS - 28;
    m_iPayloadSize = m_iPktSize - CPacket::m_iPktHdrSize;
-   m_iISN = 0;
-   m_iPeerISN = 0;
 
+   m_iEXPCount = 1;
+   m_iBandwidth = 1;
+   m_iDeliveryRate = 16;
    m_iAckSeqNo = 0;
-
-   m_iSndLastAck = 0;
-   m_iSndLastDataAck = 0;
-   m_iSndCurrSeqNo = -1;
-
-   m_iRcvLastAck = 0;
-   m_iRcvLastAckAck = 0;
    m_ullLastAckTime = 0;
-   m_iRcvCurrSeqNo = -1;
-
-   // Initial sending rate = 1us
-   m_ullInterval = m_ullCPUFrequency;
-   m_ullTimeDiff = 0;
-
-   // default congestion window size = infinite
-   m_dCongestionWindow = 1 << 30;
-
-   // Initial Window Size = 16 packets
-   m_iFlowWindowSize = 16;
-
-   m_pCC = m_pCCFactory->create();
-   m_pCC->m_UDT = m_SocketID;
-   m_ullInterval = (uint64_t)(m_pCC->m_dPktSndPeriod * m_ullCPUFrequency);
-   m_dCongestionWindow = m_pCC->m_dCWndSize;
 
    // trace information
    m_StartTime = CTimer::getTime();
@@ -448,6 +432,7 @@ void CUDT::open()
    m_LastSampleTime = CTimer::getTime();
    m_llTraceSent = m_llTraceRecv = m_iTraceSndLoss = m_iTraceRcvLoss = m_iTraceRetrans = m_iSentACK = m_iRecvACK = m_iSentNAK = m_iRecvNAK = 0;
 
+   // structures for queue
    if (NULL == m_pSNode)
       m_pSNode = new CUDTList;
    m_pSNode->m_iID = m_SocketID;
@@ -462,10 +447,11 @@ void CUDT::open()
    m_pRNode->m_llTimeStamp = 1;
    m_pRNode->m_pPrev = m_pRNode->m_pNext = NULL;
 
-   // Now UDT is opened.
-   m_bOpened = true;
+   m_iRTT = 10 * m_iSYNInterval;
+   m_iRTTVar = m_iRTT >> 1;
+   m_ullCPUFrequency = CTimer::getCPUFrequency();
 
-   // set ip the timers
+   // set up the timers
    m_ullSYNInt = m_iSYNInterval * m_ullCPUFrequency;
    
    m_ullACKInt = m_ullSYNInt;
@@ -484,6 +470,9 @@ void CUDT::open()
 
    m_ullTargetTime = 0;
    m_ullTimeDiff = 0;
+
+   // Now UDT is opened.
+   m_bOpened = true;
 }
 
 void CUDT::listen()
@@ -500,13 +489,11 @@ void CUDT::listen()
    if (m_bListening)
       return;
 
+   // if there is already another socket listening on the same port
+   if (m_pRcvQueue->setListener(this) < 0)
+      throw CUDTException(5, 11, 0);
+
    m_bListening = true;
-
-   // TO DO
-   //detect error here:
-   // if there is already a listener, throw exception
-
-   m_pRcvQueue->m_ListenerID = m_SocketID;
 }
 
 void CUDT::connect(const sockaddr* serv_addr)
@@ -524,7 +511,7 @@ void CUDT::connect(const sockaddr* serv_addr)
 
    // rendezvous mode check in
    if (m_bRendezvous)
-      m_pRcvQueue->m_pRendezvousQueue->insert(m_SocketID, m_iIPversion, serv_addr);
+      m_pRcvQueue->m_pRendezvousQueue->insert(m_SocketID, m_iIPversion, serv_addr, this);
 
    CPacket request;
    char* reqdata = new char [m_iPayloadSize];
@@ -539,7 +526,7 @@ void CUDT::connect(const sockaddr* serv_addr)
    req->m_iType = m_iSockType;
    req->m_iMSS = m_iMSS;
    req->m_iFlightFlagSize = (m_iUDTBufSize < m_iFlightFlagSize)? m_iUDTBufSize : m_iFlightFlagSize;
-   req->m_iReqType = (!m_bRendezvous) ? 1 : 2;
+   req->m_iReqType = (!m_bRendezvous) ? 1 : 0;
    req->m_iID = m_SocketID;
 
    // Random Initial Sequence Number
@@ -565,7 +552,7 @@ void CUDT::connect(const sockaddr* serv_addr)
    uint64_t entertime = CTimer::getTime();
    CUDTException e(0, 0);
 
-   do
+   while (!m_bClosing)
    {
       m_pSndQueue->sendto(serv_addr, request);
 
@@ -586,13 +573,16 @@ void CUDT::connect(const sockaddr* serv_addr)
          }
       }
 
+      if ((response.getLength() > 0) && (res->m_iReqType < 0))
+         break;
+
       if (CTimer::getTime() - entertime > timeo)
       {
          // timeout
          e = CUDTException(1, 1, 0);
          break;
       }
-   } while (((response.getLength() <= 0) || (m_bRendezvous && (res->m_iReqType > 0))) && !m_bClosing);
+   }
 
    delete [] reqdata;
 
@@ -638,20 +628,25 @@ void CUDT::connect(const sockaddr* serv_addr)
    m_pSndLossList = new CSndLossList(m_iFlowWindowSize * 2);
    m_pRcvLossList = new CRcvLossList(m_iFlightFlagSize);
    m_pACKWindow = new CACKWindow(4096);
-   m_pRcvTimeWindow = new CPktTimeWindow(16, 16, 64);
+   m_pRcvTimeWindow = new CPktTimeWindow(16, 64);
    m_pSndTimeWindow = new CPktTimeWindow();
+
+   m_pCC = m_pCCFactory->create();
+   m_pCC->m_UDT = m_SocketID;
+   m_ullInterval = (uint64_t)(m_pCC->m_dPktSndPeriod * m_ullCPUFrequency);
+   m_dCongestionWindow = m_pCC->m_dCWndSize;
 
    m_pController->join(this, serv_addr, m_iIPversion, m_iRTT, m_iBandwidth);
    m_pCC->setMSS(m_iMSS);
    m_pCC->setMaxCWndSize((int&)m_iFlowWindowSize);
    m_pCC->setSndCurrSeqNo(m_iSndCurrSeqNo);
-   m_pCC->setRcvRate(0);
+   m_pCC->setRcvRate(m_iDeliveryRate);
    m_pCC->setRTT(m_iRTT);
    m_pCC->setBandwidth(m_iBandwidth);
    m_pCC->init();
 
    // register this socket for receiving data packets
-   m_pRcvQueue->m_pRcvUList->newEntry(this);
+   m_pRcvQueue->setNewEntry(this);
 
    m_pPeerAddr = (AF_INET == m_iIPversion) ? (sockaddr*)new sockaddr_in : (sockaddr*)new sockaddr_in6;
    memcpy(m_pPeerAddr, serv_addr, (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6));
@@ -710,20 +705,25 @@ void CUDT::connect(const sockaddr* peer, CHandShake* hs)
    m_pSndLossList = new CSndLossList(m_iFlowWindowSize * 2);
    m_pRcvLossList = new CRcvLossList(m_iFlightFlagSize);
    m_pACKWindow = new CACKWindow(4096);
-   m_pRcvTimeWindow = new CPktTimeWindow(16, 16, 64);
+   m_pRcvTimeWindow = new CPktTimeWindow(16, 64);
    m_pSndTimeWindow = new CPktTimeWindow();
+
+   m_pCC = m_pCCFactory->create();
+   m_pCC->m_UDT = m_SocketID;
+   m_ullInterval = (uint64_t)(m_pCC->m_dPktSndPeriod * m_ullCPUFrequency);
+   m_dCongestionWindow = m_pCC->m_dCWndSize;
 
    m_pController->join(this, peer, m_iIPversion, m_iRTT, m_iBandwidth);
    m_pCC->setMSS(m_iMSS);
    m_pCC->setMaxCWndSize((int&)m_iFlowWindowSize);
    m_pCC->setSndCurrSeqNo(m_iSndCurrSeqNo);
-   m_pCC->setRcvRate(0);
+   m_pCC->setRcvRate(m_iDeliveryRate);
    m_pCC->setRTT(m_iRTT);
    m_pCC->setBandwidth(m_iBandwidth);
    m_pCC->init();
 
-   // register this socket for receiving data packet
-   m_pRcvQueue->m_pRcvUList->newEntry(this);
+   // register this socket for receiving data packets
+   m_pRcvQueue->setNewEntry(this);
 
    m_pPeerAddr = (AF_INET == m_iIPversion) ? (sockaddr*)new sockaddr_in : (sockaddr*)new sockaddr_in6;
    memcpy(m_pPeerAddr, peer, (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6));
@@ -747,7 +747,10 @@ void CUDT::close()
       while (!m_bBroken && m_bConnected && (m_pSndBuffer->getCurrBufSize() > 0) && (CTimer::getTime() - entertime < m_Linger.l_linger * 1000000ULL))
       {
          #ifndef WIN32
-            usleep(10);
+            timespec ts;
+            ts.tv_sec = 0;
+            ts.tv_nsec = 1000000;
+            nanosleep(&ts, NULL);
          #else
             Sleep(1);
          #endif
@@ -755,9 +758,6 @@ void CUDT::close()
    }
 
    CGuard cg(m_ConnectionLock);
-
-   m_pCC->close();
-   m_pController->leave(this, m_iRTT, m_iBandwidth);
 
    // Inform the threads handler to stop.
    m_bClosing = true;
@@ -769,18 +769,21 @@ void CUDT::close()
    if (m_bListening)
    {
       m_bListening = false;
-      m_pRcvQueue->m_ListenerID = -1;
+      m_pRcvQueue->removeListener(this);
    }
    if (m_bConnected)
    {
       if (!m_bShutdown)
          sendCtrl(5);
 
-      m_bConnected = false;
-   }
+      m_pCC->close();
+      m_pController->leave(this, m_iRTT, m_iBandwidth);
 
-   if (m_bRendezvous)
-      m_pRcvQueue->m_pRendezvousQueue->remove(m_SocketID);
+      m_bConnected = false;
+
+      if (m_bRendezvous)
+         m_pRcvQueue->m_pRendezvousQueue->remove(m_SocketID);
+   }
 
    // waiting all send and recv calls to stop
    CGuard sendguard(m_SendLock);
@@ -806,7 +809,7 @@ int CUDT::send(char* data, const int& len)
    if (len <= 0)
       return 0;
 
-   if (m_pSndBuffer->getCurrBufSize() > m_iSndQueueLimit)
+   if (m_iSndQueueLimit <= m_pSndBuffer->getCurrBufSize())
    {
       if (!m_bSynSending)
          throw CUDTException(6, 1, 0);
@@ -817,7 +820,7 @@ int CUDT::send(char* data, const int& len)
             pthread_mutex_lock(&m_SendBlockLock);
             if (m_iSndTimeOut < 0) 
             { 
-               while (!m_bBroken && m_bConnected && (m_iSndQueueLimit < m_pSndBuffer->getCurrBufSize()))
+               while (!m_bBroken && m_bConnected && (m_iSndQueueLimit <= m_pSndBuffer->getCurrBufSize()))
                   pthread_cond_wait(&m_SendBlockCond, &m_SendBlockLock);
             }
             else
@@ -834,7 +837,7 @@ int CUDT::send(char* data, const int& len)
          #else
             if (m_iSndTimeOut < 0)
             {
-               while (!m_bBroken && m_bConnected && (m_iSndQueueLimit < m_pSndBuffer->getCurrBufSize()))
+               while (!m_bBroken && m_bConnected && (m_iSndQueueLimit <= m_pSndBuffer->getCurrBufSize()))
                   WaitForSingleObject(m_SendBlockCond, INFINITE);
             }
             else 
@@ -847,20 +850,22 @@ int CUDT::send(char* data, const int& len)
       }
    }
 
-   if ((m_iSndTimeOut >= 0) && (m_iSndQueueLimit < m_pSndBuffer->getCurrBufSize())) 
+   if ((m_iSndTimeOut >= 0) || (m_iSndQueueLimit <= m_pSndBuffer->getCurrBufSize())) 
       return 0; 
 
-   char* buf = new char[len];
-   memcpy(buf, data, len);
+   int size = m_iSndQueueLimit - m_pSndBuffer->getCurrBufSize();
+   if (size > len)
+      size = len;
+   char* buf = new char[size];
+   memcpy(buf, data, size);
 
    // insert the user buffer into the sening list
-   m_pSndBuffer->addBuffer(buf, len);
+   m_pSndBuffer->addBuffer(buf, size);
 
    // insert this socket to snd list if it is not on the list yet
    m_pSndQueue->m_pSndUList->update(m_SocketID, this, false);
 
-   // UDT either sends nothing or sends all 
-   return len;
+   return size;
 }
 
 int CUDT::recv(char* data, const int& len)
@@ -934,7 +939,10 @@ int CUDT::sendmsg(const char* data, const int& len, const int& msttl, const bool
    if (len <= 0)
       return 0;
 
-   if (m_pSndBuffer->getCurrBufSize() > m_iSndQueueLimit)
+   if (len > m_iSndQueueLimit)
+      throw CUDTException(5, 12, 0);
+
+   if (m_iSndQueueLimit - m_pSndBuffer->getCurrBufSize() < len)
    {
       if (!m_bSynSending)
          throw CUDTException(6, 1, 0);
@@ -975,14 +983,14 @@ int CUDT::sendmsg(const char* data, const int& len, const int& msttl, const bool
       }
    }
 
-   if ((m_iSndTimeOut >= 0) && (m_iSndQueueLimit < m_pSndBuffer->getCurrBufSize()))
+   if ((m_iSndTimeOut >= 0) || (m_iSndQueueLimit - m_pSndBuffer->getCurrBufSize() < len))
       return 0;
 
    char* buf = new char[len];
    memcpy(buf, data, len);
 
    // insert the user buffer into the sening list
-   m_pSndBuffer->addBuffer(buf, len, msttl, m_iSndCurrSeqNo, inorder);
+   m_pSndBuffer->addBuffer(buf, len, msttl, CSeqNo::incseq(m_iSndCurrSeqNo), inorder);
 
    // insert this socket to the snd list if it is not on the list yet
    m_pSndQueue->m_pSndUList->update(m_SocketID, this, false);
@@ -1128,11 +1136,11 @@ int64_t CUDT::sendfile(ifstream& ifs, const int64_t& offset, const int64_t& size
 
       #ifndef WIN32
          pthread_mutex_lock(&m_SendBlockLock);
-         while (!m_bBroken && m_bConnected && (m_iSndQueueLimit < m_pSndBuffer->getCurrBufSize()))
+         while (!m_bBroken && m_bConnected && (m_iSndQueueLimit <= m_pSndBuffer->getCurrBufSize()))
             pthread_cond_wait(&m_SendBlockCond, &m_SendBlockLock);
          pthread_mutex_unlock(&m_SendBlockLock);
       #else
-         while (!m_bBroken && m_bConnected && (m_iSndQueueLimit < m_pSndBuffer->getCurrBufSize()))
+         while (!m_bBroken && m_bConnected && (m_iSndQueueLimit <= m_pSndBuffer->getCurrBufSize()))
             WaitForSingleObject(m_SendBlockCond, INFINITE);
       #endif
 
@@ -1217,6 +1225,11 @@ int64_t CUDT::recvfile(ofstream& ofs, const int64_t& offset, const int64_t& size
 
 void CUDT::sample(CPerfMon* perf, bool clear)
 {
+   if (!m_bConnected)
+      throw CUDTException(2, 2, 0);
+   if (m_bBroken)
+      throw CUDTException(2, 1, 0);
+
    uint64_t currtime = CTimer::getTime();
 
    perf->msTimeStamp = (currtime - m_StartTime) / 1000;
@@ -1381,6 +1394,9 @@ void CUDT::sendCtrl(const int& pkttype, void* lparam, void* rparam, const int& s
       else
          ack = m_pRcvLossList->getFirstLostSeq();
 
+      if (ack == m_iRcvLastAckAck)
+         break;
+
       // send out a lite ACK
       // to save time on buffer processing and bandwidth/AS measurement, a lite ACK only feeds back an ACK number
       if (4 == size)
@@ -1407,11 +1423,11 @@ void CUDT::sendCtrl(const int& pkttype, void* lparam, void* rparam, const int& s
          // signal a waiting "recv" call if there is any data available
          #ifndef WIN32
             pthread_mutex_lock(&m_RecvDataLock);
-            if ((m_bSynRecving) && (0 != m_pRcvBuffer->getRcvDataSize()))
+            if (m_bSynRecving)
                pthread_cond_signal(&m_RecvDataCond);
             pthread_mutex_unlock(&m_RecvDataLock);
          #else
-            if ((m_bSynRecving) && (0 != m_pRcvBuffer->getRcvDataSize()))
+            if (m_bSynRecving)
                SetEvent(m_RecvDataCond);
          #endif
       }
@@ -1559,26 +1575,11 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
 {
    // Just heard from the peer, reset the expiration count.
    m_iEXPCount = 1;
-   m_ullEXPInt = (m_iRTT + 4 * m_iRTTVar) * m_ullCPUFrequency + m_ullSYNInt;
-   if (CSeqNo::incseq(m_iSndCurrSeqNo) == m_iSndLastAck)
+   if ((CSeqNo::incseq(m_iSndCurrSeqNo) == m_iSndLastAck) || (2 == ctrlpkt.getType()) || (3 == ctrlpkt.getType()))
    {
       CTimer::rdtsc(m_ullNextEXPTime);
       m_ullNextEXPTime += m_ullEXPInt;
    }
-
-   if ((2 == ctrlpkt.getType()) || (6 == ctrlpkt.getType()))
-   {
-      m_ullNAKInt = (m_iRTT + 4 * m_iRTTVar) * m_ullCPUFrequency;
-      //do not resent the loss report within too short period
-      if (m_ullNAKInt < m_ullSYNInt)
-         m_ullNAKInt = m_ullSYNInt;
-   }
-
-   uint64_t currtime;
-   CTimer::rdtsc(currtime);
-   if ((2 <= ctrlpkt.getType()) && (4 >= ctrlpkt.getType()))
-      m_ullNextEXPTime = currtime + m_ullEXPInt;
-
 
    switch (ctrlpkt.getType())
    {
@@ -1610,7 +1611,7 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
 
       if (CSeqNo::seqcmp(ack, const_cast<int32_t&>(m_iSndLastAck)) >= 0)
       {
-         // Update Flow Window Size, must update before and together m_iSndLastAck
+         // Update Flow Window Size, must update before and together with m_iSndLastAck
          m_iFlowWindowSize = *((int32_t *)ctrlpkt.m_pcData + 3);
          m_iSndLastAck = ack;
       }
@@ -1663,15 +1664,22 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
       // Update RTT
       m_iRTT = *((int32_t *)ctrlpkt.m_pcData + 1);
       m_iRTTVar = *((int32_t *)ctrlpkt.m_pcData + 2);
+
+      m_ullEXPInt = (m_iRTT + 4 * m_iRTTVar) * m_ullCPUFrequency + m_ullSYNInt;
+      m_ullNAKInt = (m_iRTT + 4 * m_iRTTVar) * m_ullCPUFrequency + m_ullSYNInt;
+
       m_pCC->setRTT(m_iRTT);
 
       if (ctrlpkt.getLength() > 16)
       {
-         // Update Estimated Bandwidth
+         // Update Estimated Bandwidth and packet delivery rate
+         if (*((int32_t *)ctrlpkt.m_pcData + 4) > 0)
+            m_iDeliveryRate = (m_iDeliveryRate * 7 + *((int32_t *)ctrlpkt.m_pcData + 4)) >> 3;
+
          if (*((int32_t *)ctrlpkt.m_pcData + 5) > 0)
             m_iBandwidth = (m_iBandwidth * 7 + *((int32_t *)ctrlpkt.m_pcData + 5)) >> 3;
 
-         m_pCC->setRcvRate(*((int32_t *)ctrlpkt.m_pcData + 4));
+         m_pCC->setRcvRate(m_iDeliveryRate);
          m_pCC->setBandwidth(m_iBandwidth);
       }
 
@@ -1689,7 +1697,6 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
       {
       int32_t ack;
       int rtt = -1;
-      //timeval currtime;
 
       // update RTT
       rtt = m_pACKWindow->acknowledge(ctrlpkt.getAckSeqNo(), ack);
@@ -1697,22 +1704,15 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
       if (rtt <= 0)
          break;
 
-      //
-      // Well, I decide to temporaly disable the use of delay.
-      // a good idea but the algorithm to detect it is not good enough.
-      // I'll come back later...
-      //
-
-      //m_pRcvTimeWindow->ack2Arrival(rtt);
-
-      // check packet delay trend
-      //CTimer::rdtsc(currtime);
-      //if (m_pRcvTimeWindow->getDelayTrend() && (currtime - m_ullLastWarningTime > (m_iRTT + 4 * m_iRTTVar) * m_ullCPUFrequency))
+      //if increasing delay detected...
       //   sendCtrl(4);
 
       // RTT EWMA
       m_iRTTVar = (m_iRTTVar * 3 + abs(rtt - m_iRTT)) >> 2;
       m_iRTT = (m_iRTT * 7 + rtt) >> 3;
+
+      m_ullEXPInt = (m_iRTT + 4 * m_iRTTVar) * m_ullCPUFrequency + m_ullSYNInt;
+      m_ullNAKInt = (m_iRTT + 4 * m_iRTTVar) * m_ullCPUFrequency + m_ullSYNInt;
 
       // update last ACK that has been received by the sender
       if (CSeqNo::seqcmp(ack, m_iRcvLastAckAck) > 0)
@@ -1763,7 +1763,6 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
    case 4: //100 - Delay Warning
       // One way packet delay is increasing, so decrease the sending rate
       m_ullInterval = (uint64_t)ceil(m_ullInterval * 1.125);
-
       m_iLastDecSeq = m_iSndCurrSeqNo;
 
       break;
@@ -1858,7 +1857,7 @@ int CUDT::packData(CPacket& packet, uint64_t& ts)
 
       if (-1 == payload)
       {
-         seqpair[1] = CSeqNo::incseq(seqpair[0], msglen / m_iPayloadSize);
+         seqpair[1] = CSeqNo::incseq(seqpair[0], msglen / m_iPayloadSize - ((0 != msglen % m_iPayloadSize) ? 0 : 1));
          sendCtrl(7, &packet.m_iMsgNo, seqpair, 8);
 
          // only one msg drop request is necessary
@@ -1971,7 +1970,7 @@ int CUDT::processData(CUnit* unit)
 
    m_iPktCount ++;
 
-   // update time/delay information
+   // update time information
    m_pRcvTimeWindow->onPktArrival();
 
    // check if it is probing packet pair
@@ -2065,7 +2064,7 @@ void CUDT::checkTimers()
 
    if ((currtime > m_ullNextACKTime) || ((m_pCC->m_iACKInterval > 0) && (m_pCC->m_iACKInterval <= m_iPktCount)))
    {
-      // ACK timer expired, or user buffer is fulfilled, or ACK interval reached
+      // ACK timer expired or ACK interval reached
 
       sendCtrl(2);
       CTimer::rdtsc(currtime);

@@ -32,7 +32,7 @@
 <p><strong><a name="1" id="1"></a>1. What is UDT?</strong></p>
 <p>UDT stands for UDP-based Data Transfer. It can refer to both the UDT protocol and its implementation (the UDT library). Basically, UDT is built on top of UDP by adding reliability control and congestion control.</p>
 <p><strong><a name="2" id="2"></a>2. Who developed UDT?</strong></p>
-<p>UDT is a research product of the National Center for Data Mining (NCDM) at the University of Illinois at Chicago. The project was supported in part by US National Science Foundation, US Department of Energy, and US Army.</p>
+<p>UDT is a research product of the National Center for Data Mining (NCDM) at the University of Illinois at Chicago. The project was supported in part by US National Science Foundation, US Department of Energy, and US Army. </p>
 <p><strong><a name="3" id="3"></a>3. Why and when do I need UDT?</strong></p>
 <p>The original (and major) purpose of UDT is to provide a high performance transfer interface to distributed data intensive applications over a wide area network, where TCP seldom works well for efficiency and fairness reasons. It can also be used in other situation where TCP is not suitable (e.g., multimedia streaming, firewall punching, partial reliability, etc.)</p>
 <p>There is no explicit standard to determine when to use UDT or when not to. Generally speaking, if you are not satisfied with TCP's performance or functionality, UDT is probably what you need, especially in high speed networks where a small number of bulk sources share the abundant bandwidth.</p>
@@ -51,7 +51,7 @@
 <p>You forget to set the system environment of library path. On Linux/BSD/UNIX, use &quot;export&quot; or &quot;setenv&quot; to configure the LD_LIBRARY_PATH environment variable so that it contains the directory having the libudt.so file. On Windows, copy udt.dll file to the same directory containing you UDT applications (this usually also works for Linux/BSD/UNIX by copying libudt.so to the current working directory).</p>
 <p><strong><a name="9" id="9"></a>9. Does UDT care about the byte order conversion between different platforms?</strong></p>
 <p>No, the application should care about the conversion itself. However, UDT does work between different platforms even with different byte orders.</p>
-<p><strong><a name="10" id="10"></a>10. Why can't the UDT connection be set up? Why is the listen or connect call fails?</strong></p>
+<p><strong><a name="10" id="10"></a>10. Why the UDT connection cannot be set up? Why does the listen or connect call fail?</strong></p>
 <p>The most likely reason is that one of the machines is behind a firewall. You can change the firewall settings if you have the privilege or do something in the UDT program to bypass the firewall. Note that UDT has same semantics as TCP and generates UDP traffic in both directions. UDT3 also provides rendezvous connection setup in order to punch firewalls.</p>
 <p>Another reason is that at least one of the server or client sides has multiple addresses, and UDT is bound to an address different from what you use in the application. To solve the problem, explicitly set the IP address in bind call.</p>
 <p>There can be other reasons, such as domain name lookup failure. Try to use an explicit IP address if possible.</p>
@@ -62,7 +62,7 @@
 <p><strong><a name="13" id="13"></a>13. Is UDT TCP friendly?</strong></p>
 <p>TCP friendliness is an obscure concept. Please refer to UDT technical reports for detailed information on the competition between UDT flows and TCP flows.
 <p><strong><a name="14" id="14"></a>14. What copyright and license issues shall I be aware of when using UDT?</strong></p>
-<p>The UDT library developed by us is copyrighted to the board of trustees of the University of Illinois at Chicago and is published as open source software under Lesser GPL (LGPL). You can find a copy of LGPL within the UDT release. If you want to use UDT in commercial products and are not comfortable with LGPL, you should contact us to discuss the license issue in a case by case basis.</p>
+<p>UDT version 4 is released under BSD license. You may find a copy of the license within the UDT release. Previous UDT versions were released under Lesser GPL (LGPL). </p>
 <p><strong><a name="15" id="15"></a>15. Is UDT only suitable for bulk data?</strong></p>
 <p>No, UDT can transfer a data buffer from one single byte to multiple tera-bytes, as long as your system can provide enough resources. However, UDT is indeed optimized for bulk data, and it may not have any better performance for message signaling applications.</p>
 <p><strong><a name="16" id="16"></a>16. What's the relationship between UDT and SABUL?</strong></p>

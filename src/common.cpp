@@ -1,41 +1,45 @@
 /*****************************************************************************
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
-All Rights Reserved.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+All rights reserved.
 
-UDP-based Data Transfer Library (UDT) version 4
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-National Center for Data Mining (NCDM)
-University of Illinois at Chicago
-http://www.ncdm.uic.edu/
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at
-your option) any later version.
+* Redistributions in binary form must reproduce the
+  above copyright notice, this list of conditions
+  and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-This library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
-General Public License for more details.
+* Neither the name of the University of Illinois
+  nor the names of its contributors may be used to
+  endorse or promote products derived from this
+  software without specific prior written permission.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this library; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-*****************************************************************************/
-
-/*****************************************************************************
-This file contains implementation of UDT common routines of timer,
-mutex facility, and exception processing.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 06/07/2007
+   Yunhong Gu, last updated 09/19/2007
 *****************************************************************************/
 
 
 #ifndef WIN32
-   #include <unistd.h>
    #include <cstring>
    #include <cstdlib>
    #include <cerrno>
@@ -81,7 +85,7 @@ void CTimer::rdtsc(uint64_t &x)
 {
    #ifdef WIN32
       if (!QueryPerformanceCounter((LARGE_INTEGER *)&x))
-         x = getTime();
+         x = getTime() * s_ullCPUFrequency;
    #elif IA32
       uint32_t lval, hval;
       //asm volatile ("push %eax; push %ebx; push %ecx; push %edx");
@@ -117,7 +121,10 @@ uint64_t CTimer::readCPUFrequency()
       uint64_t t1, t2;
 
       rdtsc(t1);
-      usleep(100000);
+      timespec ts;
+      ts.tv_sec = 0;
+      ts.tv_nsec = 100000000;
+      nanosleep(&ts, NULL);
       rdtsc(t2);
 
       // CPU clocks per microsecond
@@ -214,15 +221,11 @@ uint64_t CTimer::getTime()
       if (QueryPerformanceFrequency(&ccf))
       {
          LARGE_INTEGER cc;
-         QueryPerformanceCounter(&cc);
-         return (cc.QuadPart / ccf.QuadPart) * 1000000ULL + (cc.QuadPart % ccf.QuadPart) / (ccf.QuadPart / 1000000);
+         if (QueryPerformanceCounter(&cc))
+            return (cc.QuadPart * 1000000ULL / ccf.QuadPart);
       }
-      else
-      {
-         FILETIME ft;
-         GetSystemTimeAsFileTime(&ft);
-         return ((((uint64_t)ft.dwHighDateTime) << 32) + ft.dwLowDateTime) / 10;
-      }
+
+      return GetTickCount() * 1000ULL;
    #endif
 }
 
@@ -317,36 +320,28 @@ const char* CUDTException::getErrorMessage()
    switch (m_iMajor)
    {
       case 0:
-        strcpy(m_pcMsg, "Success");
+        m_strMsg = "Success";
         break;
 
       case 1:
-        strcpy(m_pcMsg, "Connection setup failure");
+        m_strMsg = "Connection setup failure";
 
         switch (m_iMinor)
         {
         case 1:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "connection time out");
-
+           m_strMsg += ": connection time out";
            break;
 
         case 2:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "connection rejected");
-
+           m_strMsg += ": connection rejected";
            break;
 
         case 3:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "unable to create/configure UDP socket");
-
+           m_strMsg += ": unable to create/configure UDP socket";
            break;
 
         case 4:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "abort for security reasons");
-
+           m_strMsg += ": abort for security reasons";
            break;
 
         default:
@@ -359,13 +354,11 @@ const char* CUDTException::getErrorMessage()
         switch (m_iMinor)
         {
         case 1:
-           strcpy(m_pcMsg, "Connection was broken");
-
+           m_strMsg = "Connection was broken";
            break;
 
         case 2:
-           strcpy(m_pcMsg, "Connection does not exist");
-
+           m_strMsg = "Connection does not exist";
            break;
 
         default:
@@ -375,18 +368,16 @@ const char* CUDTException::getErrorMessage()
         break;
 
       case 3:
-        strcpy(m_pcMsg, "System resource failure");
+        m_strMsg = "System resource failure";
 
         switch (m_iMinor)
         {
         case 1:
-           strcpy(m_pcMsg, "unable to create new threads");
-
+           m_strMsg += ": unable to create new threads";
            break;
 
         case 2:
-           strcpy(m_pcMsg, "unable to allocate buffers");
-
+           m_strMsg += ": unable to allocate buffers";
            break;
 
         default:
@@ -396,32 +387,24 @@ const char* CUDTException::getErrorMessage()
         break;
 
       case 4:
-        strcpy(m_pcMsg, "File system failure");
+        m_strMsg = "File system failure";
 
         switch (m_iMinor)
         {
         case 1:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "cannot seek read position");
-
+           m_strMsg += ": cannot seek read position";
            break;
 
         case 2:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "failure in read");
-
+           m_strMsg += ": failure in read";
            break;
 
         case 3:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "cannot seek write position");
-
+           m_strMsg += ": cannot seek write position";
            break;
 
         case 4:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "failure in write");
-
+           m_strMsg += ": failure in write";
            break;
 
         default:
@@ -431,68 +414,56 @@ const char* CUDTException::getErrorMessage()
         break;
 
       case 5:
-        strcpy(m_pcMsg, "Operation not supported");
+        m_strMsg = "Operation not supported";
  
         switch (m_iMinor)
         {
         case 1:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on a BOUND socket");
-
+           m_strMsg += ": Cannot do this operation on a BOUND socket";
            break;
 
         case 2:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on a CONNECTED socket");
-
+           m_strMsg += ": Cannot do this operation on a CONNECTED socket";
            break;
 
         case 3:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Bad parameters");
-
+           m_strMsg += ": Bad parameters";
            break;
 
         case 4:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Invalid socket ID");
-
+           m_strMsg += ": Invalid socket ID";
            break;
 
         case 5:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot do this operation on an UNBOUND socket");
-
+           m_strMsg += ": Cannot do this operation on an UNBOUND socket";
            break;
 
         case 6:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Socket is not in listening state");
-
+           m_strMsg += ": Socket is not in listening state";
            break;
 
         case 7:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Listen/accept is not supported in rendezous connection setup");
-
+           m_strMsg += ": Listen/accept is not supported in rendezous connection setup";
            break;
 
         case 8:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "Cannot call connect on UNBOUND socket in rendezvous connection setup");
-
+           m_strMsg += ": Cannot call connect on UNBOUND socket in rendezvous connection setup";
            break;
 
         case 9:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "This operation is not supported in SOCK_STREAM mode");
-
+           m_strMsg += ": This operation is not supported in SOCK_STREAM mode";
            break;
 
         case 10:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "This operation is not supported in SOCK_DGRAM mode");
+           m_strMsg += ": This operation is not supported in SOCK_DGRAM mode";
+           break;
 
+        case 11:
+           m_strMsg += ": Another socket is already listening on the same port";
+           break;
+
+        case 12:
+           m_strMsg += ": Message is too large to send (it must be less than the UDT send buffer size)";
            break;
 
         default:
@@ -502,20 +473,16 @@ const char* CUDTException::getErrorMessage()
         break;
 
      case 6:
-        strcpy(m_pcMsg, "Non-blocking call failure");
+        m_strMsg = "Non-blocking call failure";
 
         switch (m_iMinor)
         {
         case 1:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "no buffer available for sending");
-
+           m_strMsg += ": no buffer available for sending";
            break;
 
         case 2:
-           strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
-           strcpy(m_pcMsg + strlen(m_pcMsg), "no data available for reading");
-
+           m_strMsg += ": no data available for reading";
            break;
 
         default:
@@ -525,29 +492,29 @@ const char* CUDTException::getErrorMessage()
         break;
 
       default:
-        strcpy(m_pcMsg, "Unknown error");
+        m_strMsg = "Unknown error";
    }
 
    // Adding "errno" information
    if (0 < m_iErrno)
    {
-      strcpy(m_pcMsg + strlen(m_pcMsg), ": ");
+      m_strMsg += ": ";
       #ifndef WIN32
-         strncpy(m_pcMsg + strlen(m_pcMsg), strerror(m_iErrno), 1024 - strlen(m_pcMsg) - 2);
+         m_strMsg += strerror(m_iErrno);
       #else
          LPVOID lpMsgBuf;
          FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, m_iErrno, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
-         strncpy(m_pcMsg + strlen(m_pcMsg), (char*)lpMsgBuf, 1024 - strlen(m_pcMsg) - 2);
+         m_strMsg += (char*)lpMsgBuf;
          LocalFree(lpMsgBuf);
       #endif
    }
 
    // period
    #ifndef WIN32
-      strcpy(m_pcMsg + strlen(m_pcMsg), ".");
+      m_strMsg += ".";
    #endif
 
-   return m_pcMsg;
+   return m_strMsg.c_str();
 }
 
 const int CUDTException::getErrorCode() const
@@ -582,14 +549,16 @@ const int CUDTException::EWRPERM = 4004;
 const int CUDTException::EINVOP = 5000;
 const int CUDTException::EBOUNDSOCK = 5001;
 const int CUDTException::ECONNSOCK = 5002;
-const int CUDTException::EINVPARAM = 5002;
-const int CUDTException::EINVSOCK = 5003;
-const int CUDTException::EUNBOUNDSOCK = 5004;
-const int CUDTException::ENOLISTEN = 5005;
-const int CUDTException::ERDVNOSERV = 5006;
-const int CUDTException::ERDVUNBOUND = 5007;
-const int CUDTException::ESTREAMILL = 5008;
-const int CUDTException::EDGRAMILL = 5009;
+const int CUDTException::EINVPARAM = 5003;
+const int CUDTException::EINVSOCK = 5004;
+const int CUDTException::EUNBOUNDSOCK = 5005;
+const int CUDTException::ENOLISTEN = 5006;
+const int CUDTException::ERDVNOSERV = 5007;
+const int CUDTException::ERDVUNBOUND = 5008;
+const int CUDTException::ESTREAMILL = 5009;
+const int CUDTException::EDGRAMILL = 5010;
+const int CUDTException::EDUPLISTEN = 5011;
+const int CUDTException::ELARGEMSG = 5012;
 const int CUDTException::EASYNCFAIL = 6000;
 const int CUDTException::EASYNCSND = 6001;
 const int CUDTException::EASYNCRCV = 6002;
@@ -615,7 +584,7 @@ bool CIPAddress::ipcmp(const sockaddr* addr1, const sockaddr* addr2, const int& 
       if (a1->sin6_port == a2->sin6_port)
       {
          for (int i = 0; i < 16; ++ i)
-            if (*((char*)&(a1->sin6_addr) + i) != *((char*)&(a1->sin6_addr) + i))
+            if (*((char*)&(a1->sin6_addr) + i) != *((char*)&(a2->sin6_addr) + i))
                return false;
 
          return true;

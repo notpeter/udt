@@ -1,16 +1,22 @@
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
-Please read the COPYRIGHT information in the current directory carefully.
+UDP-based Data Transfer (UDT) Library - version 4
+Author: Yunhong Gu
 
-Visit http://udt.sf.net or http://sourceforge.net/projects/udt/ 
-for most recent news about UDT.
+UDT version 4 is free software under BSD License. See ./LICENSE.txt.
+
+============================================================================
+
+UDT Website:
+http://udt.sf.net
+http://sf.net/projects/udt/ 
 
 
 CONTENT: 
 ./src:     UDT source code 
 ./app:     Example programs 
-./doc:     UDT documentation (HTML) and Internet Draft 
+./doc:     UDT documentation (HTML)
 ./win:     VS.Net project files for the Windows version of UDT 
 
 
@@ -20,13 +26,13 @@ To make:
 XXX: [LINUX(default), BSD, OSX] 
 YYY: [IA32(default), POWERPC, IA64, AMD64] 
 
-For example, on OS X, you need to do "make -e os=OSX arch=POWERPC"; on 32-bit 
-Linux system, simply use "make".
+For example, on OS X, you may need to do "make -e os=OSX arch=POWERPC"; 
+on 32-bit i386 Linux system, simply use "make".
 
 On Windows systems, use the Visual Studio .NET project files in ./win directory.
 
 
-To use UDT in your application: 
+To use UDT in your application:
 Read index.htm in ./doc. The documentation is in HTML format and requires your
 browser to support JavaScript.
 

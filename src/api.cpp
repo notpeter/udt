@@ -1,42 +1,44 @@
 /*****************************************************************************
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
-All Rights Reserved.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+All rights reserved.
 
-UDP-based Data Transfer Library (UDT) version 4
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-National Center for Data Mining (NCDM)
-University of Illinois at Chicago
-http://www.ncdm.uic.edu/
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at
-your option) any later version.
+* Redistributions in binary form must reproduce the
+  above copyright notice, this list of conditions
+  and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-This library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
-General Public License for more details.
+* Neither the name of the University of Illinois
+  nor the names of its contributors may be used to
+  endorse or promote products derived from this
+  software without specific prior written permission.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this library; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-*****************************************************************************/
-
-/*****************************************************************************
-This file contains the implementation of UDT API.
-
-reference: UDT programming manual and socket programming reference
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 07/16/2007
+   Yunhong Gu, last updated 09/22/2007
 *****************************************************************************/
 
-#ifndef WIN32
-   #include <unistd.h>
-#else
+#ifdef WIN32
    #include <winsock2.h>
    #include <ws2tcpip.h>
 #endif
@@ -170,9 +172,15 @@ UDTSOCKET CUDTUnited::newSocket(const int& af, const int& type)
       ns = new CUDTSocket;
       ns->m_pUDT = new CUDT;
       if (AF_INET == af)
+      {
          ns->m_pSelfAddr = (sockaddr*)(new sockaddr_in);
+         ((sockaddr_in*)(ns->m_pSelfAddr))->sin_port = 0;
+      }
       else
+      {
          ns->m_pSelfAddr = (sockaddr*)(new sockaddr_in6);
+         ((sockaddr_in6*)(ns->m_pSelfAddr))->sin6_port = 0;
+      }
    }
    catch (...)
    {
@@ -284,12 +292,14 @@ int CUDTUnited::newConnection(const UDTSOCKET listen, const sockaddr* peer, CHan
       if (AF_INET == ls->m_iIPversion)
       {
          ns->m_pSelfAddr = (sockaddr*)(new sockaddr_in);
+         ((sockaddr_in*)(ns->m_pSelfAddr))->sin_port = 0;
          ns->m_pPeerAddr = (sockaddr*)(new sockaddr_in);
          memcpy(ns->m_pPeerAddr, peer, sizeof(sockaddr_in));
       }
       else
       {
          ns->m_pSelfAddr = (sockaddr*)(new sockaddr_in6);
+         ((sockaddr_in6*)(ns->m_pSelfAddr))->sin6_port = 0;
          ns->m_pPeerAddr = (sockaddr*)(new sockaddr_in6);
          memcpy(ns->m_pPeerAddr, peer, sizeof(sockaddr_in6));
       }
@@ -647,6 +657,14 @@ int CUDTUnited::close(const UDTSOCKET u)
    if (NULL == s)
       throw CUDTException(5, 4, 0);
 
+   s->m_pUDT->close();
+
+   // a socket will not be immediated removed when it is closed
+   // in order to prevent other methods from accessing invalid address
+   // a timer is started and the socket will be removed after approximately 1 second
+   s->m_TimeStamp = CTimer::getTime();
+
+
    CUDTSocket::UDTSTATUS os = s->m_Status;
 
    // synchronize with garbage collection.
@@ -673,13 +691,6 @@ int CUDTUnited::close(const UDTSOCKET u)
          SetEvent(s->m_AcceptCond);
       #endif
    }
-
-   s->m_pUDT->close();
-
-   // a socket will not be immediated removed when it is closed
-   // in order to prevent other methods from accessing invalid address
-   // a timer is started and the socket will be removed after approximately 1 second
-   s->m_TimeStamp = CTimer::getTime();
 
    CTimer::triggerEvent();
 
@@ -753,7 +764,7 @@ int CUDTUnited::select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds, con
             if (NULL == (s = locate(*i)))
                throw CUDTException(5, 4, 0);
 
-            if ((s->m_pUDT->m_bConnected && (s->m_pUDT->m_pRcvBuffer->getRcvDataSize() > 0))
+            if ((s->m_pUDT->m_bConnected && (s->m_pUDT->m_pRcvBuffer->getRcvDataSize() > 0) && ((s->m_pUDT->m_iSockType == SOCK_STREAM) || (s->m_pUDT->m_pRcvBuffer->getRcvMsgNum() > 0)))
                || (!s->m_pUDT->m_bListening && (s->m_pUDT->m_bBroken || !s->m_pUDT->m_bConnected))
                || (s->m_pUDT->m_bListening && (s->m_pQueuedSockets->size() > 0))
                || (s->m_Status == CUDTSocket::CLOSED))
@@ -818,8 +829,11 @@ CUDTSocket* CUDTUnited::locate(const UDTSOCKET u)
 
    if (i == m_Sockets.end())
       return NULL;
-   else
-      return i->second;
+
+   if (i->second->m_Status == CUDTSocket::CLOSED)
+      return NULL;
+
+   return i->second;
 }
 
 CUDTSocket* CUDTUnited::locate(const UDTSOCKET u, const sockaddr* peer, const UDTSOCKET& id, const int32_t& isn)
@@ -876,7 +890,19 @@ void CUDTUnited::checkBrokenSockets()
             // remove from listener's queue
             map<UDTSOCKET, CUDTSocket*>::iterator j = m_Sockets.find(i->second->m_ListenSocket);
             if (j != m_Sockets.end())
+            {
+               #ifndef WIN32
+                  pthread_mutex_lock(&(j->second->m_AcceptLock));
+               #else
+                  WaitForSingleObject(j->second->m_AcceptLock, INFINITE);
+               #endif
                j->second->m_pQueuedSockets->erase(i->second->m_Socket);
+               #ifndef WIN32
+                  pthread_mutex_unlock(&(j->second->m_AcceptLock));
+               #else
+                  ReleaseMutex(j->second->m_AcceptLock);
+               #endif
+            }
          }
       }
       else
@@ -917,23 +943,44 @@ void CUDTUnited::removeSocket(const UDTSOCKET u)
    if (0 != i->second->m_ListenSocket)
    {
       // if it is an accepted socket, remove it from the listener's queue
-      map<UDTSOCKET, CUDTSocket*>::iterator j = m_Sockets.find(i->second->m_ListenSocket);
-
-      if (j != m_Sockets.end())
-         j->second->m_pAcceptSockets->erase(u);
+      map<UDTSOCKET, CUDTSocket*>::iterator j1 = m_Sockets.find(i->second->m_ListenSocket);
+      if (j1 != m_Sockets.end())
+      {
+         #ifndef WIN32
+            pthread_mutex_lock(&(j1->second->m_AcceptLock));
+         #else
+            WaitForSingleObject(j1->second->m_AcceptLock, INFINITE);
+         #endif
+         j1->second->m_pAcceptSockets->erase(u);
+         #ifndef WIN32
+            pthread_mutex_unlock(&(j1->second->m_AcceptLock));
+         #else
+            ReleaseMutex(j1->second->m_AcceptLock);
+         #endif
+      }
    }
    else if (NULL != i->second->m_pQueuedSockets)
    {
+      #ifndef WIN32
+         pthread_mutex_lock(&(i->second->m_AcceptLock));
+      #else
+         WaitForSingleObject(i->second->m_AcceptLock, INFINITE);
+      #endif
       // if it is a listener, remove all un-accepted sockets in its queue
-      for (set<UDTSOCKET>::iterator j = i->second->m_pQueuedSockets->begin(); j != i->second->m_pQueuedSockets->end(); ++ j)
+      for (set<UDTSOCKET>::iterator j2 = i->second->m_pQueuedSockets->begin(); j2 != i->second->m_pQueuedSockets->end(); ++ j2)
       {
-         m_Sockets[*j]->m_pUDT->close();
-         delete m_Sockets[*j];
-         m_Sockets.erase(*j);
+         m_Sockets[*j2]->m_pUDT->close();
+         delete m_Sockets[*j2];
+         m_Sockets.erase(*j2);
 
          if (m != m_vMultiplexer.end())
             m->m_iRefCount --;
       }
+      #ifndef WIN32
+         pthread_mutex_unlock(&(i->second->m_AcceptLock));
+      #else
+         ReleaseMutex(i->second->m_AcceptLock);
+      #endif
    }
 
    // delete this one
@@ -1001,7 +1048,6 @@ void CUDTUnited::updateMux(CUDT* u, const sockaddr* addr)
                ++ i->m_iRefCount;
                u->m_pSndQueue = i->m_pSndQueue;
                u->m_pRcvQueue = i->m_pRcvQueue;
-               u->m_pRcvQueue->m_pHash->insert(u->m_SocketID, u);
                return;
             }
          }
@@ -1040,13 +1086,12 @@ void CUDTUnited::updateMux(CUDT* u, const sockaddr* addr)
    m.m_pSndQueue = new CSndQueue;
    m.m_pSndQueue->init(m.m_pChannel, m.m_pTimer);
    m.m_pRcvQueue = new CRcvQueue;
-   m.m_pRcvQueue->init((m.m_iMTU > 1500) ? 32 : 128, u->m_iPayloadSize, 1024, m.m_iIPversion, m.m_pChannel, m.m_pTimer);
+   m.m_pRcvQueue->init((m.m_iMTU > 1500) ? 32 : 128, u->m_iPayloadSize, m.m_iIPversion, 1024, m.m_pChannel, m.m_pTimer);
 
    m_vMultiplexer.insert(m_vMultiplexer.end(), m);
 
    u->m_pSndQueue = m.m_pSndQueue;
    u->m_pRcvQueue = m.m_pRcvQueue;
-   u->m_pRcvQueue->m_pHash->insert(u->m_SocketID, u);
 }
 
 void CUDTUnited::updateMux(CUDT* u, const CUDTSocket* ls)
@@ -1064,7 +1109,6 @@ void CUDTUnited::updateMux(CUDT* u, const CUDTSocket* ls)
          ++ i->m_iRefCount;
          u->m_pSndQueue = i->m_pSndQueue;
          u->m_pRcvQueue = i->m_pRcvQueue;
-         u->m_pRcvQueue->m_pHash->insert(u->m_SocketID, u);
          return;
       }
    }
@@ -1280,7 +1324,7 @@ int CUDT::setsockopt(UDTSOCKET u, int, UDTOpt optname, const void* optval, int o
    }
 }
 
-int CUDT::send(UDTSOCKET u, const char* buf, int len, int flags)
+int CUDT::send(UDTSOCKET u, const char* buf, int len, int)
 {
    try
    {
@@ -1305,7 +1349,7 @@ int CUDT::send(UDTSOCKET u, const char* buf, int len, int flags)
    }
 }
 
-int CUDT::recv(UDTSOCKET u, char* buf, int len, int flags)
+int CUDT::recv(UDTSOCKET u, char* buf, int len, int)
 {
    try
    {

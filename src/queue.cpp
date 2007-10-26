@@ -1,35 +1,41 @@
 /*****************************************************************************
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
-All Rights Reserved.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+All rights reserved.
 
-UDP-based Data Transfer Library (UDT) version 4
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-National Center for Data Mining (NCDM)
-University of Illinois at Chicago
-http://www.ncdm.uic.edu/
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at
-your option) any later version.
+* Redistributions in binary form must reproduce the
+  above copyright notice, this list of conditions
+  and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-This library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
-General Public License for more details.
+* Neither the name of the University of Illinois
+  nor the names of its contributors may be used to
+  endorse or promote products derived from this
+  software without specific prior written permission.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this library; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-*****************************************************************************/
-
-/*****************************************************************************
-This file contains the implementation of UDT multiplexer.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 07/16/2007
+   Yunhong Gu, last updated 10/11/2007
 *****************************************************************************/
 
 #ifdef WIN32
@@ -120,7 +126,7 @@ int CUnitQueue::increase()
    while (p != NULL)
    {
       CUnit* u = p->m_pUnit;
-      for (CUnit* end = u + p->m_iSize - 1; u != end; ++ u)
+      for (CUnit* end = u + p->m_iSize; u != end; ++ u)
          if (u->m_iFlag != 0)
             ++ real_count;
 
@@ -175,7 +181,7 @@ int CUnitQueue::increase()
 
 int CUnitQueue::shrink()
 {
-   // currently queue cannot be shrinked.
+   // currently queue cannot be shrunk.
    return -1;
 }
 
@@ -189,7 +195,7 @@ CUnit* CUnitQueue::getNextAvailUnit()
 
    CQEntry* entrance = m_pCurrQueue;
 
-   while (true)
+   do
    {
       for (CUnit* sentinel = m_pCurrQueue->m_pUnit + m_pCurrQueue->m_iSize - 1; m_pAvailUnit != sentinel; ++ m_pAvailUnit)
          if (m_pAvailUnit->m_iFlag == 0)
@@ -200,15 +206,12 @@ CUnit* CUnitQueue::getNextAvailUnit()
          m_pAvailUnit = m_pCurrQueue->m_pUnit;
          return m_pAvailUnit;
       }
-      else
-      {
-         m_pCurrQueue = m_pCurrQueue->m_pNext;
-         m_pAvailUnit = m_pCurrQueue->m_pUnit;
 
-         if (m_pCurrQueue == entrance)
-            return NULL;
-      }
-   }
+      m_pCurrQueue = m_pCurrQueue->m_pNext;
+      m_pAvailUnit = m_pCurrQueue->m_pUnit;
+   } while (m_pCurrQueue != entrance);
+
+   increase();
 
    return NULL;
 }
@@ -542,22 +545,10 @@ CRcvUList::CRcvUList():
 m_pUList(NULL),
 m_pLast(NULL)
 {
-   #ifndef WIN32
-      pthread_mutex_init(&m_ListLock, NULL);
-   #else
-      m_ListLock = CreateMutex(NULL, false, NULL);
-   #endif
-
-   m_vNewEntry.clear();
 }
 
 CRcvUList::~CRcvUList()
 {
-   #ifndef WIN32
-      pthread_mutex_destroy(&m_ListLock);
-   #else
-      CloseHandle(m_ListLock);
-   #endif
 }
 
 void CRcvUList::insert(const CUDT* u)
@@ -672,30 +663,6 @@ void CRcvUList::update(const int32_t& id)
    }
 }
 
-void CRcvUList::newEntry(CUDT* u)
-{
-   CGuard listguard(m_ListLock);
-   m_vNewEntry.insert(m_vNewEntry.end(), u);
-}
-
-bool CRcvUList::ifNewEntry()
-{
-   return !(m_vNewEntry.empty());
-}
-
-CUDT* CRcvUList::newEntry()
-{
-   CGuard listguard(m_ListLock);
-
-   if (m_vNewEntry.empty())
-      return NULL;
-
-   CUDT* u = (CUDT*)*(m_vNewEntry.begin());
-   m_vNewEntry.erase(m_vNewEntry.begin());
-
-   return u;
-}
-
 //
 CHash::CHash():
 m_pBucket(NULL),
@@ -711,11 +678,6 @@ CHash::~CHash()
       while (NULL != b)
       {
          CBucket* n = b->m_pNext;
-         if (NULL != b->m_pUnit)
-         {
-            delete [] b->m_pUnit->m_Packet.m_pcData;
-            delete b->m_pUnit;
-         }
          delete b;
          b = n;
       }
@@ -749,61 +711,6 @@ CUDT* CHash::lookup(const int32_t& id)
    return NULL;
 }
 
-int CHash::retrieve(const int32_t& id, CPacket& packet)
-{
-   CBucket* b = m_pBucket[id % m_iHashSize];
-
-   while (NULL != b)
-   {
-      if ((id == b->m_iID) && (NULL != b->m_pUnit))
-      {
-         memcpy(packet.m_nHeader, b->m_pUnit->m_Packet.m_nHeader, 16);
-         memcpy(packet.m_pcData, b->m_pUnit->m_Packet.m_pcData, b->m_pUnit->m_Packet.getLength());
-
-         packet.setLength(b->m_pUnit->m_Packet.getLength());
-
-         delete [] b->m_pUnit->m_Packet.m_pcData;
-         delete b->m_pUnit;
-         b->m_pUnit = NULL;
-
-         return packet.getLength();
-      }
-
-      b = b->m_pNext;
-   }
-
-   packet.setLength(-1);
-
-   return -1;
-}
-
-void CHash::setUnit(const int32_t& id, CUnit* unit)
-{
-   CBucket* b = m_pBucket[id % m_iHashSize];
-
-   while (NULL != b)
-   {
-      if (id == b->m_iID)
-      {
-         // only one packet can be stored in the hash table entry, the following should be discarded
-         if (NULL != b->m_pUnit)
-            return;
-
-         CUnit* tmp = new CUnit;
-         tmp->m_Packet.m_pcData = new char [unit->m_Packet.getLength()];
-         memcpy(tmp->m_Packet.m_nHeader, unit->m_Packet.m_nHeader, 16);
-         memcpy(tmp->m_Packet.m_pcData, unit->m_Packet.m_pcData, unit->m_Packet.getLength());
-         tmp->m_Packet.setLength(unit->m_Packet.getLength());
-
-         b->m_pUnit = tmp;
-
-         return;
-      }
-
-      b = b->m_pNext;
-   }
-}
-
 void CHash::insert(const int32_t& id, const CUDT* u)
 {
    CBucket* b = m_pBucket[id % m_iHashSize];
@@ -811,7 +718,6 @@ void CHash::insert(const int32_t& id, const CUDT* u)
    CBucket* n = new CBucket;
    n->m_iID = id;
    n->m_pUDT = (CUDT*)u;
-   n->m_pUnit = NULL;
    n->m_pNext = b;
 
    m_pBucket[id % m_iHashSize] = n;
@@ -831,11 +737,6 @@ void CHash::remove(const int32_t& id)
          else
             p->m_pNext = b->m_pNext;
 
-         if (NULL != b->m_pUnit)
-         {
-            delete [] b->m_pUnit->m_Packet.m_pcData;
-            delete b->m_pUnit;
-         }
          delete b;
 
          return;
@@ -878,7 +779,7 @@ CRendezvousQueue::~CRendezvousQueue()
    m_vRendezvousID.clear();
 }
 
-void CRendezvousQueue::insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr)
+void CRendezvousQueue::insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr, CUDT* u)
 {
    CGuard vg(m_RIDVectorLock);
 
@@ -888,6 +789,7 @@ void CRendezvousQueue::insert(const UDTSOCKET& id, const int& ipv, const sockadd
    r.m_iIPversion = ipv;
    r.m_pPeerAddr = (AF_INET == ipv) ? (sockaddr*)new sockaddr_in : (sockaddr*)new sockaddr_in6;
    memcpy(r.m_pPeerAddr, addr, (AF_INET == ipv) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6));
+   r.m_pUDT = u;
    m_vRendezvousID.insert(m_vRendezvousID.end(), r);
 }
 
@@ -909,7 +811,7 @@ void CRendezvousQueue::remove(const UDTSOCKET& id)
       }
 }
 
-bool CRendezvousQueue::retrieve(const sockaddr* addr, UDTSOCKET& id, const UDTSOCKET& peerid)
+bool CRendezvousQueue::retrieve(const sockaddr* addr, UDTSOCKET& id, const UDTSOCKET& peerid, CUDT*& u)
 {
    CGuard vg(m_RIDVectorLock);
 
@@ -918,6 +820,7 @@ bool CRendezvousQueue::retrieve(const sockaddr* addr, UDTSOCKET& id, const UDTSO
       {
          id = i->m_iID;
          i->m_iPeerID = peerid;
+         u = i->m_pUDT;
          return true;
       }
 
@@ -931,17 +834,24 @@ m_pRcvUList(NULL),
 m_pHash(NULL),
 m_pChannel(NULL),
 m_pTimer(NULL),
-m_ListenerID(-1),
-m_pRendezvousQueue(NULL),
-m_bClosing(false)
+m_bClosing(false),
+m_pListener(NULL),
+m_pRendezvousQueue(NULL)
 {
    #ifndef WIN32
-      pthread_cond_init(&m_PassCond, NULL);
       pthread_mutex_init(&m_PassLock, NULL);
+      pthread_cond_init(&m_PassCond, NULL);
+      pthread_mutex_init(&m_LSLock, NULL);
+      pthread_mutex_init(&m_IDLock, NULL);
    #else
       m_PassLock = CreateMutex(NULL, false, NULL);
       m_PassCond = CreateEvent(NULL, false, false, NULL);
+      m_LSLock = CreateMutex(NULL, false, NULL);
+      m_IDLock = CreateMutex(NULL, false, NULL);
    #endif
+
+   m_vNewEntry.clear();
+   m_mBuffer.clear();
 }
 
 CRcvQueue::~CRcvQueue()
@@ -950,18 +860,28 @@ CRcvQueue::~CRcvQueue()
 
    #ifndef WIN32
       pthread_join(m_WorkerThread, NULL);
-      pthread_cond_destroy(&m_PassCond);
       pthread_mutex_destroy(&m_PassLock);
+      pthread_cond_destroy(&m_PassCond);
+      pthread_mutex_destroy(&m_LSLock);
+      pthread_mutex_destroy(&m_IDLock);
    #else
       WaitForSingleObject(m_WorkerThread, INFINITE);
       CloseHandle(m_WorkerThread);
       CloseHandle(m_PassLock);
       CloseHandle(m_PassCond);
+      CloseHandle(m_LSLock);
+      CloseHandle(m_IDLock);
    #endif
 
    delete m_pRcvUList;
    delete m_pHash;
    delete m_pRendezvousQueue;
+
+   for (map<int32_t, CPacket*>::iterator i = m_mBuffer.begin(); i != m_mBuffer.end(); ++ i)
+   {
+      delete [] i->second->m_pcData;
+      delete i->second;
+   }
 }
 
 void CRcvQueue::init(const int& qsize, const int& payload, const int& version, const int& hsize, const CChannel* cc, const CTimer* t)
@@ -998,7 +918,6 @@ void CRcvQueue::init(const int& qsize, const int& payload, const int& version, c
    CUnit temp;
    temp.m_Packet.m_pcData = new char[self->m_iPayloadSize];
    sockaddr* addr = (AF_INET == self->m_UnitQueue.m_iIPversion) ? (sockaddr*) new sockaddr_in : (sockaddr*) new sockaddr_in6;
-   CUnit* unit;
 
    while (!self->m_bClosing)
    {
@@ -1006,14 +925,25 @@ void CRcvQueue::init(const int& qsize, const int& payload, const int& version, c
          self->m_pTimer->tick();
       #endif
 
+      // check waiting list, if new socket, insert it to the list
+      if (self->ifNewEntry())
+      {
+         CUDT* ne = self->getNewEntry();
+         if (NULL != ne)
+         {
+            self->m_pHash->insert(ne->m_SocketID, ne);
+            self->m_pRcvUList->insert(ne);
+         }
+      }
+
       // find next available slot for incoming packet
-      unit = self->m_UnitQueue.getNextAvailUnit();
+      CUnit* unit = self->m_UnitQueue.getNextAvailUnit();
       if (NULL == unit)
          unit = &temp;
 
       unit->m_Packet.setLength(self->m_iPayloadSize);
 
-      CUDT* u;
+      CUDT* u = NULL;
       int32_t id;
 
       // reading next incoming packet
@@ -1027,63 +957,37 @@ void CRcvQueue::init(const int& qsize, const int& payload, const int& version, c
       // ID 0 is for connection request, which should be passed to the listening socket or rendezvous sockets
       if (0 == id)
       {
-         if (-1 != self->m_ListenerID)
-            id = self->m_ListenerID;
-         else
-            self->m_pRendezvousQueue->retrieve(addr, id, ((CHandShake*)unit->m_Packet.m_pcData)->m_iID);
-      }
-
-      u = self->m_pHash->lookup(id);
-
-      if (NULL != u)
-      {
-         if (0 == unit->m_Packet.getFlag())
+         if (NULL != self->m_pListener)
+            ((CUDT*)self->m_pListener)->listen(addr, unit->m_Packet);
+         else if (self->m_pRendezvousQueue->retrieve(addr, id, ((CHandShake*)unit->m_Packet.m_pcData)->m_iID, u))
          {
             if (u->m_bConnected && !u->m_bBroken)
-            {
-               u->processData(unit);
-               u->checkTimers();
-            }
-         }
-         else
-         {
-            // process the control packet, pass the connection request to listening socket, or temporally store in hash table
-
-            if (u->m_bConnected && !u->m_bBroken)
-            {
                u->processCtrl(unit->m_Packet);
-               u->checkTimers();
-            }
-            else if (u->m_bListening)
-               u->listen(addr, unit->m_Packet);
             else
+               self->storePkt(id, unit->m_Packet.clone());
+         }
+      }
+      else 
+      {
+         if (NULL != (u = self->m_pHash->lookup(id)))
+         {
+            if (u->m_bConnected && !u->m_bBroken)
             {
-               self->m_pHash->setUnit(id, unit);
+               if (0 == unit->m_Packet.getFlag())
+                  u->processData(unit);
+               else
+                  u->processCtrl(unit->m_Packet);
 
-               #ifndef WIN32
-                  pthread_cond_signal(&self->m_PassCond);
-               #else
-                  SetEvent(self->m_PassCond);
-               #endif
+               u->checkTimers();
+               self->m_pRcvUList->update(id);
             }
          }
-
-         if (u->m_bConnected && !u->m_bBroken)
-            self->m_pRcvUList->update(id);
          else
-            self->m_pRcvUList->remove(id);
+            self->storePkt(id, unit->m_Packet.clone());
       }
 
 TIMER_CHECK:
       // take care of the timing event for all UDT sockets
-
-      // check waiting list, if new socket, insert it to the list
-      if (self->m_pRcvUList->ifNewEntry())
-      {
-         CUDT* ne = self->m_pRcvUList->newEntry();
-         if (NULL != ne)
-            self->m_pRcvUList->insert(ne);
-      }
 
       CUDTList* ul = self->m_pRcvUList->m_pUList;
       uint64_t currtime;
@@ -1093,9 +997,6 @@ TIMER_CHECK:
       {
          CUDT* u = ul->m_pUDT;
          int32_t id = ul->m_iID;
-
-         CPacket packet;
-         packet.setLength(0);
 
          if (u->m_bConnected && !u->m_bBroken)
          {
@@ -1123,26 +1024,118 @@ TIMER_CHECK:
 
 int CRcvQueue::recvfrom(const int32_t& id, CPacket& packet)
 {
-   int res;
+   CGuard bufferlock(m_PassLock);
 
-   if ((res = m_pHash->retrieve(id, packet)) < 0)
+   map<int32_t, CPacket*>::iterator i = m_mBuffer.find(id);
+
+   if (i == m_mBuffer.end())
    {
       #ifndef WIN32
          uint64_t now = CTimer::getTime();
          timespec timeout;
 
          timeout.tv_sec = now / 1000000 + 1;
-         timeout.tv_nsec = now % 1000000 * 1000;
+         timeout.tv_nsec = (now % 1000000) * 1000;
 
          pthread_cond_timedwait(&m_PassCond, &m_PassLock, &timeout);
       #else
+         ReleaseMutex(m_PassLock);
          WaitForSingleObject(m_PassCond, 1);
+         WaitForSingleObject(m_PassLock, INFINITE);
       #endif
+
+      i = m_mBuffer.find(id);
+      if (i == m_mBuffer.end())
+      {
+         packet.setLength(-1);
+         return -1;
+      }
    }
+
+   if (packet.getLength() < i->second->getLength())
+   {
+      packet.setLength(-1);
+      return -1;
+   }
+
+   memcpy(packet.m_nHeader, i->second->m_nHeader, CPacket::m_iPktHdrSize);
+   memcpy(packet.m_pcData, i->second->m_pcData, i->second->getLength());
+   packet.setLength(i->second->getLength());
+
+   delete [] i->second->m_pcData;
+   delete i->second;
+   m_mBuffer.erase(i);
+
+   return packet.getLength();
+}
+
+int CRcvQueue::setListener(const CUDT* u)
+{
+   CGuard lslock(m_LSLock);
+
+   if (NULL != m_pListener)
+      return -1;
+
+   m_pListener = (CUDT*)u;
+   return 1;
+}
+
+void CRcvQueue::removeListener(const CUDT* u)
+{
+   CGuard lslock(m_LSLock);
+
+   if (u == m_pListener)
+      m_pListener = NULL;
+}
+
+void CRcvQueue::setNewEntry(CUDT* u)
+{
+   CGuard listguard(m_IDLock);
+   m_vNewEntry.insert(m_vNewEntry.end(), u);
+}
+
+bool CRcvQueue::ifNewEntry()
+{
+   return !(m_vNewEntry.empty());
+}
+
+CUDT* CRcvQueue::getNewEntry()
+{
+   CGuard listguard(m_IDLock);
+
+   if (m_vNewEntry.empty())
+      return NULL;
+
+   CUDT* u = (CUDT*)*(m_vNewEntry.begin());
+   m_vNewEntry.erase(m_vNewEntry.begin());
+
+   return u;
+}
+
+void CRcvQueue::storePkt(const int32_t& id, CPacket* pkt)
+{
+   #ifndef WIN32
+      pthread_mutex_lock(&m_PassLock);
+   #else
+      WaitForSingleObject(m_PassLock, INFINITE);
+   #endif
+
+   map<int32_t, CPacket*>::iterator i = m_mBuffer.find(id);
+
+   if (i == m_mBuffer.end())
+      m_mBuffer[id] = pkt;
    else
-      return res;
+   {
+      delete [] i->second->m_pcData;
+      delete i->second;
+      i->second = pkt;
+   }
 
-   res = m_pHash->retrieve(id, packet);
-
-   return res;
+   #ifndef WIN32
+      pthread_mutex_unlock(&m_PassLock);
+      pthread_cond_signal(&m_PassCond);
+   #else
+      ReleaseMutex(m_PassLock);
+      SetEvent(m_PassCond);
+   #endif
 }

@@ -1,35 +1,41 @@
 /*****************************************************************************
-Copyright © 2001 - 2007, The Board of Trustees of the University of Illinois.
-All Rights Reserved.
+Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+All rights reserved.
 
-UDP-based Data Transfer Library (UDT) version 4
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
 
-National Center for Data Mining (NCDM)
-University of Illinois at Chicago
-http://www.ncdm.uic.edu/
+* Redistributions of source code must retain the above
+  copyright notice, this list of conditions and the
+  following disclaimer.
 
-This library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at
-your option) any later version.
+* Redistributions in binary form must reproduce the
+  above copyright notice, this list of conditions
+  and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
-This library is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
-General Public License for more details.
+* Neither the name of the University of Illinois
+  nor the names of its contributors may be used to
+  endorse or promote products derived from this
+  software without specific prior written permission.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this library; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-*****************************************************************************/
-
-/*****************************************************************************
-This header file contains the definition of UDT buffer structure and operations.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
 /*****************************************************************************
 written by
-   Yunhong Gu [gu@lac.uic.edu], last updated 04/08/2007
+   Yunhong Gu, last updated 09/17/2007
 *****************************************************************************/
 
 #ifndef __UDT_BUFFER_H__
@@ -52,9 +58,9 @@ public:
       // Parameters:
       //    0) [in] data: pointer to the user data block.
       //    1) [in] len: size of the block.
-      //    5) [in] ttl: time to live in milliseconds
-      //    6) [in] seqno: sequence number of the first packet in the block, for DGRAM only
-      //    7) [in] order: if the block should be delivered in order, for DGRAM only
+      //    2) [in] ttl: time to live in milliseconds
+      //    3) [in] seqno: sequence number of the first packet in the block, for DGRAM only
+      //    4) [in] order: if the block should be delivered in order, for DGRAM only
       // Returned value:
       //    None.
 
@@ -113,7 +119,7 @@ private:
       int m_iLength;                    // length of the block
 
       uint64_t m_OriginTime;            // original request time
-      int m_iTTL;                       // time to live
+      int m_iTTL;                       // time to live (milliseconds)
       int32_t m_iMsgNo;                 // message number
       int32_t m_iSeqNo;                 // sequence number of first packet
       int m_iInOrder;                   // flag indicating if the block should be delivered in order
@@ -219,6 +225,18 @@ public:
       //    actuall size of data read.
 
    int readMsg(char* data, const int& len);
+
+      // Functionality:
+      //    Query how many messages are available now.
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    number of messages available for recvmsg.
+
+   int getRcvMsgNum();
+
+private:
+   bool scanMsg(int& start, int& end, bool& passack);
 
 private:
    CUnit** m_pUnit;                     // pointer to the protocol buffer

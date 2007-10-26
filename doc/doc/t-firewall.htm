@@ -24,7 +24,7 @@ each other directly.</p>
 UDTSOCKET u;<br>
 ...<br>
 <br>
-bool rendzevous = true;<br>
+bool rendezvous = true;<br>
 UDT::setsockopt(u, 0, UDT_RENDEZVOUS, &rendezvous, sizeof(bool));<br>
 UDT::bind(u, &known_addr, sizeof(known_addr));<br>
 UDT::connect(u, &peer_addr, sizeof(peer_addr));
