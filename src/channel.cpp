@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /****************************************************************************
 written by
-   Yunhong Gu, last updated 04/19/2007
+   Yunhong Gu, last updated 11/02/2007
 *****************************************************************************/
 
 #ifndef WIN32
@@ -251,6 +251,16 @@ int CChannel::recvfrom(sockaddr* addr, CPacket& packet) const
       mh.msg_control = NULL;
       mh.msg_controllen = 0;
       mh.msg_flags = 0;
+
+      #ifdef UNIX
+         fd_set set;
+         timeval tv;
+         FD_ZERO(&set);
+         FD_SET(m_iSocket, &set);
+         tv.tv_sec = 0;
+         tv.tv_usec = 10000;
+         select(m_iSocket+1, &set, NULL, &set, &tv);
+      #endif
 
       int res = recvmsg(m_iSocket, &mh, 0);
    #else

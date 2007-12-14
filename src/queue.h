@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 10/11/2007
+   Yunhong Gu, last updated 12/02/2007
 *****************************************************************************/
 
 
@@ -136,6 +136,8 @@ struct CUDTList
 
    CUDTList* m_pPrev;		// previous link
    CUDTList* m_pNext;		// next link
+
+   bool m_bOnList;		// if the node is already on the list
 };
 
 
@@ -153,21 +155,11 @@ public:
       //    Insert a new UDT instance into the list.
       // Parameters:
       //    1) [in] ts: time stamp: next processing time
-      //    2) [in] id: socket ID
-      //    3) [in] u: pointer to the UDT instance
+      //    2) [in] u: pointer to the UDT instance
       // Returned value:
       //    None.
 
-   void insert(const int64_t& ts, const int32_t& id, const CUDT* u);
-
-      // Functionality:
-      //    Remove UDT instance from the list.
-      // Parameters:
-      //    1) [in] id: Socket ID
-      // Returned value:
-      //    None.
-
-   void remove(const int32_t& id);
+   void insert(const int64_t& ts, const CUDT* u);
 
       // Functionality:
       //    Update the timestamp of the UDT instance on the list.
@@ -183,12 +175,29 @@ public:
       // Functionality:
       //    Get and remove the first UDT instance on the list.
       // Parameters:
-      //    1) [out] id: socket ID
-      //    2) [out] u: pointer to the UDT instance
+      //    None
       // Returned value:
-      //    UDT Socket ID if found one, otherwise -1.
+      //    UDT instance.
 
-   int pop(int32_t& id, CUDT*& u);
+   CUDT* pop();
+
+      // Functionality:
+      //    Remove UDT instance from the list.
+      // Parameters:
+      //    1) [in] id: Socket ID
+      // Returned value:
+      //    None.
+
+     void remove(const int32_t& id);
+
+      // Functionality:
+      //    Retrieve the next scheduled processing time.
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    Scheduled processing time of the first UDT socket in the list.
+
+     uint64_t getNextProcTime();
 
 public:
    CUDTList* m_pUList;		// The head node
@@ -200,6 +209,8 @@ private:
 
    pthread_mutex_t* m_pWindowLock;
    pthread_cond_t* m_pWindowCond;
+
+   CTimer* m_pTimer;
 };
 
 
@@ -469,7 +480,7 @@ public:
 
    int m_iPort;			// The UDP port number of this multiplexer
    int m_iIPversion;		// IP version
-   int m_iMTU;			// MTU
+   int m_iMSS;			// Maximum Segment Size
    int m_iRefCount;		// number of UDT instances that are associated with this multiplexer
    bool m_bReusable;		// if this one can be shared with others
 };

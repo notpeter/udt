@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 10/04/2007
+   Yunhong Gu, last updated 11/30/2007
 *****************************************************************************/
 
 #ifndef __UDT_CORE_H__
@@ -53,6 +53,8 @@ written by
 #include "ccc.h"
 #include "control.h"
 #include "queue.h"
+
+enum UDTSockType {UDT_STREAM = 1, UDT_DGRAM};
 
 class CUDT
 {
@@ -94,7 +96,6 @@ public: //API
    static int perfmon(UDTSOCKET u, CPerfMon* perf, bool clear = true);
 
 public: // internal API
-   static bool isUSock(UDTSOCKET u);
    static CUDT* getUDTHandle(UDTSOCKET u);
 
 private:
@@ -151,7 +152,7 @@ private:
       // Returned value:
       //    Actual size of data sent.
 
-   int send(char* data, const int& len);
+   int send(const char* data, const int& len);
 
       // Functionality:
       //    Request UDT to receive data to a memory block "data" with size of "len".
@@ -250,7 +251,7 @@ public:
 
 private: // Identification
    UDTSOCKET m_SocketID;                        // UDT socket number
-   int m_iSockType;                             // Type of the UDT connection (SOCK_STREAM or SOCK_DGRAM)
+   UDTSockType m_iSockType;                     // Type of the UDT connection (SOCK_STREAM or SOCK_DGRAM)
    UDTSOCKET m_PeerID;				// peer id, for multiplexer
    static const int m_iVersion;                 // UDT version, for compatibility use
 
@@ -263,8 +264,8 @@ private: // Options
    bool m_bSynSending;                          // Sending syncronization mode
    bool m_bSynRecving;                          // Receiving syncronization mode
    int m_iFlightFlagSize;                       // Maximum number of packets in flight from the peer side
-   int m_iSndQueueLimit;                        // Maximum length of the sending buffer queue
-   int m_iUDTBufSize;                           // UDT buffer size (for receiving)
+   int m_iSndBufSize;                           // Maximum UDT sender buffer size
+   int m_iRcvBufSize;                           // Maximum UDT receiver buffer size
    linger m_Linger;                             // Linger information on close
    int m_iUDPSndBufSize;                        // UDP sending buffer size
    int m_iUDPRcvBufSize;                        // UDP receiving buffer size

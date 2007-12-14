@@ -38,11 +38,11 @@ int main(int argc, char* argv[])
    hints.ai_socktype = SOCK_STREAM;
    //hints.ai_socktype = SOCK_DGRAM;
 
-   char* service = "9000";
+   string service("9000");
    if (2 == argc)
       service = argv[1];
 
-   if (0 != getaddrinfo(NULL, service, &hints, &res))
+   if (0 != getaddrinfo(NULL, service.c_str(), &hints, &res))
    {
       cout << "illegal port number or port is busy.\n" << endl;
       return 0;

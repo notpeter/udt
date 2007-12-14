@@ -52,13 +52,13 @@
 <p><strong><a name="9" id="9"></a>9. Does UDT care about the byte order conversion between different platforms?</strong></p>
 <p>No, the application should care about the conversion itself. However, UDT does work between different platforms even with different byte orders.</p>
 <p><strong><a name="10" id="10"></a>10. Why the UDT connection cannot be set up? Why does the listen or connect call fail?</strong></p>
-<p>The most likely reason is that one of the machines is behind a firewall. You can change the firewall settings if you have the privilege or do something in the UDT program to bypass the firewall. Note that UDT has same semantics as TCP and generates UDP traffic in both directions. UDT3 also provides rendezvous connection setup in order to punch firewalls.</p>
+<p>The most likely reason is that one of the machines is behind a firewall. You can change the firewall settings if you have the privilege or do something in the UDT program to bypass the firewall. Note that UDT has same semantics as TCP and generates UDP traffic in both directions. UDT4 also provides rendezvous connection setup in order to punch firewalls.</p>
 <p>Another reason is that at least one of the server or client sides has multiple addresses, and UDT is bound to an address different from what you use in the application. To solve the problem, explicitly set the IP address in bind call.</p>
 <p>There can be other reasons, such as domain name lookup failure. Try to use an explicit IP address if possible.</p>
 <p><strong><a name="11" id="11"></a>11. Is UDT connection secure?</strong></p>
 <p>No. If you need a secure connection, you should add other mechanisms on the top of UDT in your application.</p>
 <p><strong><a name="12" id="12"></a>12. Why does my application often have packet loss even the throughput is much lower than the available bandwidth?</strong></p>
-<p>Packet loss can be caused by a busy receiver. For example, if there is large block memory copy, arriving packets will be dropped because the CPU does not have enough time to process them. Try to avoid large block copy during data receiving and try to use blocking receiving to alleviate the problem.</p>
+<p>There may be many reasons for packet loss, such as network congestion and hardware failure. Try to use some other benchmark or network test tools first to check the network. Improper setting of UDT parameters may also cause similar problem. Set UDP_RCVBUF as large as UDT_RCVBUF.</p>
 <p><strong><a name="13" id="13"></a>13. Is UDT TCP friendly?</strong></p>
 <p>TCP friendliness is an obscure concept. Please refer to UDT technical reports for detailed information on the competition between UDT flows and TCP flows.
 <p><strong><a name="14" id="14"></a>14. What copyright and license issues shall I be aware of when using UDT?</strong></p>

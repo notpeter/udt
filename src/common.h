@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 09/08/2007
+   Yunhong Gu, last updated 11/05/2007
 *****************************************************************************/
 
 #ifndef __UDT_COMMON_H__
@@ -58,12 +58,6 @@ written by
    typedef HANDLE pthread_mutex_t;
    typedef HANDLE pthread_cond_t;
    typedef DWORD pthread_key_t;
-
-   struct iovec
-   {
-      int iov_len;
-      char* iov_base;
-   };
 #endif
 
 

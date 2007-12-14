@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 09/19/2007
+   Yunhong Gu, last updated 12/02/2007
 *****************************************************************************/
 
 #ifndef _UDT_H_
@@ -279,9 +279,9 @@ UDT_API int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl = -1, bool in
 
 UDT_API int recvmsg(UDTSOCKET u, char* buf, int len);
 
-UDT_API int64_t sendfile(UDTSOCKET u, std::ifstream& ifs, int64_t offset, int64_t size, int block = 366000);
+UDT_API int64_t sendfile(UDTSOCKET u, std::ifstream& ifs, int64_t offset, int64_t size, int block = 364000);
 
-UDT_API int64_t recvfile(UDTSOCKET u, std::ofstream& ofs, int64_t offset, int64_t size, int block = 7320000);
+UDT_API int64_t recvfile(UDTSOCKET u, std::ofstream& ofs, int64_t offset, int64_t size, int block = 7280000);
 
 UDT_API int select(int nfds, UDSET* readfds, UDSET* writefds, UDSET* exceptfds, const struct timeval* timeout);
 

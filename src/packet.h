@@ -35,19 +35,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 08/28/2007
+   Yunhong Gu, last updated 11/05/2007
 *****************************************************************************/
 
 #ifndef __UDT_PACKET_H__
 #define __UDT_PACKET_H__
 
 
-#include "common.h"
 #include "udt.h"
 
+#ifdef WIN32
+   struct iovec
+   {
+      int iov_len;
+      char* iov_base;
+   };
+#endif
 
 class CChannel;
-
 
 class CPacket
 {

@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 09/13/2007
+   Yunhong Gu, last updated 11/30/2007
 *****************************************************************************/
 
 #ifndef __UDT_API_H__
@@ -57,7 +57,7 @@ struct CUDTSocket
    CUDTSocket();
    ~CUDTSocket();
 
-   enum UDTSTATUS {INIT = 1, OPENED, LISTENING, CONNECTED, CLOSED};
+   enum UDTSTATUS {INIT = 1, OPENED, LISTENING, CONNECTED, BROKEN, CLOSED};
    UDTSTATUS m_Status;                       // current socket state
 
    uint64_t m_TimeStamp;                     // time when the socket is closed
@@ -66,7 +66,7 @@ struct CUDTSocket
    sockaddr* m_pSelfAddr;                    // pointer to the local address of the socket
    sockaddr* m_pPeerAddr;                    // pointer to the peer address of the socket
 
-   UDTSOCKET m_Socket;                       // socket ID
+   UDTSOCKET m_SocketID;                     // socket ID
    UDTSOCKET m_ListenSocket;                 // ID of the listener socket; 0 means this is an independent socket
 
    UDTSOCKET m_PeerID;                       // peer socket ID
@@ -125,6 +125,15 @@ public:
 
    CUDT* lookup(const UDTSOCKET u);
 
+      // Functionality:
+      //    Check the status of the UDT socket.
+      // Parameters:
+      //    0) [in] u: the UDT socket ID.
+      // Returned value:
+      //    UDT socket status, or INIT if not found.
+
+   CUDTSocket::UDTSTATUS getStatus(const UDTSOCKET u);
+
       // socket APIs
 
    int bind(const UDTSOCKET u, const sockaddr* name, const int& namelen);
@@ -180,6 +189,15 @@ private:
 
 private:
    CControl* m_pController;				// UDT congestion control manager
+
+private:
+   bool m_bClosing;
+   pthread_t m_GCThread;
+   #ifndef WIN32
+      static void* garbageCollect(void*);
+   #else
+      static DWORD WINAPI garbageCollect(LPVOID);
+   #endif
 };
 
 #endif

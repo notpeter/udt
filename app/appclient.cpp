@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
       CreateThread(NULL, 0, monitor, &client, 0, NULL);
    #endif
 
-   for (int i = 0; i < 100000000; i ++)
+   for (int i = 0; i < 1000000; i ++)
    {
       int ssize = 0;
       int ss;
