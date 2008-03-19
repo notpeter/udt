@@ -318,7 +318,7 @@ void CSndLossList::remove(const int32_t& seqno)
       }
       else
       {
-         // targe node is empty, check prior node
+         // target node is empty, check prior node
          int i = m_iHead;
          while ((-1 != m_piNext[i]) && (CSeqNo::seqcmp(m_piData1[m_piNext[i]], seqno) < 0))
             i = m_piNext[i];

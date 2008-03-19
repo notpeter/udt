@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 11/05/2007
+   Yunhong Gu, last updated 12/23/2007
 *****************************************************************************/
 
 #ifndef __UDT_COMMON_H__
@@ -280,5 +280,13 @@ struct CIPAddress
 {
    static bool ipcmp(const sockaddr* addr1, const sockaddr* addr2, const int& ver = AF_INET);
 };
+
+////////////////////////////////////////////////////////////////////////////////
+
+struct CMD5
+{
+   static void compute(const char* input, unsigned char result[16]);
+};
+
 
 #endif

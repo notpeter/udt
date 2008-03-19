@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 08/22/2007
+   Yunhong Gu, last updated 01/31/2008
 *****************************************************************************/
 
 #include <cmath>
@@ -108,7 +108,7 @@ int CACKWindow::acknowledge(const int32_t& seq, int32_t& ack)
 
             // calculate RTT
             int rtt = int(CTimer::getTime() - m_pTimeStamp[i]);
-            if (i == m_iHead)
+            if (i + 1 == m_iHead)
             {
                m_iTail = m_iHead = 0;
                m_piACKSeqNo[0] = -1;

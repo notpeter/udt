@@ -151,6 +151,9 @@
 				RelativePath="..\src\list.cpp">
 			</File>
 			<File
+				RelativePath="..\src\md5.cpp">
+			</File>
+			<File
 				RelativePath="..\src\packet.cpp">
 			</File>
 			<File
@@ -186,6 +189,9 @@
 			</File>
 			<File
 				RelativePath="..\src\list.h">
+			</File>
+			<File
+				RelativePath="..\src\md5.h">
 			</File>
 			<File
 				RelativePath="..\src\packet.h">

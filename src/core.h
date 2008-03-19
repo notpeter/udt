@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 11/30/2007
+   Yunhong Gu, last updated 12/25/2007
 *****************************************************************************/
 
 #ifndef __UDT_CORE_H__
@@ -402,8 +402,8 @@ private: // for UDP multiplexer
    CSndQueue* m_pSndQueue;			// packet sending queue
    CRcvQueue* m_pRcvQueue;			// packet receivinf queue
    sockaddr* m_pPeerAddr;			// peer address
-   CUDTList* m_pSNode;				// node information for UDT list used in snd queue
-   CUDTList* m_pRNode;                          // node information for UDT list used in rcv queue
+   CSNode* m_pSNode;				// node information for UDT list used in snd queue
+   CRNode* m_pRNode;                            // node information for UDT list used in rcv queue
 };
 
 

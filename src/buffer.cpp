@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/04/2007
+   Yunhong Gu, last updated 02/06/2008
 *****************************************************************************/
 
 #include <cstring>
@@ -185,6 +185,8 @@ void CSndBuffer::addBufferFromFile(ifstream& ifs, const int& len)
 
       ifs.read(s->m_pcData, pktlen);
       s->m_iLength = pktlen;
+
+      s->m_iTTL = -1;
 
       s = s->m_pNext;
    }

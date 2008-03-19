@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/02/2007
+   Yunhong Gu, last updated 12/26/2007
 *****************************************************************************/
 
 
@@ -127,19 +127,13 @@ private:
    int m_iIPversion;		// IP version
 };
 
-
-struct CUDTList
+struct CSNode
 {
-   uint64_t m_llTimeStamp;	// Time Stamp
-   int32_t m_iID;		// UDT Socket ID
    CUDT* m_pUDT;		// Pointer to the instance of CUDT socket
+   uint64_t m_llTimeStamp;      // Time Stamp
 
-   CUDTList* m_pPrev;		// previous link
-   CUDTList* m_pNext;		// next link
-
-   bool m_bOnList;		// if the node is already on the list
+   int m_iHeapLoc;		// location on the heap, -1 means not on the heap
 };
-
 
 class CSndUList
 {
@@ -164,13 +158,12 @@ public:
       // Functionality:
       //    Update the timestamp of the UDT instance on the list.
       // Parameters:
-      //    1) [in] id: socket ID
-      //    2) [in] u: pointer to the UDT instance
-      //    3) [in] resechedule: if the timestampe shoudl be rescheduled
+      //    1) [in] u: pointer to the UDT instance
+      //    2) [in] resechedule: if the timestampe shoudl be rescheduled
       // Returned value:
       //    None.
 
-   void update(const int32_t& id, const CUDT* u, const bool& reschedule = true);
+   void update(const CUDT* u, const bool& reschedule = true);
 
       // Functionality:
       //    Get and remove the first UDT instance on the list.
@@ -184,11 +177,11 @@ public:
       // Functionality:
       //    Remove UDT instance from the list.
       // Parameters:
-      //    1) [in] id: Socket ID
+      //    1) [in] u: pointer to the UDT instance
       // Returned value:
       //    None.
 
-     void remove(const int32_t& id);
+     void remove(const CUDT* u);
 
       // Functionality:
       //    Retrieve the next scheduled processing time.
@@ -199,11 +192,14 @@ public:
 
      uint64_t getNextProcTime();
 
-public:
-   CUDTList* m_pUList;		// The head node
+private:
+   void insert_(const int64_t& ts, const CUDT* u);
+   void remove_(const CUDT* u);
 
 private:
-   CUDTList* m_pLast;		// The last node
+   CSNode** m_pHeap;			// The heap array
+   int m_iArrayLength;			// physical length of the array
+   int m_iLastEntry;			// position of last entry on the heap array
 
    pthread_mutex_t m_ListLock;
 
@@ -213,6 +209,16 @@ private:
    CTimer* m_pTimer;
 };
 
+struct CRNode
+{
+   CUDT* m_pUDT;                // Pointer to the instance of CUDT socket
+   uint64_t m_llTimeStamp;      // Time Stamp
+
+   CRNode* m_pPrev;             // previous link
+   CRNode* m_pNext;             // next link
+
+   bool m_bOnList;              // if the node is already on the list
+};
 
 class CRcvUList
 {
@@ -234,26 +240,26 @@ public:
       // Functionality:
       //    Remove the UDT instance from the list.
       // Parameters:
-      //    1) [in] id: socket ID
+      //    1) [in] u: pointer to the UDT instance
       // Returned value:
       //    None.
 
-   void remove(const int32_t& id);
+   void remove(const CUDT* u);
 
       // Functionality:
       //    Move the UDT instance to the end of the list, if it already exists; otherwise, do nothing.
       // Parameters:
-      //    1) [in] id: socket ID
+      //    1) [in] u: pointer to the UDT instance
       // Returned value:
       //    None.
 
-   void update(const int32_t& id);
+   void update(const CUDT* u);
 
 public:
-   CUDTList* m_pUList;		// the head node
+   CRNode* m_pUList;		// the head node
 
 private:
-   CUDTList* m_pLast;		// the last node
+   CRNode* m_pLast;		// the last node
 };
 
 class CHash
@@ -389,7 +395,6 @@ private:
    volatile bool m_bClosing;		// closing the worker
 };
 
-
 class CRcvQueue
 {
 friend class CUDT;
@@ -468,7 +473,6 @@ private:
    pthread_mutex_t m_PassLock;
    pthread_cond_t m_PassCond;
 };
-
 
 class CMultiplexer
 {

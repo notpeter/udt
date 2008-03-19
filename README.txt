@@ -1,4 +1,4 @@
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All Rights Reserved.
 
 UDP-based Data Transfer (UDT) Library - version 4

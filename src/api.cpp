@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/10/2007
+   Yunhong Gu, last updated 01/30/2008
 *****************************************************************************/
 
 #ifdef WIN32
@@ -405,6 +405,7 @@ int CUDTUnited::newConnection(const UDTSOCKET listen, const sockaddr* peer, CHan
    if (error > 0)
    {
       ns->m_pUDT->close();
+      delete ns->m_pUDT;
       if (error > 1)
          m_Sockets.erase(ns->m_SocketID);
       delete ns;
@@ -1008,6 +1009,7 @@ void CUDTUnited::removeSocket(const UDTSOCKET u)
          #else
             WaitForSingleObject(ls->second->m_AcceptLock, INFINITE);
          #endif
+         ls->second->m_pQueuedSockets->erase(u);
          ls->second->m_pAcceptSockets->erase(u);
          #ifndef WIN32
             pthread_mutex_unlock(&(ls->second->m_AcceptLock));
@@ -1143,7 +1145,7 @@ void CUDTUnited::updateMux(CUDT* u, const sockaddr* addr)
    m.m_pSndQueue = new CSndQueue;
    m.m_pSndQueue->init(m.m_pChannel, m.m_pTimer);
    m.m_pRcvQueue = new CRcvQueue;
-   m.m_pRcvQueue->init((m.m_iMSS > 1500) ? 32 : 128, u->m_iPayloadSize, m.m_iIPversion, 1024, m.m_pChannel, m.m_pTimer);
+   m.m_pRcvQueue->init(32, u->m_iPayloadSize, m.m_iIPversion, 1024, m.m_pChannel, m.m_pTimer);
 
    m_vMultiplexer.insert(m_vMultiplexer.end(), m);
 
