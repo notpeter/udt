@@ -35,14 +35,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 01/04/2008
+   Yunhong Gu, last updated 10/09/2008
 *****************************************************************************/
 
 #ifdef WIN32
    #include <winsock2.h>
    #include <ws2tcpip.h>
+   #include <wspiapi.h>
 #endif
 
+#include <cstring>
 #include "common.h"
 #include "queue.h"
 #include "core.h"
@@ -417,6 +419,7 @@ m_bClosing(false)
    #else
       m_WindowLock = CreateMutex(NULL, false, NULL);
       m_WindowCond = CreateEvent(NULL, false, false, NULL);
+      m_ExitCond = CreateEvent(NULL, false, false, NULL);
    #endif
 }
 
@@ -435,7 +438,7 @@ CSndQueue::~CSndQueue()
    #else
       SetEvent(m_WindowCond);
       if (NULL != m_WorkerThread)
-         WaitForSingleObject(m_WorkerThread, INFINITE);
+         WaitForSingleObject(m_ExitCond, INFINITE);
       CloseHandle(m_WorkerThread);
       CloseHandle(m_WindowLock);
       CloseHandle(m_WindowCond);
@@ -517,7 +520,12 @@ void CSndQueue::init(const CChannel* c, const CTimer* t)
       }
    }
 
-   return NULL;
+   #ifndef WIN32
+      return NULL;
+   #else
+      SetEvent(self->m_ExitCond);
+      return 0;
+   #endif
 }
 
 int CSndQueue::sendto(const sockaddr* addr, CPacket& packet)
@@ -570,8 +578,6 @@ void CRcvUList::remove(const CUDT* u)
    if (!n->m_bOnList)
       return;
 
-   n->m_bOnList = false;
-
    if (NULL == n->m_pPrev)
    {
       // n is the first node
@@ -580,22 +586,22 @@ void CRcvUList::remove(const CUDT* u)
          m_pLast = NULL;
       else
          m_pUList->m_pPrev = NULL;
-
-      n->m_pNext = n->m_pPrev = NULL;
-
-      return;
-   }
-
-   n->m_pPrev->m_pNext = n->m_pNext;
-   if (NULL == n->m_pNext)
-   {
-      // n is the last node
-      m_pLast = n->m_pPrev;
    }
    else
-      n->m_pNext->m_pPrev = n->m_pPrev;
+   {
+      n->m_pPrev->m_pNext = n->m_pNext;
+      if (NULL == n->m_pNext)
+      {
+         // n is the last node
+         m_pLast = n->m_pPrev;
+      }
+      else
+         n->m_pNext->m_pPrev = n->m_pPrev;
+   }
 
    n->m_pNext = n->m_pPrev = NULL;
+
+   n->m_bOnList = false;
 }
 
 void CRcvUList::update(const CUDT* u)
@@ -744,17 +750,16 @@ CRendezvousQueue::~CRendezvousQueue()
    m_vRendezvousID.clear();
 }
 
-void CRendezvousQueue::insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr, CUDT* u)
+void CRendezvousQueue::insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr)
 {
    CGuard vg(m_RIDVectorLock);
 
    CRL r;
    r.m_iID = id;
-   r.m_iPeerID = 0;
    r.m_iIPversion = ipv;
    r.m_pPeerAddr = (AF_INET == ipv) ? (sockaddr*)new sockaddr_in : (sockaddr*)new sockaddr_in6;
    memcpy(r.m_pPeerAddr, addr, (AF_INET == ipv) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6));
-   r.m_pUDT = u;
+
    m_vRendezvousID.insert(m_vRendezvousID.end(), r);
 }
 
@@ -776,18 +781,18 @@ void CRendezvousQueue::remove(const UDTSOCKET& id)
       }
 }
 
-bool CRendezvousQueue::retrieve(const sockaddr* addr, UDTSOCKET& id, const UDTSOCKET& peerid, CUDT*& u)
+bool CRendezvousQueue::retrieve(const sockaddr* addr, UDTSOCKET& id)
 {
    CGuard vg(m_RIDVectorLock);
 
    for (vector<CRL>::iterator i = m_vRendezvousID.begin(); i != m_vRendezvousID.end(); ++ i)
-      if (CIPAddress::ipcmp(addr, i->m_pPeerAddr, i->m_iIPversion) && ((0 == i->m_iPeerID) || (peerid == i->m_iPeerID)))
+   {
+      if (CIPAddress::ipcmp(addr, i->m_pPeerAddr, i->m_iIPversion) && ((0 == id) || (id == i->m_iID)))
       {
          id = i->m_iID;
-         i->m_iPeerID = peerid;
-         u = i->m_pUDT;
          return true;
       }
+   }
 
    return false;
 }
@@ -813,6 +818,7 @@ m_pRendezvousQueue(NULL)
       m_PassCond = CreateEvent(NULL, false, false, NULL);
       m_LSLock = CreateMutex(NULL, false, NULL);
       m_IDLock = CreateMutex(NULL, false, NULL);
+      m_ExitCond = CreateEvent(NULL, false, false, NULL);
    #endif
 
    m_vNewEntry.clear();
@@ -832,7 +838,7 @@ CRcvQueue::~CRcvQueue()
       pthread_mutex_destroy(&m_IDLock);
    #else
       if (NULL != m_WorkerThread)
-         WaitForSingleObject(m_WorkerThread, INFINITE);
+         WaitForSingleObject(m_ExitCond, INFINITE);
       CloseHandle(m_WorkerThread);
       CloseHandle(m_PassLock);
       CloseHandle(m_PassCond);
@@ -932,30 +938,28 @@ void CRcvQueue::init(const int& qsize, const int& payload, const int& version, c
       {
          if (NULL != self->m_pListener)
             ((CUDT*)self->m_pListener)->listen(addr, unit->m_Packet);
-         else if (self->m_pRendezvousQueue->retrieve(addr, id, ((CHandShake*)unit->m_Packet.m_pcData)->m_iID, u))
-         {
-            if (u->m_bConnected && !u->m_bBroken)
-               u->processCtrl(unit->m_Packet);
-            else
-               self->storePkt(id, unit->m_Packet.clone());
-         }
+         else if (self->m_pRendezvousQueue->retrieve(addr, id))
+            self->storePkt(id, unit->m_Packet.clone());
       }
       else if (id > 0)
       {
          if (NULL != (u = self->m_pHash->lookup(id)))
          {
-            if (u->m_bConnected && !u->m_bBroken)
+            if (CIPAddress::ipcmp(addr, u->m_pPeerAddr, u->m_iIPversion))
             {
-               if (0 == unit->m_Packet.getFlag())
-                  u->processData(unit);
-               else
-                  u->processCtrl(unit->m_Packet);
+               if (u->m_bConnected && !u->m_bBroken)
+               {
+                  if (0 == unit->m_Packet.getFlag())
+                     u->processData(unit);
+                  else
+                     u->processCtrl(unit->m_Packet);
 
-               u->checkTimers();
-               self->m_pRcvUList->update(u);
+                  u->checkTimers();
+                  self->m_pRcvUList->update(u);
+               }
             }
          }
-         else
+         else if (self->m_pRendezvousQueue->retrieve(addr, id))
             self->storePkt(id, unit->m_Packet.clone());
       }
 
@@ -992,7 +996,12 @@ TIMER_CHECK:
    else
       delete (sockaddr_in6*)addr;
 
-   return NULL;
+   #ifndef WIN32
+      return NULL;
+   #else
+      SetEvent(self->m_ExitCond);
+      return 0;
+   #endif
 }
 
 int CRcvQueue::recvfrom(const int32_t& id, CPacket& packet)
@@ -1013,7 +1022,7 @@ int CRcvQueue::recvfrom(const int32_t& id, CPacket& packet)
          pthread_cond_timedwait(&m_PassCond, &m_PassLock, &timeout);
       #else
          ReleaseMutex(m_PassLock);
-         WaitForSingleObject(m_PassCond, 1);
+         WaitForSingleObject(m_PassCond, 1000);
          WaitForSingleObject(m_PassLock, INFINITE);
       #endif
 

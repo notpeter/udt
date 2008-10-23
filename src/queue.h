@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/26/2007
+   Yunhong Gu, last updated 06/02/2008
 *****************************************************************************/
 
 
@@ -326,18 +326,16 @@ public:
    ~CRendezvousQueue();
 
 public:
-   void insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr, CUDT* u);
+   void insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr);
    void remove(const UDTSOCKET& id);
-   bool retrieve(const sockaddr* addr, UDTSOCKET& id, const UDTSOCKET& peerid, CUDT*& u);
+   bool retrieve(const sockaddr* addr, UDTSOCKET& id);
 
 private:
    struct CRL
    {
       UDTSOCKET m_iID;
-      UDTSOCKET m_iPeerID;
       int m_iIPversion;
       sockaddr* m_pPeerAddr;
-      CUDT* m_pUDT;
    };
    std::vector<CRL> m_vRendezvousID;         // The sockets currently in rendezvous mode
 
@@ -393,6 +391,7 @@ private:
    pthread_cond_t m_WindowCond;
 
    volatile bool m_bClosing;		// closing the worker
+   pthread_cond_t m_ExitCond;
 };
 
 class CRcvQueue
@@ -450,6 +449,7 @@ private:
    int m_iPayloadSize;                  // packet payload size
 
    volatile bool m_bClosing;            // closing the workder
+   pthread_cond_t m_ExitCond;
 
 private:
    int setListener(const CUDT* u);

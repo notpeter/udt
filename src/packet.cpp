@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 04/27/2007
+   Yunhong Gu, last updated 07/25/2007
 *****************************************************************************/
 
 
@@ -139,6 +139,7 @@ written by
 //      the original sequence numbers in the field.
 
 
+#include <cstring>
 #include "packet.h"
 
 

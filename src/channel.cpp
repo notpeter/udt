@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /****************************************************************************
 written by
-   Yunhong Gu, last updated 11/02/2007
+   Yunhong Gu, last updated 05/23/2008
 *****************************************************************************/
 
 #ifndef WIN32
@@ -49,6 +49,7 @@ written by
 #else
    #include <winsock2.h>
    #include <ws2tcpip.h>
+   #include <wspiapi.h>
 #endif
 #include "channel.h"
 #include "packet.h"
@@ -118,6 +119,17 @@ void CChannel::open(const sockaddr* addr)
       freeaddrinfo(res);
    }
 
+   setUDPSockOpt();
+}
+
+void CChannel::open(UDPSOCKET udpsock)
+{
+   m_iSocket = udpsock;
+   setUDPSockOpt();
+}
+
+void CChannel::setUDPSockOpt()
+{
    if ((0 != setsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char *)&m_iRcvBufSize, sizeof(int))) ||
        (0 != setsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char *)&m_iSndBufSize, sizeof(int))))
       throw CUDTException(1, 3, NET_ERROR);

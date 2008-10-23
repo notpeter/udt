@@ -6,6 +6,7 @@
 #endif
 #include <fstream>
 #include <iostream>
+#include <cstring>
 #include <udt.h>
 
 using namespace std;

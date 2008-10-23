@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 02/18/2008
+   Yunhong Gu, last updated 10/09/2008
 *****************************************************************************/
 
 #ifndef WIN32
@@ -48,6 +48,7 @@ written by
 #else
    #include <winsock2.h>
    #include <ws2tcpip.h>
+   #include <wspiapi.h>
 #endif
 #include <cmath>
 #include "queue.h"
@@ -205,7 +206,7 @@ void CUDT::setOpt(UDTOpt optName, const void* optval, const int&)
       if (m_bOpened)
          throw CUDTException(5, 1, 0);
 
-      if (*(int*)optval < 28)
+      if (*(int*)optval < int(28 + sizeof(CHandShake)))
          throw CUDTException(5, 3, 0);
 
       m_iMSS = *(int*)optval;
@@ -508,9 +509,8 @@ void CUDT::connect(const sockaddr* serv_addr)
    if (m_bConnected)
       throw CUDTException(5, 2, 0);
 
-   // rendezvous mode check in
-   if (m_bRendezvous)
-      m_pRcvQueue->m_pRendezvousQueue->insert(m_SocketID, m_iIPversion, serv_addr, this);
+   // register this socket in the rendezvous queue
+   m_pRcvQueue->m_pRendezvousQueue->insert(m_SocketID, m_iIPversion, serv_addr);
 
    CPacket request;
    char* reqdata = new char [m_iPayloadSize];
@@ -686,6 +686,9 @@ void CUDT::connect(const sockaddr* serv_addr)
 
    // register this socket for receiving data packets
    m_pRcvQueue->setNewEntry(this);
+
+   // remove from rendezvous queue
+   m_pRcvQueue->m_pRendezvousQueue->remove(m_SocketID);
 }
 
 void CUDT::connect(const sockaddr* peer, CHandShake* hs)
@@ -823,9 +826,6 @@ void CUDT::close()
       m_pController->leave(this, m_iRTT, m_iBandwidth);
 
       m_bConnected = false;
-
-      if (m_bRendezvous)
-         m_pRcvQueue->m_pRendezvousQueue->remove(m_SocketID);
    }
 
    // waiting all send and recv calls to stop
@@ -1474,7 +1474,7 @@ void CUDT::sendCtrl(const int& pkttype, void* lparam, void* rparam, const int& s
          if (data[3] < 2)
             data[3] = 2;
 
-         if (CTimer::getTime() - m_ullLastAckTime > (uint64_t)m_iSYNInterval)
+         if (currtime - m_ullLastAckTime > m_ullSYNInt)
          {
             data[4] = m_pRcvTimeWindow->getPktRcvSpeed();
             data[5] = m_pRcvTimeWindow->getBandwidth();
@@ -1633,6 +1633,14 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
       // Got data ACK
       ack = *(int32_t *)ctrlpkt.m_pcData;
 
+      // check the  validation of the ack
+      if (CSeqNo::seqcmp(ack, CSeqNo::incseq(m_iSndCurrSeqNo)) > 0)
+      {
+         //this should not happen: attack or bug
+         m_bBroken = true;
+         break;
+      }
+
       if (CSeqNo::seqcmp(ack, const_cast<int32_t&>(m_iSndLastAck)) >= 0)
       {
          // Update Flow Window Size, must update before and together with m_iSndLastAck
@@ -1750,11 +1758,20 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
       m_ullInterval = (uint64_t)(m_pCC->m_dPktSndPeriod * m_ullCPUFrequency);
       m_dCongestionWindow = m_pCC->m_dCWndSize;
 
+      bool secure = true;
+
       // decode loss list message and insert loss into the sender loss list
       for (int i = 0, n = (int)(ctrlpkt.getLength() / 4); i < n; ++ i)
       {
          if (0 != (losslist[i] & 0x80000000))
          {
+            if ((CSeqNo::seqcmp(losslist[i] & 0x7FFFFFFF, losslist[i + 1]) > 0) || (CSeqNo::seqcmp(losslist[i + 1], m_iSndCurrSeqNo) > 0))
+            {
+               // seq_a must not be greater than seq_b; seq_b must not be greater than the most recent sent seq
+               secure = false;
+               break;
+            }
+
             if (CSeqNo::seqcmp(losslist[i] & 0x7FFFFFFF, const_cast<int32_t&>(m_iSndLastAck)) >= 0)
                m_iTraceSndLoss += m_pSndLossList->insert(losslist[i] & 0x7FFFFFFF, losslist[i + 1]);
             else if (CSeqNo::seqcmp(losslist[i + 1], const_cast<int32_t&>(m_iSndLastAck)) >= 0)
@@ -1764,8 +1781,22 @@ void CUDT::processCtrl(CPacket& ctrlpkt)
          }
          else if (CSeqNo::seqcmp(losslist[i], const_cast<int32_t&>(m_iSndLastAck)) >= 0)
          {
+            if (CSeqNo::seqcmp(losslist[i], m_iSndCurrSeqNo) > 0)
+            {
+               //seq_a must not be greater than the most recent sent seq
+               secure = false;
+               break;
+            }
+
             m_iTraceSndLoss += m_pSndLossList->insert(losslist[i], losslist[i]);
          }
+      }
+
+      if (!secure)
+      {
+         //this should not happen: attack or bug
+         m_bBroken = true;
+         break;
       }
 
       // Wake up the waiting sender (avoiding deadlock on an infinite sleeping)
@@ -2138,8 +2169,8 @@ void CUDT::checkTimers()
    {
       // Haven't receive any information from the peer, is it dead?!
       // timeout: at least 16 expirations and must be greater than 3 seconds and be less than 30 seconds
-      if (((m_iEXPCount > 16) && 
-          (m_iEXPCount * ((m_iEXPCount - 1) * (m_iRTT + 4 * m_iRTTVar) / 2 + m_iSYNInterval) > 3000000))
+      if (((m_iEXPCount > 16) && (m_iEXPCount * ((m_iEXPCount - 1) * (m_iRTT + 4 * m_iRTTVar) / 2 + m_iSYNInterval) > 3000000))
+          || (m_iEXPCount > 30)
           || (m_iEXPCount * ((m_iEXPCount - 1) * (m_iRTT + 4 * m_iRTTVar) / 2 + m_iSYNInterval) > 30000000))
       {
          //

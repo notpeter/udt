@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/02/2007
+   Yunhong Gu, last updated 05/23/2008
 *****************************************************************************/
 
 #ifndef _UDT_H_
@@ -79,6 +79,11 @@ written by
 
 #define NO_BUSY_WAITING
 
+#ifndef WIN32
+   typedef int UDPSOCKET;
+#else
+   typedef SOCKET UDPSOCKET;
+#endif
 
 typedef int UDTSOCKET;
 
@@ -254,6 +259,8 @@ UDT_API extern const int ERROR;
 UDT_API UDTSOCKET socket(int af, int type, int protocol);
 
 UDT_API int bind(UDTSOCKET u, const struct sockaddr* name, int namelen);
+
+UDT_API int bind(UDTSOCKET u, UDPSOCKET udpsock);
 
 UDT_API int listen(UDTSOCKET u, int backlog);
 

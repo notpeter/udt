@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 11/30/2007
+   Yunhong Gu, last updated 05/23/2008
 *****************************************************************************/
 
 #ifndef __UDT_API_H__
@@ -137,6 +137,7 @@ public:
       // socket APIs
 
    int bind(const UDTSOCKET u, const sockaddr* name, const int& namelen);
+   int bind(const UDTSOCKET u, UDPSOCKET udpsock);
    int listen(const UDTSOCKET u, const int& backlog);
    UDTSOCKET accept(const UDTSOCKET listen, sockaddr* addr, int* addrlen);
    int connect(const UDTSOCKET u, const sockaddr* name, const int& namelen);
@@ -180,7 +181,7 @@ private:
    CUDTSocket* locate(const UDTSOCKET u, const sockaddr* peer, const UDTSOCKET& id, const int32_t& isn);
    void checkBrokenSockets();
    void removeSocket(const UDTSOCKET u);
-   void updateMux(CUDT* u, const sockaddr* addr = NULL);
+   void updateMux(CUDT* u, const sockaddr* addr = NULL, const UDPSOCKET* = NULL);
    void updateMux(CUDT* u, const CUDTSocket* ls);
 
 private:
@@ -191,7 +192,11 @@ private:
    CControl* m_pController;				// UDT congestion control manager
 
 private:
-   bool m_bClosing;
+   volatile bool m_bClosing;
+   pthread_mutex_t m_GCStopLock;
+   pthread_cond_t m_GCStopCond;
+   pthread_cond_t m_GCExitCond;
+
    pthread_t m_GCThread;
    #ifndef WIN32
       static void* garbageCollect(void*);
