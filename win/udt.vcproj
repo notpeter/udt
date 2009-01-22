@@ -142,7 +142,7 @@
 				RelativePath="..\src\common.cpp">
 			</File>
 			<File
-				RelativePath="..\src\control.cpp">
+				RelativePath="..\src\co-op.cpp">
 			</File>
 			<File
 				RelativePath="..\src\core.cpp">
@@ -182,7 +182,7 @@
 				RelativePath="..\src\common.h">
 			</File>
 			<File
-				RelativePath="..\src\control.h">
+				RelativePath="..\src\co-op.h">
 			</File>
 			<File
 				RelativePath="..\src\core.h">

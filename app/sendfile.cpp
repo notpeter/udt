@@ -20,6 +20,9 @@ int main(int argc, char* argv[])
       return 0;
    }
 
+   // use this function to initialize the UDT library
+   UDT::startup();
+
    UDTSOCKET serv = UDT::socket(AF_INET, SOCK_STREAM, 0);
 
 #ifdef WIN32
@@ -102,11 +105,14 @@ int main(int argc, char* argv[])
    }
 
    UDT::perfmon(fhandle, &trace);
-   cout << "speed = " << trace.mbpsSendRate << endl;
+   cout << "speed = " << trace.mbpsSendRate << "Mbits/sec" << endl;
 
    UDT::close(fhandle);
 
    ifs.close();
+
+   // use this function to release the UDT library
+   UDT::cleanup();
 
    return 1;
 }

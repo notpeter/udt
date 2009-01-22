@@ -166,13 +166,14 @@ public:
    void update(const CUDT* u, const bool& reschedule = true);
 
       // Functionality:
-      //    Get and remove the first UDT instance on the list.
+      //    Retrieve the next packet and peer address from the first entry, and reschedule it in the queue.
       // Parameters:
-      //    None
+      //    0) [out] addr: destination address of the next packet
+      //    1) [out] pkt: the next packet to be sent
       // Returned value:
-      //    UDT instance.
+      //    1 if successfully retrieved, -1 if no packet found.
 
-   CUDT* pop();
+   int pop(sockaddr*& addr, CPacket& pkt);
 
       // Functionality:
       //    Remove UDT instance from the list.
@@ -181,7 +182,7 @@ public:
       // Returned value:
       //    None.
 
-     void remove(const CUDT* u);
+   void remove(const CUDT* u);
 
       // Functionality:
       //    Retrieve the next scheduled processing time.
@@ -190,7 +191,7 @@ public:
       // Returned value:
       //    Scheduled processing time of the first UDT socket in the list.
 
-     uint64_t getNextProcTime();
+   uint64_t getNextProcTime();
 
 private:
    void insert_(const int64_t& ts, const CUDT* u);

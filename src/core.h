@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/23/2008
+   Yunhong Gu, last updated 01/15/2009
 *****************************************************************************/
 
 #ifndef __UDT_CORE_H__
@@ -51,7 +51,7 @@ written by
 #include "channel.h"
 #include "api.h"
 #include "ccc.h"
-#include "control.h"
+#include "co-op.h"
 #include "queue.h"
 
 enum UDTSockType {UDT_STREAM = 1, UDT_DGRAM};
@@ -75,6 +75,8 @@ private: // constructor and desctructor
    ~CUDT();
 
 public: //API
+   static int startup();
+   static int cleanup();
    static UDTSOCKET socket(int af, int type = SOCK_STREAM, int protocol = 0);
    static int bind(UDTSOCKET u, const sockaddr* name, int namelen);
    static int bind(UDTSOCKET u, UDPSOCKET udpsock);
@@ -275,6 +277,7 @@ private: // Options
    int m_iSndTimeOut;                           // sending timeout in milliseconds
    int m_iRcvTimeOut;                           // receiving timeout in milliseconds
    bool m_bReuseAddr;				// reuse an exiting port or not, for UDP multiplexer
+   int64_t m_llMaxBW;				// maximum data transfer rate (threshold)
 
 private: // congestion control
    CCCVirtualFactory* m_pCCFactory;             // Factory class to create a specific CC instance
@@ -288,6 +291,7 @@ private: // Status
    volatile bool m_bShutdown;                   // If the peer side has shutdown the connection
    volatile bool m_bBroken;                     // If the connection has been broken
    bool m_bOpened;                              // If the UDT entity has been opened
+   int m_iBrokenCounter;			// a counter (number of GC checks) to let the GC tag this socket as disconnected
 
    int m_iEXPCount;                             // Expiration counter
    int m_iBandwidth;                            // Estimated bandwidth
@@ -310,6 +314,8 @@ private: // Sending related data
    int32_t m_iSndLastDataAck;                   // The real last ACK that updates the sender buffer and loss list
    int32_t m_iSndCurrSeqNo;                     // The largest sequence number that has been sent
    int32_t m_iLastDecSeq;                       // Sequence number sent last decrease occurs
+   int32_t m_iSndLastAck2;                      // Last ACK2 sent back
+   uint64_t m_ullSndLastAck2Time;               // The time when last ACK2 was sent back
 
    int32_t m_iISN;                              // Initial Sequence Number
 
@@ -380,7 +386,7 @@ private: // Trace
 private: // Timers
    uint64_t m_ullCPUFrequency;                  // CPU clock frequency, used for Timer
 
-   static const int m_iSYNInterval;             // Periodical Rate Control Interval, 10 microseconds
+   static const int m_iSYNInterval;             // Periodical Rate Control Interval, 10 ms
    static const int m_iSelfClockInterval;       // ACK interval for self-clocking
 
    uint64_t m_ullNextACKTime;			// Next ACK time, in CPU clock cycles
@@ -391,6 +397,7 @@ private: // Timers
    volatile uint64_t m_ullACKInt;		// ACK interval
    volatile uint64_t m_ullNAKInt;		// NAK interval
    volatile uint64_t m_ullEXPInt;		// EXP interval
+   volatile uint64_t m_ullMinEXPInt;		// Minimum EXP interval
 
    int m_iPktCount;				// packet counter for ACK
    int m_iLightACKCount;			// light ACK counter

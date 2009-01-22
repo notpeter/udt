@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/07/2008
+   Yunhong Gu, last updated 12/05/2008
 *****************************************************************************/
 
 
@@ -85,10 +85,10 @@ CTimer::~CTimer()
 void CTimer::rdtsc(uint64_t &x)
 {
    #ifdef WIN32
-      HANDLE hCurThread = ::GetCurrentThread(); 
-      DWORD_PTR dwOldMask = ::SetThreadAffinityMask(hCurThread, 1); 
+      //HANDLE hCurThread = ::GetCurrentThread(); 
+      //DWORD_PTR dwOldMask = ::SetThreadAffinityMask(hCurThread, 1); 
       BOOL ret = QueryPerformanceCounter((LARGE_INTEGER *)&x);
-      SetThreadAffinityMask(hCurThread, dwOldMask);
+      //SetThreadAffinityMask(hCurThread, dwOldMask);
 
       if (!ret)
          x = getTime() * s_ullCPUFrequency;
@@ -299,6 +299,25 @@ CGuard::~CGuard()
          ReleaseMutex(m_Mutex);
    #endif
 }
+
+void CGuard::enterCS(pthread_mutex_t& lock)
+{
+   #ifndef WIN32
+      pthread_mutex_lock(&lock);
+   #else
+      WaitForSingleObject(lock, INFINITE);
+   #endif
+}
+
+void CGuard::leaveCS(pthread_mutex_t& lock)
+{
+   #ifndef WIN32
+      pthread_mutex_unlock(&lock);
+   #else
+      ReleaseMutex(lock);
+   #endif
+}
+
 
 //
 CUDTException::CUDTException(int major, int minor, int err):

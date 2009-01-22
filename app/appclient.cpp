@@ -28,6 +28,9 @@ int main(int argc, char* argv[])
       return 0;
    }
 
+   // use this function to initialize the UDT library
+   UDT::startup();
+
    struct addrinfo hints, *local, *peer;
 
    memset(&hints, 0, sizeof(struct addrinfo));
@@ -120,6 +123,9 @@ int main(int argc, char* argv[])
    UDT::close(client);
 
    delete [] data;
+
+   // use this function to release the UDT library
+   UDT::cleanup();
 
    return 1;
 }

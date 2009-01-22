@@ -20,6 +20,9 @@ int main(int argc, char* argv[])
       return 0;
    }
 
+   // use this function to initialize the UDT library
+   UDT::startup();
+
    UDTSOCKET fhandle = UDT::socket(AF_INET, SOCK_STREAM, 0);
 
    sockaddr_in serv_addr;
@@ -79,6 +82,9 @@ int main(int argc, char* argv[])
    UDT::close(fhandle);
 
    ofs.close();
+
+   // use this function to release the UDT library
+   UDT::cleanup();
 
    return 1;
 }

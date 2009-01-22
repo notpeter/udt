@@ -38,8 +38,8 @@ written by
    Yunhong Gu, last updated 07/22/2007
 *****************************************************************************/
 
-#ifndef _UDT_CONTROL_H_
-#define _UDT_CONTROL_H_
+#ifndef __UDT_CO_OP_H__
+#define __UDT_CO_OP_H__
 
 #include "udt.h"
 #include "common.h"

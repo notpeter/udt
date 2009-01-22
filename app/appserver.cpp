@@ -29,6 +29,9 @@ int main(int argc, char* argv[])
       return 0;
    }
 
+   // use this function to initialize the UDT library
+   UDT::startup();
+
    addrinfo hints;
    addrinfo* res;
 
@@ -105,6 +108,9 @@ int main(int argc, char* argv[])
    }
 
    UDT::close(serv);
+
+   // use this function to release the UDT library
+   UDT::cleanup();
 
    return 1;
 }

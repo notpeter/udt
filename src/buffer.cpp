@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 02/06/2008
+   Yunhong Gu, last updated 12/28/2008
 *****************************************************************************/
 
 #include <cstring>
@@ -151,22 +151,14 @@ void CSndBuffer::addBuffer(const char* data, const int& len, const int& ttl, con
    }
    m_pLastBlock = s;
 
-   #ifndef WIN32
-      pthread_mutex_lock(&m_BufLock);
-   #else
-      WaitForSingleObject(m_BufLock, INFINITE);
-   #endif
+   CGuard::enterCS(m_BufLock);
    m_iCount += size;
-   #ifndef WIN32
-      pthread_mutex_unlock(&m_BufLock);
-   #else
-      ReleaseMutex(m_BufLock);
-   #endif
+   CGuard::leaveCS(m_BufLock);
 
    m_iNextMsgNo ++;
 }
 
-void CSndBuffer::addBufferFromFile(ifstream& ifs, const int& len)
+int CSndBuffer::addBufferFromFile(ifstream& ifs, const int& len)
 {
    int size = len / m_iMSS;
    if ((len % m_iMSS) != 0)
@@ -177,32 +169,33 @@ void CSndBuffer::addBufferFromFile(ifstream& ifs, const int& len)
       increase();
 
    Block* s = m_pLastBlock;
+   int total = 0;
    for (int i = 0; i < size; ++ i)
    {
+      if (ifs.bad() || ifs.fail() || ifs.eof())
+         break;
+
       int pktlen = len - i * m_iMSS;
       if (pktlen > m_iMSS)
          pktlen = m_iMSS;
 
       ifs.read(s->m_pcData, pktlen);
+      if ((pktlen = ifs.gcount()) <= 0)
+         break;
+
       s->m_iLength = pktlen;
-
       s->m_iTTL = -1;
-
       s = s->m_pNext;
+
+      total += pktlen;
    }
    m_pLastBlock = s;
 
-   #ifndef WIN32
-      pthread_mutex_lock(&m_BufLock);
-   #else
-      WaitForSingleObject(m_BufLock, INFINITE);
-   #endif
+   CGuard::enterCS(m_BufLock);
    m_iCount += size;
-   #ifndef WIN32
-      pthread_mutex_unlock(&m_BufLock);
-   #else
-      ReleaseMutex(m_BufLock);
-   #endif
+   CGuard::leaveCS(m_BufLock);
+
+   return total;
 }
 
 int CSndBuffer::readData(char** data, int32_t& msgno)
@@ -281,6 +274,7 @@ void CSndBuffer::increase()
    }
    catch (...)
    {
+      delete nbuf;
       throw CUDTException(3, 2, 0);
    }
    nbuf->m_iSize = unitsize;
@@ -300,6 +294,7 @@ void CSndBuffer::increase()
    }
    catch (...)
    {
+      delete nblk;
       throw CUDTException(3, 2, 0);
    }
    Block* pb = nblk;

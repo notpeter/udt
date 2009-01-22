@@ -73,7 +73,7 @@
 
 <h5>Description</h5>
 <p>The <strong>sendfile</strong> method sends certain amount of out of a local file. It is always in blocking mode and will not return until the exact 
-amount of data is sent or the connection is broken. Neither UDT_SNDSYN nor UDT_SNDTIMEO affects this method.</p>
+amount of data is sent, EOF is reached, or the connection is broken. Neither UDT_SNDSYN nor UDT_SNDTIMEO affects this method.</p>
 <p>Note that <strong>sendfile</strong> does NOT nessesarily require <strong>recvfile</strong> at the peer side. Send/recvfile and send/recv are orthogonal 
 UDT methods.</p>
 

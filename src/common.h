@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 07/25/2008
+   Yunhong Gu, last updated 12/04/2008
 *****************************************************************************/
 
 #ifndef __UDT_COMMON_H__
@@ -176,6 +176,9 @@ class CGuard
 public:
    CGuard(pthread_mutex_t& lock);
    ~CGuard();
+
+   static void enterCS(pthread_mutex_t& lock);
+   static void leaveCS(pthread_mutex_t& lock);
 
 private:
    pthread_mutex_t& m_Mutex;            // Alias name of the mutex to be protected

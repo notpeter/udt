@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /****************************************************************************
 written by
-   Yunhong Gu, last updated 05/23/2008
+   Yunhong Gu, last updated 12/08/2008
 *****************************************************************************/
 
 #ifndef WIN32
@@ -220,8 +220,14 @@ int CChannel::sendto(const sockaddr* addr, CPacket& packet) const
          *((uint32_t *)packet.m_pcData + i) = htonl(*((uint32_t *)packet.m_pcData + i));
 
    // convert packet header into network order
+   //for (int j = 0; j < 4; ++ j)
+   //   packet.m_nHeader[j] = htonl(packet.m_nHeader[j]);
+   uint32_t* p = packet.m_nHeader;
    for (int j = 0; j < 4; ++ j)
-      packet.m_nHeader[j] = htonl(packet.m_nHeader[j]);
+   {
+      *p = htonl(*p);
+      ++ p;
+   }
 
    #ifndef WIN32
       msghdr mh;
@@ -242,8 +248,14 @@ int CChannel::sendto(const sockaddr* addr, CPacket& packet) const
    #endif
 
    // convert back into local host order
+   //for (int k = 0; k < 4; ++ k)
+   //   packet.m_nHeader[k] = ntohl(packet.m_nHeader[k]);
+   p = packet.m_nHeader;
    for (int k = 0; k < 4; ++ k)
-      packet.m_nHeader[k] = ntohl(packet.m_nHeader[k]);
+   {
+      *p = ntohl(*p);
+       ++ p;
+   }
 
    if (packet.getFlag())
       for (int l = 0, n = packet.getLength() / 4; l < n; ++ l)
@@ -293,8 +305,14 @@ int CChannel::recvfrom(sockaddr* addr, CPacket& packet) const
    packet.setLength(res - CPacket::m_iPktHdrSize);
 
    // convert back into local host order
+   //for (int i = 0; i < 4; ++ i)
+   //   packet.m_nHeader[i] = ntohl(packet.m_nHeader[i]);
+   uint32_t* p = packet.m_nHeader;
    for (int i = 0; i < 4; ++ i)
-      packet.m_nHeader[i] = ntohl(packet.m_nHeader[i]);
+   {
+      *p = ntohl(*p);
+      ++ p;
+   }
 
    if (packet.getFlag())
       for (int j = 0, n = packet.getLength() / 4; j < n; ++ j)

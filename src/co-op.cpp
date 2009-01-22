@@ -45,7 +45,7 @@ written by
 #endif
 
 #include <cstring>
-#include "control.h"
+#include "co-op.h"
 #include "core.h"
 
 using namespace std;

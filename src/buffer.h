@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 11/28/2007
+   Yunhong Gu, last updated 12/28/2008
 *****************************************************************************/
 
 #ifndef __UDT_BUFFER_H__
@@ -71,9 +71,9 @@ public:
       //    0) [in] ifs: input file stream.
       //    1) [in] len: size of the block.
       // Returned value:
-      //    None.
+      //    actual size of data added from the file.
 
-   void addBufferFromFile(std::ifstream& ifs, const int& len);
+   int addBufferFromFile(std::ifstream& ifs, const int& len);
 
       // Functionality:
       //    Find data position to pack a DATA packet from the furthest reading point.

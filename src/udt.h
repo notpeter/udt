@@ -35,11 +35,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/23/2008
+   Yunhong Gu, last updated 12/01/2008
 *****************************************************************************/
 
-#ifndef _UDT_H_
-#define _UDT_H_
+#ifndef __UDT_H__
+#define __UDT_H__
 
 
 #ifndef WIN32
@@ -64,7 +64,7 @@ written by
    #if _MSC_VER >= 1300
       typedef unsigned __int64 uint64_t;
    #else
-      // VC 6.0 does not support unsigned __int64: may bring potential problems.
+      // VC 6.0 does not support unsigned __int64: may cause potential problems.
       typedef __int64 uint64_t;
    #endif
 
@@ -112,7 +112,8 @@ enum UDTOpt
    UDT_RENDEZVOUS,      // rendezvous connection mode
    UDT_SNDTIMEO,        // send() timeout
    UDT_RCVTIMEO,        // recv() timeout
-   UDT_REUSEADDR	// reuse an existing port or create a new one
+   UDT_REUSEADDR,	// reuse an existing port or create a new one
+   UDT_MAXBW		// maximum bandwidth (bps) that the connection can use
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -256,44 +257,27 @@ UDT_API extern const UDTSOCKET INVALID_SOCK;
 #undef ERROR
 UDT_API extern const int ERROR;
 
+UDT_API int startup();
+UDT_API int cleanup();
 UDT_API UDTSOCKET socket(int af, int type, int protocol);
-
 UDT_API int bind(UDTSOCKET u, const struct sockaddr* name, int namelen);
-
 UDT_API int bind(UDTSOCKET u, UDPSOCKET udpsock);
-
 UDT_API int listen(UDTSOCKET u, int backlog);
-
 UDT_API UDTSOCKET accept(UDTSOCKET u, struct sockaddr* addr, int* addrlen);
-
 UDT_API int connect(UDTSOCKET u, const struct sockaddr* name, int namelen);
-
 UDT_API int close(UDTSOCKET u);
-
 UDT_API int getpeername(UDTSOCKET u, struct sockaddr* name, int* namelen);
-
 UDT_API int getsockname(UDTSOCKET u, struct sockaddr* name, int* namelen);
-
 UDT_API int getsockopt(UDTSOCKET u, int level, SOCKOPT optname, void* optval, int* optlen);
-
 UDT_API int setsockopt(UDTSOCKET u, int level, SOCKOPT optname, const void* optval, int optlen);
-
 UDT_API int send(UDTSOCKET u, const char* buf, int len, int flags);
-
 UDT_API int recv(UDTSOCKET u, char* buf, int len, int flags);
-
 UDT_API int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl = -1, bool inorder = false);
-
 UDT_API int recvmsg(UDTSOCKET u, char* buf, int len);
-
 UDT_API int64_t sendfile(UDTSOCKET u, std::ifstream& ifs, int64_t offset, int64_t size, int block = 364000);
-
 UDT_API int64_t recvfile(UDTSOCKET u, std::ofstream& ofs, int64_t offset, int64_t size, int block = 7280000);
-
 UDT_API int select(int nfds, UDSET* readfds, UDSET* writefds, UDSET* exceptfds, const struct timeval* timeout);
-
 UDT_API ERRORINFO& getlasterror();
-
 UDT_API int perfmon(UDTSOCKET u, TRACEINFO* perf, bool clear = true);
 }
 

@@ -73,8 +73,7 @@ href="error.htm">getlasterror</a>.</p>
 
 <h5>Description</h5>
 <p>The <strong>recvfile</strong> method reads certain amount of data and write it into a local file. It is always in blocking mode and will not return until the exact amount of data is 
-received or the connection is broken. Neither UDT_RCVSYN nor UDT_RCVTIMEO affects this method.</p>
-
+received, file handler is bad (e.g., no disk space), or the connection is broken. Neither UDT_RCVSYN nor UDT_RCVTIMEO affects this method. The actual size of data to expect must be known before calling recvfile, otherwise deadlock may occur due to insufficient incoming data.</p>
 <h5>See Also</h5>
 <p><strong><a href="send.htm">send</a>, <a href="sendfile.htm">sendfile</a>, <a href="recv.htm">recv</a></strong></p>
 <p>&nbsp;</p>
