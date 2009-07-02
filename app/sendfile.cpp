@@ -25,6 +25,8 @@ int main(int argc, char* argv[])
 
    UDTSOCKET serv = UDT::socket(AF_INET, SOCK_STREAM, 0);
 
+   // Windows UDP issue
+   // For better performance, modify HKLM\System\CurrentControlSet\Services\Afd\Parameters\FastSendDatagramThreshold
 #ifdef WIN32
    int mss = 1052;
    UDT::setsockopt(serv, 0, UDT_MSS, &mss, sizeof(int));
@@ -81,7 +83,7 @@ int main(int argc, char* argv[])
    file[len] = '\0';
 
    // open the file
-   ifstream ifs(file, ios::in | ios::binary);
+   fstream ifs(file, ios::in | ios::binary);
 
    ifs.seekg(0, ios::end);
    int64_t size = ifs.tellg();

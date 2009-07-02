@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/04/2008
+   Yunhong Gu, last updated 05/05/2009
 *****************************************************************************/
 
 #ifndef __UDT_API_H__
@@ -47,13 +47,14 @@ written by
 #include "udt.h"
 #include "packet.h"
 #include "queue.h"
-#include "co-op.h"
+#include "cache.h"
 
 
 class CUDT;
 
-struct CUDTSocket
+class CUDTSocket
 {
+public:
    CUDTSocket();
    ~CUDTSocket();
 
@@ -81,6 +82,10 @@ struct CUDTSocket
    pthread_mutex_t m_AcceptLock;             // mutex associated to m_AcceptCond
 
    unsigned int m_uiBackLog;                 // maximum number of connections in queue
+
+private:
+   CUDTSocket(const CUDTSocket&);
+   CUDTSocket& operator=(const CUDTSocket&);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -163,6 +168,7 @@ public:
    int getpeername(const UDTSOCKET u, sockaddr* name, int* namelen);
    int getsockname(const UDTSOCKET u, sockaddr* name, int* namelen);
    int select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds, const timeval* timeout);
+   int selectEx(const std::vector<UDTSOCKET>& fds, std::vector<UDTSOCKET>* readfds, std::vector<UDTSOCKET>* writefds, std::vector<UDTSOCKET>* exceptfds, int64_t msTimeOut);
 
       // Functionality:
       //    record the UDT exception.
@@ -211,7 +217,7 @@ private:
    pthread_mutex_t m_MultiplexerLock;
 
 private:
-   CControl* m_pController;				// UDT congestion control manager
+   CCache* m_pCache;					// UDT network information cache
 
 private:
    volatile bool m_bClosing;
@@ -232,6 +238,10 @@ private:
 
    void checkBrokenSockets();
    void removeSocket(const UDTSOCKET u);
+
+private:
+   CUDTUnited(const CUDTUnited&);
+   CUDTUnited& operator=(const CUDTUnited&);
 };
 
 #endif

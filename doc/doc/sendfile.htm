@@ -14,7 +14,7 @@
 
 <div class="code">int64_t sendfile(<br />
 &nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
-&nbsp; ifstream& <font color="#FFFFFF">ifs</font>,<br />
+&nbsp; fstream& <font color="#FFFFFF">ifs</font>,<br />
 &nbsp; const int64_t <font color="#FFFFFF">offset</font>,<br />
 &nbsp; const int64_t <font color="#FFFFFF">size</font>,<br />
 &nbsp; const int <font color="#FFFFFF">block</font> = 7320000<br />
@@ -25,7 +25,7 @@
   <dt><i>u</i></dt>
   <dd>[in] Descriptor identifying a connected socket.</dd>
   <dt><i>ifs</i></dt>
-  <dd>[in] C++ ifstream descriptor for the file to read data from.</dd>
+  <dd>[in] C++ fstream descriptor for the file to read data from.</dd>
   <dt><i>offset</i></dt>
   <dd>[in] The offset position from where the data is read from the file.</dd>
   <dt><i>size</i></dt>

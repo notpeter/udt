@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2007, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/23/2007
+   Yunhong Gu, last updated 05/21/2009
 *****************************************************************************/
 
 #ifndef __UDT_PACKET_H__
@@ -191,7 +191,7 @@ protected:
    int32_t __pad;
 
 protected:
-   void operator = (const CPacket&) {}
+   CPacket& operator=(const CPacket&);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -206,6 +206,7 @@ struct CHandShake
    int32_t m_iReqType;          // connection request type: 1: regular connection request, 0: rendezvous connection request, -1/-2: response
    int32_t m_iID;		// socket ID
    int32_t m_iCookie;		// cookie
+   uint32_t m_piPeerIP[4];	// The IP address that the peer's UDP port is bound to
 };
 
 

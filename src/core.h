@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 01/15/2009
+   Yunhong Gu, last updated 06/10/2009
 *****************************************************************************/
 
 #ifndef __UDT_CORE_H__
@@ -51,18 +51,18 @@ written by
 #include "channel.h"
 #include "api.h"
 #include "ccc.h"
-#include "co-op.h"
+#include "cache.h"
 #include "queue.h"
 
 enum UDTSockType {UDT_STREAM = 1, UDT_DGRAM};
 
 class CUDT
 {
-friend struct CUDTSocket;
+friend class CUDTSocket;
 friend class CUDTUnited;
 friend class CCC;
 friend struct CUDTComp;
-friend class CControl;
+friend class CCache;
 friend class CSndQueue;
 friend class CRcvQueue;
 friend class CSndUList;
@@ -92,9 +92,10 @@ public: //API
    static int recv(UDTSOCKET u, char* buf, int len, int flags);
    static int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl = -1, bool inorder = false);
    static int recvmsg(UDTSOCKET u, char* buf, int len);
-   static int64_t sendfile(UDTSOCKET u, std::ifstream& ifs, const int64_t& offset, const int64_t& size, const int& block = 364000);
-   static int64_t recvfile(UDTSOCKET u, std::ofstream& ofs, const int64_t& offset, const int64_t& size, const int& block = 7280000);
+   static int64_t sendfile(UDTSOCKET u, std::fstream& ifs, const int64_t& offset, const int64_t& size, const int& block = 364000);
+   static int64_t recvfile(UDTSOCKET u, std::fstream& ofs, const int64_t& offset, const int64_t& size, const int& block = 7280000);
    static int select(int nfds, ud_set* readfds, ud_set* writefds, ud_set* exceptfds, const timeval* timeout);
+   static int selectEx(const std::vector<UDTSOCKET>& fds, std::vector<UDTSOCKET>* readfds, std::vector<UDTSOCKET>* writefds, std::vector<UDTSOCKET>* exceptfds, int64_t msTimeOut);
    static CUDTException& getlasterror();
    static int perfmon(UDTSOCKET u, CPerfMon* perf, bool clear = true);
 
@@ -199,7 +200,7 @@ private:
       // Returned value:
       //    Actual size of data sent.
 
-   int64_t sendfile(std::ifstream& ifs, const int64_t& offset, const int64_t& size, const int& block = 366000);
+   int64_t sendfile(std::fstream& ifs, const int64_t& offset, const int64_t& size, const int& block = 366000);
 
       // Functionality:
       //    Request UDT to receive data into a file described as "fd", starting from "offset", with expected size of "size".
@@ -211,7 +212,7 @@ private:
       // Returned value:
       //    Actual size of data received.
 
-   int64_t recvfile(std::ofstream& ofs, const int64_t& offset, const int64_t& size, const int& block = 7320000);
+   int64_t recvfile(std::fstream& ofs, const int64_t& offset, const int64_t& size, const int& block = 7320000);
 
       // Functionality:
       //    Configure UDT options.
@@ -282,7 +283,7 @@ private: // Options
 private: // congestion control
    CCCVirtualFactory* m_pCCFactory;             // Factory class to create a specific CC instance
    CCC* m_pCC;                                  // congestion control class
-   CControl* m_pController;			// congestion control manager
+   CCache* m_pCache;				// network information cache
 
 private: // Status
    volatile bool m_bListening;                  // If the UDT entit is listening to connection
@@ -311,8 +312,8 @@ private: // Sending related data
    volatile double m_dCongestionWindow;         // congestion window size
 
    volatile int32_t m_iSndLastAck;              // Last ACK received
-   int32_t m_iSndLastDataAck;                   // The real last ACK that updates the sender buffer and loss list
-   int32_t m_iSndCurrSeqNo;                     // The largest sequence number that has been sent
+   volatile int32_t m_iSndLastDataAck;          // The real last ACK that updates the sender buffer and loss list
+   volatile int32_t m_iSndCurrSeqNo;            // The largest sequence number that has been sent
    int32_t m_iLastDecSeq;                       // Sequence number sent last decrease occurs
    int32_t m_iSndLastAck2;                      // Last ACK2 sent back
    uint64_t m_ullSndLastAck2Time;               // The time when last ACK2 was sent back
@@ -371,6 +372,7 @@ private: // Trace
    int m_iRecvACKTotal;                         // total number of received ACK packets
    int m_iSentNAKTotal;                         // total number of sent NAK packets
    int m_iRecvNAKTotal;                         // total number of received NAK packets
+   int64_t m_llSndDurationTotal;		// total real time for sending
 
    uint64_t m_LastSampleTime;                   // last performance sample time
    int64_t m_llTraceSent;                       // number of pakctes sent in the last trace interval
@@ -382,6 +384,8 @@ private: // Trace
    int m_iRecvACK;                              // number of ACKs received in the last trace interval
    int m_iSentNAK;                              // number of NAKs sent in the last trace interval
    int m_iRecvNAK;                              // number of NAKs received in the last trace interval
+   int64_t m_llSndDuration;			// real time for sending
+   int64_t m_llSndDurationCounter;		// timers to record the sending duration
 
 private: // Timers
    uint64_t m_ullCPUFrequency;                  // CPU clock frequency, used for Timer
@@ -408,8 +412,9 @@ private: // Timers
 
 private: // for UDP multiplexer
    CSndQueue* m_pSndQueue;			// packet sending queue
-   CRcvQueue* m_pRcvQueue;			// packet receivinf queue
+   CRcvQueue* m_pRcvQueue;			// packet receiving queue
    sockaddr* m_pPeerAddr;			// peer address
+   uint32_t m_piSelfIP[4];			// local UDP IP address
    CSNode* m_pSNode;				// node information for UDT list used in snd queue
    CRNode* m_pRNode;                            // node information for UDT list used in rcv queue
 };

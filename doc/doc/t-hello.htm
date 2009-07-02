@@ -24,11 +24,11 @@ examples in ./app directory.</p>
 <p><b>UDT server example</b></p>
 
 <div class="code">
-#include <arpa/inet.h><br>
+#include &lt;arpa/inet.h&gt;<br>
+#include &lt;udt.h&gt;<br>
+#include &lt;iostream.h&gt;<br>
 <br>
 using namespace std;<br>
-<br>
-using namespace UDT;<br>
 <br>
 int main()<br>
 {<br>
@@ -66,8 +66,8 @@ if (UDT::ERROR == UDT::recv(recver, data, 100, 0))<br>
 <br>
 cout << data << endl;<br>
 <br>
-CUDT::close(recver);<br>
-CUDT::close(serv);<br>
+UDT::close(recver);<br>
+UDT::close(serv);<br>
 <br>
 return 1;<br>
 }
@@ -76,9 +76,9 @@ return 1;<br>
 <p>This simple server tries to bind itself at port 9000. If succeed, it listens at port 9000 and accepts a client and then reads a string.</p>
 <p><strong>UDT client example </strong></p>
 <div class="code">
-#include <iostream><br>
-#include <udt.h><br>
-#include <arpa/inet.h><br>
+#include &lt;iostream&gt;<br>
+#include &lt;udt.h&gt;<br>
+#include &lt;arpa/inet.h&gt;<br>
 <br>
 using namespace std;<br>
 using namespace UDT;<br>

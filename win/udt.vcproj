@@ -133,6 +133,9 @@
 				RelativePath="..\src\buffer.cpp">
 			</File>
 			<File
+				RelativePath="..\src\cache.cpp">
+			</File>
+			<File
 				RelativePath="..\src\ccc.cpp">
 			</File>
 			<File
@@ -140,9 +143,6 @@
 			</File>
 			<File
 				RelativePath="..\src\common.cpp">
-			</File>
-			<File
-				RelativePath="..\src\co-op.cpp">
 			</File>
 			<File
 				RelativePath="..\src\core.cpp">
@@ -173,6 +173,9 @@
 				RelativePath="..\src\buffer.h">
 			</File>
 			<File
+				RelativePath="..\src\cache.h">
+			</File>
+			<File
 				RelativePath="..\src\ccc.h">
 			</File>
 			<File
@@ -180,9 +183,6 @@
 			</File>
 			<File
 				RelativePath="..\src\common.h">
-			</File>
-			<File
-				RelativePath="..\src\co-op.h">
 			</File>
 			<File
 				RelativePath="..\src\core.h">

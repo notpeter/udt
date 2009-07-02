@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/05/2008
+   Yunhong Gu, last updated 05/21/2009
 *****************************************************************************/
 
 
@@ -45,7 +45,9 @@ written by
 #else
    #include <winsock2.h>
    #include <ws2tcpip.h>
-   #include <wspiapi.h>
+   #ifdef LEGACY_WIN32
+      #include <wspiapi.h>
+   #endif
 #endif
 #include <cmath>
 #include "md5.h"
@@ -60,7 +62,10 @@ uint64_t CTimer::s_ullCPUFrequency = CTimer::readCPUFrequency();
    pthread_cond_t CTimer::m_EventCond = CreateEvent(NULL, false, false, NULL);
 #endif
 
-CTimer::CTimer()
+CTimer::CTimer():
+m_ullSchedTime(),
+m_TickCond(),
+m_TickLock()
 {
    #ifndef WIN32
       pthread_mutex_init(&m_TickLock, NULL);
@@ -279,7 +284,8 @@ void CTimer::waitForEvent()
 //
 // Automatically lock in constructor
 CGuard::CGuard(pthread_mutex_t& lock):
-m_Mutex(lock)
+m_Mutex(lock),
+m_iLocked()
 {
    #ifndef WIN32
       m_iLocked = pthread_mutex_lock(&m_Mutex);
@@ -337,7 +343,8 @@ m_iMinor(minor)
 CUDTException::CUDTException(const CUDTException& e):
 m_iMajor(e.m_iMajor),
 m_iMinor(e.m_iMinor),
-m_iErrno(e.m_iErrno)
+m_iErrno(e.m_iErrno),
+m_strMsg()
 {
 }
 
@@ -626,6 +633,42 @@ bool CIPAddress::ipcmp(const sockaddr* addr1, const sockaddr* addr2, const int& 
    return false;
 }
 
+void CIPAddress::ntop(const sockaddr* addr, uint32_t ip[4], const int& ver)
+{
+   if (AF_INET == ver)
+   {
+      sockaddr_in* a = (sockaddr_in*)addr;
+      ip[0] = a->sin_addr.s_addr;
+   }
+   else
+   {
+      sockaddr_in6* a = (sockaddr_in6*)addr;
+      ip[3] = (a->sin6_addr.s6_addr[15] << 24) + (a->sin6_addr.s6_addr[14] << 16) + (a->sin6_addr.s6_addr[13] << 8) + a->sin6_addr.s6_addr[12];
+      ip[2] = (a->sin6_addr.s6_addr[11] << 24) + (a->sin6_addr.s6_addr[10] << 16) + (a->sin6_addr.s6_addr[9] << 8) + a->sin6_addr.s6_addr[8];
+      ip[1] = (a->sin6_addr.s6_addr[7] << 24) + (a->sin6_addr.s6_addr[6] << 16) + (a->sin6_addr.s6_addr[5] << 8) + a->sin6_addr.s6_addr[4];
+      ip[0] = (a->sin6_addr.s6_addr[3] << 24) + (a->sin6_addr.s6_addr[2] << 16) + (a->sin6_addr.s6_addr[1] << 8) + a->sin6_addr.s6_addr[0];
+   }
+}
+
+void CIPAddress::pton(sockaddr* addr, const uint32_t ip[4], const int& ver)
+{
+   if (AF_INET == ver)
+   {
+      sockaddr_in* a = (sockaddr_in*)addr;
+      a->sin_addr.s_addr = ip[0];
+   }
+   else
+   {
+      sockaddr_in6* a = (sockaddr_in6*)addr;
+      for (int i = 0; i < 4; ++ i)
+      {
+         a->sin6_addr.s6_addr[i * 4] = ip[i] & 0xFF;
+         a->sin6_addr.s6_addr[i * 4 + 1] = ip[i] & 0xFF00;
+         a->sin6_addr.s6_addr[i * 4 + 2] = ip[i] & 0xFF0000;
+         a->sin6_addr.s6_addr[i * 4 + 3] = ip[i] & 0xFF000000;
+      }
+   }
+}
 
 //
 void CMD5::compute(const char* input, unsigned char result[16])

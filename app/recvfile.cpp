@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
    }
 
    // receive the file
-   ofstream ofs(argv[4], ios::out | ios::binary | ios::trunc);
+   fstream ofs(argv[4], ios::out | ios::binary | ios::trunc);
    int64_t recvsize; 
 
    if (UDT::ERROR == (recvsize = UDT::recvfile(fhandle, ofs, 0, size)))

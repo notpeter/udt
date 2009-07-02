@@ -54,6 +54,8 @@ int main(int argc, char* argv[])
    //UDT::setsockopt(client, 0, UDT_SNDBUF, new int(10000000), sizeof(int));
    //UDT::setsockopt(client, 0, UDP_SNDBUF, new int(10000000), sizeof(int));
 
+   // Windows UDP issue
+   // For better performance, modify HKLM\System\CurrentControlSet\Services\Afd\Parameters\FastSendDatagramThreshold
    #ifdef WIN32
       UDT::setsockopt(client, 0, UDT_MSS, new int(1052), sizeof(int));
    #endif
