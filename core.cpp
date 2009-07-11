@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 06/11/2009
+   Yunhong Gu, last updated 07/10/2009
 *****************************************************************************/
 
 #ifndef WIN32
@@ -103,7 +103,7 @@ CUDT::CUDT()
    m_bSynRecving = true;
    m_iFlightFlagSize = 25600;
    m_iSndBufSize = 8192;
-   m_iRcvBufSize = 8192;
+   m_iRcvBufSize = 8192; //Rcv buffer MUST NOT be bigger than Flight Flag size
    m_Linger.l_onoff = 1;
    m_Linger.l_linger = 180;
    m_iUDPSndBufSize = 65536;
@@ -247,7 +247,11 @@ void CUDT::setOpt(UDTOpt optName, const void* optval, const int&)
       if (*(int*)optval < 1)
          throw CUDTException(5, 3);
 
-      m_iFlightFlagSize = *(int*)optval;
+      // Mimimum recv flight flag size is 32 packets
+      if (*(int*)optval > 32)
+         m_iFlightFlagSize = *(int*)optval;
+      else
+         m_iFlightFlagSize = 32;
 
       break;
 
@@ -274,6 +278,10 @@ void CUDT::setOpt(UDTOpt optName, const void* optval, const int&)
          m_iRcvBufSize = *(int*)optval / (m_iMSS - 28);
       else
          m_iRcvBufSize = 32;
+
+      // recv buffer MUST not be greater than FC size
+      if (m_iRcvBufSize > m_iFlightFlagSize)
+         m_iRcvBufSize = m_iFlightFlagSize;
 
       break;
 

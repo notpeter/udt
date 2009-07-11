@@ -464,7 +464,7 @@ void CRcvBuffer::ackData(const int& len)
 
 int CRcvBuffer::getAvailBufSize() const
 {
-   // One slot must be empty in order to tell the different between "empty buffer" and "full buffer"
+   // One slot must be empty in order to tell the difference between "empty buffer" and "full buffer"
    return m_iSize - getRcvDataSize() - 1;
 }
 

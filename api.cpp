@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 06/25/2009
+   Yunhong Gu, last updated 07/10/2009
 *****************************************************************************/
 
 #ifdef WIN32
@@ -966,37 +966,17 @@ int CUDTUnited::selectEx(const vector<UDTSOCKET>& fds, vector<UDTSOCKET>* readfd
    if (NULL != exceptfds)
       exceptfds->clear();
 
-   // retrieve related UDT sockets
-   CUDTSocket* s;
-   vector<CUDTSocket*> fds_u;
-
-   for (vector<UDTSOCKET>::const_iterator i = fds.begin(); i != fds.end(); ++ i)
-   {
-      if (CUDTSocket::BROKEN == getStatus(*i))
-      {
-         if (NULL != exceptfds)
-         {
-            exceptfds->push_back(*i);
-            ++ count;
-         }
-      }
-      else if (NULL == (s = locate(*i)))
-         throw CUDTException(5, 4, 0);
-      else
-         fds_u.push_back(s);
-   }
-
    do
    {
-      for (vector<CUDTSocket*>::iterator j = fds_u.begin(); j != fds_u.end(); ++ j)
+      for (vector<UDTSOCKET>::const_iterator i = fds.begin(); i != fds.end(); ++ i)
       {
-         s = *j;
+         CUDTSocket* s = locate(*i);
 
-         if (s->m_pUDT->m_bBroken || !s->m_pUDT->m_bConnected || (s->m_Status == CUDTSocket::CLOSED))
+         if ((NULL == s) || s->m_pUDT->m_bBroken || !s->m_pUDT->m_bConnected || (s->m_Status == CUDTSocket::CLOSED))
          {
             if (NULL != exceptfds)
             {
-               exceptfds->push_back(s->m_SocketID);
+               exceptfds->push_back(*i);
                ++ count;
             }
             continue;
@@ -1807,7 +1787,7 @@ int CUDT::select(int, ud_set* readfds, ud_set* writefds, ud_set* exceptfds, cons
 
 int CUDT::selectEx(const vector<UDTSOCKET>& fds, vector<UDTSOCKET>* readfds, vector<UDTSOCKET>* writefds, vector<UDTSOCKET>* exceptfds, int64_t msTimeOut)
 {
-   if ((NULL == readfds) && (NULL == writefds))
+   if ((NULL == readfds) && (NULL == writefds) && (NULL == exceptfds))
    {
       s_UDTUnited.setError(new CUDTException(5, 3, 0));
       return ERROR;

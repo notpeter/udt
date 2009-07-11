@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/05/2009
+   Yunhong Gu, last updated 07/09/2009
 *****************************************************************************/
 
 #include <cmath>
@@ -170,7 +170,7 @@ m_ProbeTime()
    m_LastArrTime = CTimer::getTime();
 
    for (int i = 0; i < m_iAWSize; ++ i)
-      m_piPktWindow[i] = 1;
+      m_piPktWindow[i] = 1000000;
 
    for (int k = 0; k < m_iPWSize; ++ k)
       m_piProbeWindow[k] = 1000;
@@ -195,7 +195,7 @@ m_ProbeTime()
    m_LastArrTime = CTimer::getTime();
 
    for (int i = 0; i < m_iAWSize; ++ i)
-      m_piPktWindow[i] = 1;
+      m_piPktWindow[i] = 1000000;
 
    for (int k = 0; k < m_iPWSize; ++ k)
       m_piProbeWindow[k] = 1000;

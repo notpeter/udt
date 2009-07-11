@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/29/2009
+   Yunhong Gu, last updated 07/09/2009
 *****************************************************************************/
 
 
@@ -300,5 +300,11 @@ void CUDTCC::onTimeout()
          m_dPktSndPeriod = 1000000.0 / m_iRcvRate;
       else
          m_dPktSndPeriod = m_dCWndSize / (m_iRTT + m_iRCInterval);
+   }
+   else
+   {
+      m_dLastDecPeriod = m_dPktSndPeriod;
+      m_dPktSndPeriod = ceil(m_dPktSndPeriod * 2);
+      m_iLastDecSeq = m_iLastAck;
    }
 }

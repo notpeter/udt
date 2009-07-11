@@ -1,5 +1,0 @@
-add accurate receiver buffer size calculation in our-of-order message delivery.
-add file transfer under messaging mode
-reduce frequency of ACK2s
-add identification code for each UDT packet (can reuse timestamp?)
-add session and priority
