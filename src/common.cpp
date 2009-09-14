@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/21/2009
+   Yunhong Gu, last updated 08/15/2009
 *****************************************************************************/
 
 
@@ -535,7 +535,7 @@ const char* CUDTException::getErrorMessage()
    }
 
    // Adding "errno" information
-   if (0 < m_iErrno)
+   if ((0 != m_iMajor) && (0 < m_iErrno))
    {
       m_strMsg += ": ";
       #ifndef WIN32
@@ -663,9 +663,9 @@ void CIPAddress::pton(sockaddr* addr, const uint32_t ip[4], const int& ver)
       for (int i = 0; i < 4; ++ i)
       {
          a->sin6_addr.s6_addr[i * 4] = ip[i] & 0xFF;
-         a->sin6_addr.s6_addr[i * 4 + 1] = ip[i] & 0xFF00;
-         a->sin6_addr.s6_addr[i * 4 + 2] = ip[i] & 0xFF0000;
-         a->sin6_addr.s6_addr[i * 4 + 3] = ip[i] & 0xFF000000;
+         a->sin6_addr.s6_addr[i * 4 + 1] = (unsigned char)((ip[i] & 0xFF00) >> 8);
+         a->sin6_addr.s6_addr[i * 4 + 2] = (unsigned char)((ip[i] & 0xFF0000) >> 16);
+         a->sin6_addr.s6_addr[i * 4 + 3] = (unsigned char)((ip[i] & 0xFF000000) >> 24);
       }
    }
 }

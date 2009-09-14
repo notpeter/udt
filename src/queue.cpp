@@ -468,6 +468,7 @@ CSndQueue::~CSndQueue()
       CloseHandle(m_WorkerThread);
       CloseHandle(m_WindowLock);
       CloseHandle(m_WindowCond);
+      CloseHandle(m_ExitCond);
    #endif
 
    delete m_pSndUList;
@@ -871,6 +872,7 @@ CRcvQueue::~CRcvQueue()
       CloseHandle(m_PassCond);
       CloseHandle(m_LSLock);
       CloseHandle(m_IDLock);
+      CloseHandle(m_ExitCond);
    #endif
 
    delete m_pRcvUList;

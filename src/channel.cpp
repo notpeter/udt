@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /****************************************************************************
 written by
-   Yunhong Gu, last updated 05/05/2008
+   Yunhong Gu, last updated 09/13/2008
 *****************************************************************************/
 
 #ifndef WIN32
@@ -140,7 +140,7 @@ void CChannel::setUDPSockOpt()
 {
    #if defined(BSD) || defined(OSX)
       // BSD system will fail setsockopt if the requested buffer size exceeds system maximum value
-      int maxsize = 262144;
+      int maxsize = 64000;
       if (0 != setsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char*)&m_iRcvBufSize, sizeof(int)))
          setsockopt(m_iSocket, SOL_SOCKET, SO_RCVBUF, (char*)&maxsize, sizeof(int));
       if (0 != setsockopt(m_iSocket, SOL_SOCKET, SO_SNDBUF, (char*)&m_iSndBufSize, sizeof(int)))
@@ -170,11 +170,11 @@ void CChannel::setUDPSockOpt()
          throw CUDTException(1, 3, NET_ERROR);
    #elif WIN32
       DWORD ot = 1; //milliseconds
-      if (setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&ot, sizeof(DWORD)) < 0)
+      if (0 != setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&ot, sizeof(DWORD)))
          throw CUDTException(1, 3, NET_ERROR);
    #else
       // Set receiving time-out value
-      if (setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(timeval)) < 0)
+      if (0 != setsockopt(m_iSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(timeval)))
          throw CUDTException(1, 3, NET_ERROR);
    #endif
 }

@@ -303,8 +303,10 @@ void CUDTCC::onTimeout()
    }
    else
    {
+      /*
       m_dLastDecPeriod = m_dPktSndPeriod;
       m_dPktSndPeriod = ceil(m_dPktSndPeriod * 2);
       m_iLastDecSeq = m_iLastAck;
+      */
    }
 }

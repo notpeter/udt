@@ -156,7 +156,7 @@ struct CPerfMon
    int64_t pktSent;                     // number of sent data packets, including retransmissions
    int64_t pktRecv;                     // number of received packets
    int pktSndLoss;                      // number of lost packets (sender side)
-   int pktRcvLoss;                      // number of lost packets (receiverer side)
+   int pktRcvLoss;                      // number of lost packets (receiver side)
    int pktRetrans;                      // number of retransmitted packets
    int pktSentACK;                      // number of sent ACK packets
    int pktRecvACK;                      // number of received ACK packets

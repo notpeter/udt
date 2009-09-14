@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 07/10/2009
+   Yunhong Gu, last updated 09/09/2009
 *****************************************************************************/
 
 #ifdef WIN32
@@ -189,6 +189,8 @@ int CUDTUnited::startup()
 {
    CGuard gcinit(m_InitLock);
 
+   //init CTimer::EventLock
+
    if (m_bGCStatus)
       return true;
 
@@ -212,6 +214,8 @@ int CUDTUnited::startup()
 int CUDTUnited::cleanup()
 {
    CGuard gcinit(m_InitLock);
+
+   //destroy CTimer::EventLock
 
    if (!m_bGCStatus)
       return 0;
@@ -739,9 +743,8 @@ int CUDTUnited::close(const UDTSOCKET u)
 {
    CUDTSocket* s = locate(u);
 
-   // silently drop a request to close an invalid ID, rather than return error   
    if (NULL == s)
-      return 0;
+      throw CUDTException(5, 4, 0);
 
    s->m_pUDT->close();
 
@@ -953,7 +956,7 @@ int CUDTUnited::selectEx(const vector<UDTSOCKET>& fds, vector<UDTSOCKET>* readfd
 
    uint64_t to;
    if (msTimeOut >= 0)
-      to = msTimeOut;
+      to = msTimeOut * 1000;
    else
       to = 0xFFFFFFFFFFFFFFFFULL;
 
@@ -972,7 +975,7 @@ int CUDTUnited::selectEx(const vector<UDTSOCKET>& fds, vector<UDTSOCKET>* readfd
       {
          CUDTSocket* s = locate(*i);
 
-         if ((NULL == s) || s->m_pUDT->m_bBroken || !s->m_pUDT->m_bConnected || (s->m_Status == CUDTSocket::CLOSED))
+         if ((NULL == s) || s->m_pUDT->m_bBroken || (s->m_Status == CUDTSocket::CLOSED))
          {
             if (NULL != exceptfds)
             {
@@ -1358,25 +1361,21 @@ void CUDTUnited::updateMux(CUDT* u, const CUDTSocket* ls)
    {
       i->second->m_pUDT->close();
       i->second->m_Status = CUDTSocket::CLOSED;
-      i->second->m_TimeStamp = 0;
+      i->second->m_TimeStamp = CTimer::getTime();
       self->m_ClosedSockets[i->first] = i->second;
    }
    self->m_Sockets.clear();
-   self->checkBrokenSockets();
 
-   for (vector<CMultiplexer>::iterator m = self->m_vMultiplexer.begin(); m != self->m_vMultiplexer.end(); ++ m)
+   while (!self->m_ClosedSockets.empty())
    {
-      m->m_pChannel->close();
-      delete m->m_pSndQueue;
-      delete m->m_pRcvQueue;
-      delete m->m_pTimer;
-      delete m->m_pChannel;
-   }
-   self->m_vMultiplexer.clear();
+      #ifndef WIN32
+         usleep(1000);
+      #else
+         Sleep(1);
+      #endif
 
-   for (map<UDTSOCKET, CUDTSocket*>::iterator c = self->m_ClosedSockets.begin(); c != self->m_ClosedSockets.end(); ++ c)
-      delete c->second;
-   self->m_ClosedSockets.clear();
+      self->checkBrokenSockets();
+   }
 
    #ifndef WIN32
       return NULL;

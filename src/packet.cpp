@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/29/2009
+   Yunhong Gu, last updated 07/13/2009
 *****************************************************************************/
 
 
@@ -115,7 +115,7 @@ written by
 //              Add. Info:    Message ID
 //              Control Info: first sequence number of the message
 //                            last seqeunce number of the message
-//      65535: Explained by bits 16 - 31
+//      0x7FFF: Explained by bits 16 - 31
 //              
 //   bit 16 - 31:
 //      This space is used for future expansion or user defined control packets. 
@@ -252,7 +252,7 @@ void CPacket::pack(const int& pkttype, void* lparam, void* rparam, const int& si
 
       break;
 
-   case 65535: //0x7FFF - Reserved for user defined control packets
+   case 32767: //0x7FFF - Reserved for user defined control packets
       // for extended control packet
       // "lparam" contains the extended type information for bit 16 - 31
       // "rparam" is the control information
