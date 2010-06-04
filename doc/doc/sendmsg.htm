@@ -81,7 +81,7 @@ cannot be sent before the timer expires.</p>
 <p>The <strong>sendmsg</strong> method sends a message to the peer side. The UDT socket must be in SOCK_DGRAM mode in order to send or receive messages. 
 Message is the minimum data unit in this situation. In particular, <strong>sendmsg</strong> always tries to send the message out as a whole, that is, the message will 
 either to completely sent or it is not sent at all.</p>
-<p>In blocking mode (default), strong>sendmsg</strong> waits until there is enough space to hold the whole message. In non-blocking mode, <strong>sendmsg</strong> 
+<p>In blocking mode (default), <strong>sendmsg</strong></strong> waits until there is enough space to hold the whole message. In non-blocking mode, <strong>sendmsg</strong> 
 returns immediately and returns error if no buffer space available.</p>
 <p>If UDT_SNDTIMEO is set and the socket is in blocking mode, <strong>sendmsg</strong> only waits a limited time specified by UDT_SNDTIMEO option. If there is still 
 no buffer space available when the timer expires, zero will be returned. UDT_SNDTIMEO has no effect for non-blocking socket.</p>

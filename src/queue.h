@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2008, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 06/02/2008
+   Yunhong Gu, last updated 04/07/2010
 *****************************************************************************/
 
 
@@ -511,6 +511,8 @@ struct CMultiplexer
    int m_iMSS;			// Maximum Segment Size
    int m_iRefCount;		// number of UDT instances that are associated with this multiplexer
    bool m_bReusable;		// if this one can be shared with others
+
+   int m_iID;			// multiplexer ID
 };
 
 #endif

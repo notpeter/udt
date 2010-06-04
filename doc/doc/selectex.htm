@@ -54,10 +54,10 @@ returned. If there is any error, UDT::ERROR is returned and the specific error i
 </table>
 
 <h5>Description</h5>
-<p>This function <strong>seclectEx</strong> is an advanced version of <a href="select.htm">select</a>. In contrast to <a href="select.htm">select</a>, <strong>selectEx</strong> does not modify the input parameter <em>fds</em>, so that applications do not need to replicate or initialize it every time the function is called. </p>
+<p>This function <strong>selectEx</strong> is an advanced version of <a href="select.htm">select</a>. In contrast to <a href="select.htm">select</a>, <strong>selectEx</strong> does not modify the input parameter <em>fds</em>, so that applications do not need to replicate or initialize it every time the function is called. </p>
 <p>The new function only has one group of input socket descriptors. If a particular event check is not necessary, the corresponding output parameter can be set to NULL. For example, if the application does not care about if a socket is ready for send, the parameter <em>writefds</em> can be NULL. </p>
-<p>Finally, <strong>seclectEx</strong> specifies the absolute amount of time to wait, while  <a href="select.htm">select</a> requires a clock time in the future to wait until.</p>
-<p>Overall,  <strong>seclectEx</strong> is more convinient and more efficient. </p>
+<p>Finally, <strong>selectEx</strong> specifies the absolute amount of time to wait, while  <a href="select.htm">select</a> requires a clock time in the future to wait until.</p>
+<p>Overall,  <strong>selectEx</strong> is more convinient and more efficient. </p>
 <dl>
   <h5>See Also</h5>
   <p><strong><a href="select.htm">select</a></strong></p>

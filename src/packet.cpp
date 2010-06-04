@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 07/13/2009
+   Yunhong Gu, last updated 04/25/2010
 *****************************************************************************/
 
 
@@ -97,12 +97,13 @@ written by
 //              Control Info: The sequence number to which (but not include) all the previous packets have beed received
 //              Optional:     RTT
 //                            RTT Variance
+//                            available receiver buffer size (in bytes)
 //                            advertised flow window size (number of packets)
 //                            estimated bandwidth (number of packets per second)
 //      3: Negative Acknowledgement (NAK)
 //              Add. Info:    Undefined
 //              Control Info: Loss list (see loss list coding below)
-//      4: Congestion Warning
+//      4: Congestion/Delay Warning
 //              Add. Info:    Undefined
 //              Control Info: None
 //      5: Shutdown
@@ -144,6 +145,7 @@ written by
 
 
 const int CPacket::m_iPktHdrSize = 16;
+const int CHandShake::m_iContentSize = 48;
 
 
 // Set up the aliases in the constructure
@@ -332,4 +334,44 @@ CPacket* CPacket::clone() const
    pkt->m_PacketVector[1].iov_len = m_PacketVector[1].iov_len;
 
    return pkt;
+}
+
+int CHandShake::serialize(char* buf, const int& size)
+{
+   if (size < m_iContentSize)
+      return -1;
+
+   int32_t* p = (int32_t*)buf;
+   *p++ = m_iVersion;
+   *p++ = m_iType;
+   *p++ = m_iISN;
+   *p++ = m_iMSS;
+   *p++ = m_iFlightFlagSize;
+   *p++ = m_iReqType;
+   *p++ = m_iID;
+   *p++ = m_iCookie;
+   for (int i = 0; i < 4; ++ i)
+      *p++ = m_piPeerIP[i];
+
+   return 0;
+}
+
+int CHandShake::deserialize(const char* buf, const int& size)
+{
+   if (size < m_iContentSize)
+      return -1;
+
+   int32_t* p = (int32_t*)buf;
+   m_iVersion = *p++;
+   m_iType = *p++;
+   m_iISN = *p++;
+   m_iMSS = *p++;
+   m_iFlightFlagSize = *p++;
+   m_iReqType = *p++;
+   m_iID = *p++;
+   m_iCookie = *p++;
+   for (int i = 0; i < 4; ++ i)
+      m_piPeerIP[i] = *p++;
+
+   return 0;
 }

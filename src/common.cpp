@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 08/15/2009
+   Yunhong Gu, last updated 05/25/2010
 *****************************************************************************/
 
 
@@ -224,6 +224,11 @@ void CTimer::tick()
 
 uint64_t CTimer::getTime()
 {
+   //For Cygwin and other systems without microsecond level resolution, uncomment the following three lines
+   //uint64_t x;
+   //rdtsc(x);
+   //return x / s_ullCPUFrequency;
+
    #ifndef WIN32
       timeval t;
       gettimeofday(&t, 0);
@@ -539,7 +544,9 @@ const char* CUDTException::getErrorMessage()
    {
       m_strMsg += ": ";
       #ifndef WIN32
-         m_strMsg += strerror(m_iErrno);
+         char errmsg[1024];
+         if (strerror_r(m_iErrno, errmsg, 1024) == 0)
+            m_strMsg += errmsg;
       #else
          LPVOID lpMsgBuf;
          FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, m_iErrno, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);

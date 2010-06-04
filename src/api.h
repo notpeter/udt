@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/05/2009
+   Yunhong Gu, last updated 04/07/2010
 *****************************************************************************/
 
 #ifndef __UDT_API_H__
@@ -82,6 +82,8 @@ public:
    pthread_mutex_t m_AcceptLock;             // mutex associated to m_AcceptCond
 
    unsigned int m_uiBackLog;                 // maximum number of connections in queue
+
+   int m_iMuxID;                             // multiplexer ID
 
 private:
    CUDTSocket(const CUDTSocket&);
@@ -209,11 +211,11 @@ private:
 private:
    CUDTSocket* locate(const UDTSOCKET u);
    CUDTSocket* locate(const UDTSOCKET u, const sockaddr* peer, const UDTSOCKET& id, const int32_t& isn);
-   void updateMux(CUDT* u, const sockaddr* addr = NULL, const UDPSOCKET* = NULL);
-   void updateMux(CUDT* u, const CUDTSocket* ls);
+   void updateMux(CUDTSocket* s, const sockaddr* addr = NULL, const UDPSOCKET* = NULL);
+   void updateMux(CUDTSocket* s, const CUDTSocket* ls);
 
 private:
-   std::vector<CMultiplexer> m_vMultiplexer;		// UDP multiplexer
+   std::map<int, CMultiplexer> m_mMultiplexer;		// UDP multiplexer
    pthread_mutex_t m_MultiplexerLock;
 
 private:

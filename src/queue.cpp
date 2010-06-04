@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/05/2009
+   Yunhong Gu, last updated 05/21/2010
 *****************************************************************************/
 
 #ifdef WIN32
@@ -574,8 +574,6 @@ void CRcvUList::insert(const CUDT* u)
    CRNode* n = u->m_pRNode;
    CTimer::rdtsc(n->m_llTimeStamp);
 
-   n->m_bOnList = true;
-
    if (NULL == m_pUList)
    {
       // empty list, insert as the single node
@@ -621,8 +619,6 @@ void CRcvUList::remove(const CUDT* u)
    }
 
    n->m_pNext = n->m_pPrev = NULL;
-
-   n->m_bOnList = false;
 }
 
 void CRcvUList::update(const CUDT* u)
@@ -934,7 +930,7 @@ void CRcvQueue::init(const int& qsize, const int& payload, const int& version, c
       #endif
 
       // check waiting list, if new socket, insert it to the list
-      if (self->ifNewEntry())
+      while (self->ifNewEntry())
       {
          CUDT* ne = self->getNewEntry();
          if (NULL != ne)
@@ -1017,6 +1013,7 @@ TIMER_CHECK:
             // the socket must be removed from Hash table first, then RcvUList
             self->m_pHash->remove(u->m_SocketID);
             self->m_pRcvUList->remove(u);
+            u->m_pRNode->m_bOnList = false;
          }
 
          ul = self->m_pRcvUList->m_pUList;

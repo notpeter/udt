@@ -8,7 +8,7 @@ ifndef arch
    arch = IA32
 endif
 
-CCFLAGS = -Wall -D$(os) -I../src -O2 -finline-functions
+CCFLAGS = -Wall -D$(os) -I../src -finline-functions -O3
 
 ifeq ($(arch), IA32)
    CCFLAGS += -DIA32 #-mcpu=pentiumpro -march=pentiumpro -mmmx -msse
@@ -27,8 +27,6 @@ LDFLAGS = -L../src -ludt -lstdc++ -lpthread -lm
 ifeq ($(os), UNIX)
    LDFLAGS += -lsocket
 endif
-
-OBJS = appserver.o appclient.o sendfile.o recvfile.o
 
 DIR = $(shell pwd)
 

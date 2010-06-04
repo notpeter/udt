@@ -71,7 +71,7 @@ data unit in this situation. Each <strong>recvmsg</strong> will read no more tha
 are more messages available. On the other hand, if the <i>buf</i> is not enough to hold the first message, only part of the message will be copied into the buffer, 
 but the message will still be discarded after this <strong>recvmsg</strong> call.</p>
 <p>In blocking mode (default), <strong>recvmsg</strong> waits until there is a valid message received into the receiver buffer. In non-blocking mode, 
-strong>recvmsg</strong> returns immediately and returns error if no message available.</p>
+<strong>recvmsg</strong></strong> returns immediately and returns error if no message available.</p>
 <p>If UDT_RCVTIMEO is set and the socket is in blocking mode, <strong>recvmsg</strong> only waits a limited time specified by UDT_RCVTIMEO option. If there is still 
 no message available when the timer expires, zero will be returned. UDT_RCVTIMEO has no effect for non-blocking socket.</p>
 
