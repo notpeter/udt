@@ -1,5 +1,6 @@
 #ifndef WIN32
    #include <cstdlib>
+   #include <netdb.h>
 #else
    #include <winsock2.h>
    #include <ws2tcpip.h>
@@ -10,6 +11,12 @@
 #include <udt.h>
 
 using namespace std;
+
+#ifndef WIN32
+void* sendfile(void*);
+#else
+DWORD WINAPI sendfile(LPVOID);
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -50,20 +57,51 @@ int main(int argc, char* argv[])
 
    cout << "server is ready at port: " << port << endl;
 
-   UDT::listen(serv, 1);
+   UDT::listen(serv, 10);
 
-   sockaddr_in their_addr;
-   int namelen = sizeof(their_addr);
+   sockaddr_storage clientaddr;
+   int addrlen = sizeof(clientaddr);
 
    UDTSOCKET fhandle;
 
-   if (UDT::INVALID_SOCK == (fhandle = UDT::accept(serv, (sockaddr*)&their_addr, &namelen)))
+   while (true)
    {
-      cout << "accept: " << UDT::getlasterror().getErrorMessage() << endl;
-      return 0;
+      if (UDT::INVALID_SOCK == (fhandle = UDT::accept(serv, (sockaddr*)&clientaddr, &addrlen)))
+      {
+         cout << "accept: " << UDT::getlasterror().getErrorMessage() << endl;
+         return 0;
+      }
+
+      char clienthost[NI_MAXHOST];
+      char clientservice[NI_MAXSERV];
+      getnameinfo((sockaddr *)&clientaddr, addrlen, clienthost, sizeof(clienthost), clientservice, sizeof(clientservice), NI_NUMERICHOST|NI_NUMERICSERV);
+      cout << "new connection: " << clienthost << ":" << clientservice << endl;
+
+      #ifndef WIN32
+         pthread_t filethread;
+         pthread_create(&filethread, NULL, sendfile, new UDTSOCKET(fhandle));
+         pthread_detach(filethread);
+      #else
+         CreateThread(NULL, 0, sendfile, new UDTSOCKET(fhandle), 0, NULL);
+      #endif
    }
 
    UDT::close(serv);
+
+   // use this function to release the UDT library
+   UDT::cleanup();
+
+   return 1;
+}
+
+#ifndef WIN32
+void* sendfile(void* usocket)
+#else
+DWORD WINAPI sendfile(LPVOID usocket)
+#endif
+{
+   UDTSOCKET fhandle = *(UDTSOCKET*)usocket;
+   delete (UDTSOCKET*)usocket;
 
    // aquiring file name information from client
    char file[1024];
@@ -100,7 +138,8 @@ int main(int argc, char* argv[])
    UDT::perfmon(fhandle, &trace);
 
    // send the file
-   if (UDT::ERROR == UDT::sendfile(fhandle, ifs, 0, size))
+   int64_t offset = 0;
+   if (UDT::ERROR == UDT::sendfile(fhandle, ifs, offset, size))
    {
       cout << "sendfile: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
@@ -113,8 +152,9 @@ int main(int argc, char* argv[])
 
    ifs.close();
 
-   // use this function to release the UDT library
-   UDT::cleanup();
-
-   return 1;
+   #ifndef WIN32
+      return NULL;
+   #else
+      return 0;
+   #endif
 }

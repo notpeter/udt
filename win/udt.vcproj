@@ -148,6 +148,9 @@
 				RelativePath="..\src\core.cpp">
 			</File>
 			<File
+				RelativePath="..\src\epoll.cpp">
+			</File>
+			<File
 				RelativePath="..\src\list.cpp">
 			</File>
 			<File
@@ -186,6 +189,9 @@
 			</File>
 			<File
 				RelativePath="..\src\core.h">
+			</File>
+			<File
+				RelativePath="..\src\epoll.h">
 			</File>
 			<File
 				RelativePath="..\src\list.h">

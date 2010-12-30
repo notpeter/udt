@@ -155,6 +155,15 @@ public:
 
    static void waitForEvent();
 
+      // Functionality:
+      //    sleep for a short interval. exact sleep time does not matter
+      // Parameters:
+      //    None.
+      // Returned value:
+      //    None.
+
+   static void sleep();
+
 private:
    uint64_t m_ullSchedTime;             // next schedulled time
 
@@ -177,8 +186,15 @@ public:
    CGuard(pthread_mutex_t& lock);
    ~CGuard();
 
+public:
    static void enterCS(pthread_mutex_t& lock);
    static void leaveCS(pthread_mutex_t& lock);
+
+   static void createMutex(pthread_mutex_t& lock);
+   static void releaseMutex(pthread_mutex_t& lock);
+
+   static void createCond(pthread_cond_t& cond);
+   static void releaseCond(pthread_cond_t& cond);
 
 private:
    pthread_mutex_t& m_Mutex;            // Alias name of the mutex to be protected
@@ -203,13 +219,13 @@ private:
 class CSeqNo
 {
 public:
-   inline static const int seqcmp(const int32_t& seq1, const int32_t& seq2)
+   inline static int seqcmp(const int32_t& seq1, const int32_t& seq2)
    {return (abs(seq1 - seq2) < m_iSeqNoTH) ? (seq1 - seq2) : (seq2 - seq1);}
 
-   inline static const int seqlen(const int32_t& seq1, const int32_t& seq2)
+   inline static int seqlen(const int32_t& seq1, const int32_t& seq2)
    {return (seq1 <= seq2) ? (seq2 - seq1 + 1) : (seq2 - seq1 + m_iMaxSeqNo + 2);}
 
-   inline static const int seqoff(const int32_t& seq1, const int32_t& seq2)
+   inline static int seqoff(const int32_t& seq1, const int32_t& seq2)
    {
       if (abs(seq1 - seq2) < m_iSeqNoTH)
          return seq2 - seq1;
@@ -220,13 +236,13 @@ public:
       return seq2 - seq1 + m_iMaxSeqNo + 1;
    }
 
-   inline static const int32_t incseq(const int32_t seq)
+   inline static int32_t incseq(const int32_t seq)
    {return (seq == m_iMaxSeqNo) ? 0 : seq + 1;}
 
-   inline static const int32_t decseq(const int32_t& seq)
+   inline static int32_t decseq(const int32_t& seq)
    {return (seq == 0) ? m_iMaxSeqNo : seq - 1;}
 
-   inline static const int32_t incseq(const int32_t& seq, const int32_t& inc)
+   inline static int32_t incseq(const int32_t& seq, const int32_t& inc)
    {return (m_iMaxSeqNo - seq >= inc) ? seq + inc : seq - m_iMaxSeqNo + inc - 1;}
 
 public:
@@ -241,7 +257,7 @@ public:
 class CAckNo
 {
 public:
-   inline static const int32_t incack(const int32_t& ackno)
+   inline static int32_t incack(const int32_t& ackno)
    {return (ackno == m_iMaxAckSeqNo) ? 0 : ackno + 1;}
 
 public:
@@ -255,13 +271,13 @@ public:
 class CMsgNo
 {
 public:
-   inline static const int msgcmp(const int32_t& msgno1, const int32_t& msgno2)
+   inline static int msgcmp(const int32_t& msgno1, const int32_t& msgno2)
    {return (abs(msgno1 - msgno2) < m_iMsgNoTH) ? (msgno1 - msgno2) : (msgno2 - msgno1);}
 
-   inline static const int msglen(const int32_t& msgno1, const int32_t& msgno2)
+   inline static int msglen(const int32_t& msgno1, const int32_t& msgno2)
    {return (msgno1 <= msgno2) ? (msgno2 - msgno1 + 1) : (msgno2 - msgno1 + m_iMaxMsgNo + 2);}
 
-   inline static const int msgoff(const int32_t& msgno1, const int32_t& msgno2)
+   inline static int msgoff(const int32_t& msgno1, const int32_t& msgno2)
    {
       if (abs(msgno1 - msgno2) < m_iMsgNoTH)
          return msgno2 - msgno1;
@@ -272,7 +288,7 @@ public:
       return msgno2 - msgno1 + m_iMaxMsgNo + 1;
    }
 
-   inline static const int32_t incmsg(const int32_t& msgno)
+   inline static int32_t incmsg(const int32_t& msgno)
    {return (msgno == m_iMaxMsgNo) ? 0 : msgno + 1;}
 
 public:

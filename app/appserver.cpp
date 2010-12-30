@@ -54,13 +54,11 @@ int main(int argc, char* argv[])
 
    UDTSOCKET serv = UDT::socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
-
    // UDT Options
    //UDT::setsockopt(serv, 0, UDT_CC, new CCCFactory<CUDPBlast>, sizeof(CCCFactory<CUDPBlast>));
    //UDT::setsockopt(serv, 0, UDT_MSS, new int(9000), sizeof(int));
    //UDT::setsockopt(serv, 0, UDT_RCVBUF, new int(10000000), sizeof(int));
    //UDT::setsockopt(serv, 0, UDP_RCVBUF, new int(10000000), sizeof(int));
-
 
    if (UDT::ERROR == UDT::bind(serv, res->ai_addr, res->ai_addrlen))
    {
@@ -70,7 +68,6 @@ int main(int argc, char* argv[])
 
    freeaddrinfo(res);
 
-
    cout << "server is ready at port: " << service << endl;
 
    if (UDT::ERROR == UDT::listen(serv, 10))
@@ -78,7 +75,6 @@ int main(int argc, char* argv[])
       cout << "listen: " << UDT::getlasterror().getErrorMessage() << endl;
       return 0;
    }
-
 
    sockaddr_storage clientaddr;
    int addrlen = sizeof(clientaddr);

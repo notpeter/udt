@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 04/07/2010
+   Yunhong Gu, last updated 09/28/2010
 *****************************************************************************/
 
 #ifndef __UDT_API_H__
@@ -48,7 +48,7 @@ written by
 #include "packet.h"
 #include "queue.h"
 #include "cache.h"
-
+#include "epoll.h"
 
 class CUDT;
 
@@ -171,6 +171,13 @@ public:
    int getsockname(const UDTSOCKET u, sockaddr* name, int* namelen);
    int select(ud_set* readfds, ud_set* writefds, ud_set* exceptfds, const timeval* timeout);
    int selectEx(const std::vector<UDTSOCKET>& fds, std::vector<UDTSOCKET>* readfds, std::vector<UDTSOCKET>* writefds, std::vector<UDTSOCKET>* exceptfds, int64_t msTimeOut);
+   int epoll_create();
+   int epoll_add_usock(const int eid, const UDTSOCKET u, const int* events = NULL);
+   int epoll_add_ssock(const int eid, const SYSSOCKET s, const int* events = NULL);
+   int epoll_remove_usock(const int eid, const UDTSOCKET u, const int* events = NULL);
+   int epoll_remove_ssock(const int eid, const SYSSOCKET s, const int* events = NULL);
+   int epoll_wait(const int eid, std::set<UDTSOCKET>* readfds, std::set<UDTSOCKET>* writefds, int64_t msTimeOut, std::set<SYSSOCKET>* lrfds = NULL, std::set<SYSSOCKET>* lwfds = NULL);
+   int epoll_release(const int eid);
 
       // Functionality:
       //    record the UDT exception.
@@ -197,6 +204,8 @@ private:
 
    pthread_mutex_t m_IDLock;                         // used to synchronize ID generation
    UDTSOCKET m_SocketID;                             // seed to generate a new unique socket ID
+
+   std::map<int64_t, std::set<UDTSOCKET> > m_PeerRec;// record sockets from peers to avoid repeated connection request, int64_t = (socker_id << 30) + isn
 
 private:
    pthread_key_t m_TLSError;                         // thread local error record (last error)
@@ -227,6 +236,7 @@ private:
    pthread_cond_t m_GCStopCond;
 
    pthread_mutex_t m_InitLock;
+   int m_iInstanceCount;				// number of startup() called by application
    bool m_bGCStatus;					// if the GC thread is working (true)
 
    pthread_t m_GCThread;
@@ -240,6 +250,9 @@ private:
 
    void checkBrokenSockets();
    void removeSocket(const UDTSOCKET u);
+
+private:
+   CEPoll m_EPoll;                                     // handling epoll data structures and events
 
 private:
    CUDTUnited(const CUDTUnited&);

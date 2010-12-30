@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 01/07/2010
+   Yunhong Gu, last updated 12/14/2010
 *****************************************************************************/
 
 #ifndef __UDT_H__
@@ -106,11 +106,29 @@ written by
 
 typedef int UDTSOCKET;
 
+#ifndef WIN32
+   typedef int SYSSOCKET;
+#else
+   typedef SOCKET SYSSOCKET;
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+
 typedef std::set<UDTSOCKET> ud_set;
 #define UD_CLR(u, uset) ((uset)->erase(u))
 #define UD_ISSET(u, uset) ((uset)->find(u) != (uset)->end())
 #define UD_SET(u, uset) ((uset)->insert(u))
 #define UD_ZERO(uset) ((uset)->clear())
+
+enum EPOLLOpt
+{
+   // this values are defined same as linux epoll.h
+   // so that if system values are used by mistake, they should have the same effect
+   UDT_EPOLL_IN = 0x1,
+   UDT_EPOLL_OUT = 0x4,
+   UDT_EPOLL_ERR = 0x8
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -202,7 +220,7 @@ public:
       // Returned value:
       //    errno.
 
-   virtual const int getErrorCode() const;
+   virtual int getErrorCode() const;
 
       // Functionality:
       //    Clear the error code.
@@ -262,9 +280,11 @@ public: // Error Code
    static const int EDGRAMILL;
    static const int EDUPLISTEN;
    static const int ELARGEMSG;
+   static const int EINVPOLLID;
    static const int EASYNCFAIL;
    static const int EASYNCSND;
    static const int EASYNCRCV;
+   static const int EPEERERR;
    static const int EUNKNOWN;
 };
 
@@ -298,10 +318,17 @@ UDT_API int send(UDTSOCKET u, const char* buf, int len, int flags);
 UDT_API int recv(UDTSOCKET u, char* buf, int len, int flags);
 UDT_API int sendmsg(UDTSOCKET u, const char* buf, int len, int ttl = -1, bool inorder = false);
 UDT_API int recvmsg(UDTSOCKET u, char* buf, int len);
-UDT_API int64_t sendfile(UDTSOCKET u, std::fstream& ifs, int64_t offset, int64_t size, int block = 364000);
-UDT_API int64_t recvfile(UDTSOCKET u, std::fstream& ofs, int64_t offset, int64_t size, int block = 7280000);
+UDT_API int64_t sendfile(UDTSOCKET u, std::fstream& ifs, int64_t& offset, int64_t size, int block = 364000);
+UDT_API int64_t recvfile(UDTSOCKET u, std::fstream& ofs, int64_t& offset, int64_t size, int block = 7280000);
 UDT_API int select(int nfds, UDSET* readfds, UDSET* writefds, UDSET* exceptfds, const struct timeval* timeout);
 UDT_API int selectEx(const std::vector<UDTSOCKET>& fds, std::vector<UDTSOCKET>* readfds, std::vector<UDTSOCKET>* writefds, std::vector<UDTSOCKET>* exceptfds, int64_t msTimeOut);
+UDT_API int epoll_create();
+UDT_API int epoll_add_usock(const int eid, const UDTSOCKET u, const int* events = NULL);
+UDT_API int epoll_add_ssock(const int eid, const SYSSOCKET s, const int* events = NULL);
+UDT_API int epoll_remove_usock(const int eid, const UDTSOCKET u, const int* events = NULL);
+UDT_API int epoll_remove_ssock(const int eid, const SYSSOCKET s, const int* events = NULL);
+UDT_API int epoll_wait(const int eid, std::set<UDTSOCKET>* readfds, std::set<UDTSOCKET>* writefds, int64_t msTimeOut, std::set<SYSSOCKET>* lrfds = NULL, std::set<SYSSOCKET>* wrfds = NULL);
+UDT_API int epoll_release(const int eid);
 UDT_API ERRORINFO& getlasterror();
 UDT_API int perfmon(UDTSOCKET u, TRACEINFO* perf, bool clear = true);
 }

@@ -30,7 +30,9 @@ endif
 
 DIR = $(shell pwd)
 
-all: appserver appclient sendfile recvfile
+APP = appserver appclient sendfile recvfile test
+
+all: $(APP)
 
 %.o: %.cpp
 	$(C++) $(CCFLAGS) $< -c
@@ -43,10 +45,11 @@ sendfile: sendfile.o
 	$(C++) $^ -o $@ $(LDFLAGS)
 recvfile: recvfile.o
 	$(C++) $^ -o $@ $(LDFLAGS)
+test: test.o
+	$(C++) $^ -o $@ $(LDFLAGS)
 
 clean:
-	rm -f *.o
-	rm -f appserver appclient sendfile recvfile
+	rm -f *.o $(APP)
 
 install:
 	export PATH=$(DIR):$$PATH

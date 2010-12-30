@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 04/25/2010
+   Yunhong Gu, last updated 12/14/2010
 *****************************************************************************/
 
 
@@ -116,6 +116,9 @@ written by
 //              Add. Info:    Message ID
 //              Control Info: first sequence number of the message
 //                            last seqeunce number of the message
+//      8: Error Signal from the Peer Side
+//              Add. Info:    Error code
+//              Control Info: None
 //      0x7FFF: Explained by bits 16 - 31
 //              
 //   bit 16 - 31:
@@ -157,8 +160,12 @@ m_iID((int32_t&)(m_nHeader[3])),
 m_pcData((char*&)(m_PacketVector[1].iov_base)),
 __pad()
 {
+   for (int i = 0; i < 4; ++ i)
+      m_nHeader[i] = 0;
    m_PacketVector[0].iov_base = (char *)m_nHeader;
    m_PacketVector[0].iov_len = CPacket::m_iPktHdrSize;
+   m_PacketVector[1].iov_base = NULL;
+   m_PacketVector[1].iov_len = 0;
 }
 
 CPacket::~CPacket()
@@ -254,6 +261,15 @@ void CPacket::pack(const int& pkttype, void* lparam, void* rparam, const int& si
 
       break;
 
+   case 8: //1000 - Error Signal from the Peer Side
+      // Error type
+      m_nHeader[1] = *(int32_t *)lparam;
+
+      // control info field should be none
+      // but "writev" does not allow this
+      m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
+      m_PacketVector[1].iov_len = 4; //0;
+
    case 32767: //0x7FFF - Reserved for user defined control packets
       // for extended control packet
       // "lparam" contains the extended type information for bit 16 - 31
@@ -334,6 +350,19 @@ CPacket* CPacket::clone() const
    pkt->m_PacketVector[1].iov_len = m_PacketVector[1].iov_len;
 
    return pkt;
+}
+
+CHandShake::CHandShake():
+m_iVersion(0),
+m_iType(0),
+m_iISN(0),
+m_iMSS(0),
+m_iFlightFlagSize(0),
+m_iReqType(0),
+m_iID(0),
+m_iCookie(0),
+m_piPeerIP()
+{
 }
 
 int CHandShake::serialize(char* buf, const int& size)

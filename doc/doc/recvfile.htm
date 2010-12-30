@@ -15,7 +15,7 @@
 <div class="code">int64_t recvfile(<br />
 &nbsp; UDTSOCKET <font color="#FFFFFF">u</font>,<br />
 &nbsp; fstream& <font color="#FFFFFF">ofs</font>,<br />
-&nbsp; int64_t <font color="#FFFFFF">offset</font>,<br />
+&nbsp; int64_t&amp; <font color="#FFFFFF">offset</font>,<br />
 &nbsp; int64_t <font color="#FFFFFF">size</font>,<br />
 &nbsp; int <font color="#FFFFFF">block</font> = 366000<br />
 );</div>
@@ -27,7 +27,7 @@
   <dt><em>ofs</em></dt>
   <dd>[in] C++ fstream descriptor for the file to store incoming data.</dd>
   <dt><em>offset</em></dt>
-  <dd>[in] The offset position from where the data is written into the file.</dd>
+  <dd>[in, out] The offset position from where the data is written into the file; after the call returns, this value records the new offset of the write position. </dd>
   <dt><em>size</em></dt>
   <dd>[in] The total size to be received.</dd>
   <dt><em>block</em></dt>
@@ -72,8 +72,7 @@ href="error.htm">getlasterror</a>.</p>
 </table>
 
 <h5>Description</h5>
-<p>The <strong>recvfile</strong> method reads certain amount of data and write it into a local file. It is always in blocking mode and will not return until the exact amount of data is 
-received, file handler is bad (e.g., no disk space), or the connection is broken. Neither UDT_RCVSYN nor UDT_RCVTIMEO affects this method. The actual size of data to expect must be known before calling recvfile, otherwise deadlock may occur due to insufficient incoming data.</p>
+<p>The <strong>recvfile</strong> method reads certain amount of data and write it into a local file. It is always in blocking mode and neither UDT_RCVSYN nor UDT_RCVTIMEO affects this method. The actual size of data to expect must be known before calling recvfile, otherwise deadlock may occur due to insufficient incoming data.</p>
 <h5>See Also</h5>
 <p><strong><a href="send.htm">send</a>, <a href="sendfile.htm">sendfile</a>, <a href="recv.htm">recv</a></strong></p>
 <p>&nbsp;</p>
