@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,19 +35,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 08/06/2010
+   Yunhong Gu, last updated 01/12/2011
 *****************************************************************************/
 
 
 #ifndef __UDT_QUEUE_H__
 #define __UDT_QUEUE_H__
 
+#include "channel.h"
 #include "common.h"
 #include "packet.h"
-#include "channel.h"
-#include <vector>
+#include <list>
 #include <map>
 #include <queue>
+#include <vector>
 
 class CUDT;
 
@@ -344,18 +345,22 @@ public:
    ~CRendezvousQueue();
 
 public:
-   void insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr);
+   void insert(const UDTSOCKET& id, CUDT* u, const int& ipv, const sockaddr* addr, const uint64_t& ttl);
    void remove(const UDTSOCKET& id);
-   bool retrieve(const sockaddr* addr, UDTSOCKET& id);
+   CUDT* retrieve(const sockaddr* addr, UDTSOCKET& id);
+
+   void updateConnStatus();
 
 private:
    struct CRL
    {
-      UDTSOCKET m_iID;
-      int m_iIPversion;
-      sockaddr* m_pPeerAddr;
+      UDTSOCKET m_iID;			// UDT socket ID (self)
+      CUDT* m_pUDT;			// UDT instance
+      int m_iIPversion;                 // IP version
+      sockaddr* m_pPeerAddr;		// UDT sonnection peer address
+      uint64_t m_ullTTL;			// the time that this request expires
    };
-   std::vector<CRL> m_vRendezvousID;         // The sockets currently in rendezvous mode
+   std::list<CRL> m_lRendezvousID;      // The sockets currently in rendezvous mode
 
    pthread_mutex_t m_RIDVectorLock;
 };
@@ -476,6 +481,9 @@ private:
 private:
    int setListener(const CUDT* u);
    void removeListener(const CUDT* u);
+
+   void registerConnector(const UDTSOCKET& id, CUDT* u, const int& ipv, const sockaddr* addr, const uint64_t& ttl);
+   void removeConnector(const UDTSOCKET& id);
 
    void setNewEntry(CUDT* u);
    bool ifNewEntry();

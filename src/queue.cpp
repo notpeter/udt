@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 08/06/2010
+   Yunhong Gu, last updated 05/05/2011
 *****************************************************************************/
 
 #ifdef WIN32
@@ -45,11 +45,11 @@ written by
       #include <wspiapi.h>
    #endif
 #endif
-
 #include <cstring>
+
 #include "common.h"
-#include "queue.h"
 #include "core.h"
+#include "queue.h"
 
 using namespace std;
 
@@ -310,6 +310,12 @@ int CSndUList::pop(sockaddr*& addr, CPacket& pkt)
    if (-1 == m_iLastEntry)
       return -1;
 
+   // no pop until the next schedulled time
+   uint64_t ts;
+   CTimer::rdtsc(ts);
+   if (ts < m_pHeap[0]->m_llTimeStamp)
+      return -1;
+
    CUDT* u = m_pHeap[0]->m_pUDT;
    remove_(u);
 
@@ -317,7 +323,6 @@ int CSndUList::pop(sockaddr*& addr, CPacket& pkt)
       return -1;
 
    // pack a packet from the socket
-   uint64_t ts;
    if (u->packData(pkt, ts) <= 0)
       return -1;
 
@@ -378,6 +383,10 @@ void CSndUList::insert_(const int64_t& ts, const CUDT* u)
 
    n->m_iHeapLoc = q;
 
+   // an earlier event has been inserted, wake up sending worker
+   if (n->m_iHeapLoc == 0)
+      m_pTimer->interrupt();
+
    // first entry, activate the sending queue
    if (0 == m_iLastEntry)
    {
@@ -426,6 +435,10 @@ void CSndUList::remove_(const CUDT* u)
 
       n->m_iHeapLoc = -1;
    }
+
+   // the only event has been deleted, wake up immediately
+   if (0 == m_iLastEntry)
+      m_pTimer->interrupt();
 }
 
 //
@@ -517,7 +530,7 @@ void CSndQueue::init(const CChannel* c, const CTimer* t)
          if (currtime < ts)
             self->m_pTimer->sleepto(ts);
 
-         // it is time to process it, pop it out/remove from the list
+         // it is time to send the next pkt
          sockaddr* addr;
          CPacket pkt;
          if (self->m_pSndUList->pop(addr, pkt) < 0)
@@ -735,7 +748,7 @@ void CHash::remove(const int32_t& id)
 
 //
 CRendezvousQueue::CRendezvousQueue():
-m_vRendezvousID(),
+m_lRendezvousID(),
 m_RIDVectorLock()
 {
    #ifndef WIN32
@@ -753,7 +766,7 @@ CRendezvousQueue::~CRendezvousQueue()
       CloseHandle(m_RIDVectorLock);
    #endif
 
-   for (vector<CRL>::iterator i = m_vRendezvousID.begin(); i != m_vRendezvousID.end(); ++ i)
+   for (list<CRL>::iterator i = m_lRendezvousID.begin(); i != m_lRendezvousID.end(); ++ i)
    {
       if (AF_INET == i->m_iIPversion)
          delete (sockaddr_in*)i->m_pPeerAddr;
@@ -761,27 +774,30 @@ CRendezvousQueue::~CRendezvousQueue()
          delete (sockaddr_in6*)i->m_pPeerAddr;
    }
 
-   m_vRendezvousID.clear();
+   m_lRendezvousID.clear();
 }
 
-void CRendezvousQueue::insert(const UDTSOCKET& id, const int& ipv, const sockaddr* addr)
+void CRendezvousQueue::insert(const UDTSOCKET& id, CUDT* u, const int& ipv, const sockaddr* addr, const uint64_t& ttl)
 {
    CGuard vg(m_RIDVectorLock);
 
    CRL r;
    r.m_iID = id;
+   r.m_pUDT = u;
    r.m_iIPversion = ipv;
    r.m_pPeerAddr = (AF_INET == ipv) ? (sockaddr*)new sockaddr_in : (sockaddr*)new sockaddr_in6;
    memcpy(r.m_pPeerAddr, addr, (AF_INET == ipv) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6));
+   r.m_ullTTL = ttl;
 
-   m_vRendezvousID.insert(m_vRendezvousID.end(), r);
+   m_lRendezvousID.push_back(r);
 }
 
 void CRendezvousQueue::remove(const UDTSOCKET& id)
 {
    CGuard vg(m_RIDVectorLock);
 
-   for (vector<CRL>::iterator i = m_vRendezvousID.begin(); i != m_vRendezvousID.end(); ++ i)
+   for (list<CRL>::iterator i = m_lRendezvousID.begin(); i != m_lRendezvousID.end(); ++ i)
+   {
       if (i->m_iID == id)
       {
          if (AF_INET == i->m_iIPversion)
@@ -789,28 +805,64 @@ void CRendezvousQueue::remove(const UDTSOCKET& id)
          else
             delete (sockaddr_in6*)i->m_pPeerAddr;
 
-         m_vRendezvousID.erase(i);
+         m_lRendezvousID.erase(i);
 
          return;
       }
+   }
 }
 
-bool CRendezvousQueue::retrieve(const sockaddr* addr, UDTSOCKET& id)
+CUDT* CRendezvousQueue::retrieve(const sockaddr* addr, UDTSOCKET& id)
 {
    CGuard vg(m_RIDVectorLock);
 
-   for (vector<CRL>::iterator i = m_vRendezvousID.begin(); i != m_vRendezvousID.end(); ++ i)
+   // TODO: optimize search
+   for (list<CRL>::iterator i = m_lRendezvousID.begin(); i != m_lRendezvousID.end(); ++ i)
    {
       if (CIPAddress::ipcmp(addr, i->m_pPeerAddr, i->m_iIPversion) && ((0 == id) || (id == i->m_iID)))
       {
          id = i->m_iID;
-         return true;
+         return i->m_pUDT;
       }
    }
 
-   return false;
+   return NULL;
 }
 
+void CRendezvousQueue::updateConnStatus()
+{
+   if (m_lRendezvousID.empty())
+      return;
+
+   CGuard vg(m_RIDVectorLock);
+
+   for (list<CRL>::iterator i = m_lRendezvousID.begin(); i != m_lRendezvousID.end(); ++ i)
+   {
+      // avoid sending too many requests, at most 1 request per 250ms
+      if (CTimer::getTime() - i->m_pUDT->m_llLastReqTime > 250000)
+      {
+         if (CTimer::getTime() >= i->m_ullTTL)
+         {
+            // connection timer expired, acknowledge app via epoll (UDT send will return error so that apps know this connection has failed)
+            i->m_pUDT->m_bConnecting = false;
+            CUDT::s_UDTUnited.m_EPoll.enable_write(i->m_iID, i->m_pUDT->m_sPollID);
+            continue;
+         }
+
+         CPacket request;
+         char* reqdata = new char [i->m_pUDT->m_iPayloadSize];
+         request.pack(0, NULL, reqdata, i->m_pUDT->m_iPayloadSize);
+         // ID = 0, connection request
+         request.m_iID = !i->m_pUDT->m_bRendezvous ? 0 : i->m_pUDT->m_ConnRes.m_iID;
+         int hs_size = i->m_pUDT->m_iPayloadSize;
+         i->m_pUDT->m_ConnReq.serialize(reqdata, hs_size);
+         request.setLength(hs_size);
+         i->m_pUDT->m_pSndQueue->sendto(i->m_pPeerAddr, request);
+         i->m_pUDT->m_llLastReqTime = CTimer::getTime();
+         delete [] reqdata;
+      }
+   }
+}
 
 //
 CRcvQueue::CRcvQueue():
@@ -873,7 +925,7 @@ CRcvQueue::~CRcvQueue()
    delete m_pRendezvousQueue;
 
    // remove all queued messages
-   for (map<int32_t, queue<CPacket*> >::iterator i = m_mBuffer.begin(); i != m_mBuffer.end(); ++ i)
+   for (map<int32_t, std::queue<CPacket*> >::iterator i = m_mBuffer.begin(); i != m_mBuffer.end(); ++ i)
    {
       while (!i->second.empty())
       {
@@ -958,8 +1010,8 @@ void CRcvQueue::init(const int& qsize, const int& payload, const int& version, c
 
       unit->m_Packet.setLength(self->m_iPayloadSize);
 
-      // reading next incoming packet
-      if (self->m_pChannel->recvfrom(addr, unit->m_Packet) <= 0)
+      // reading next incoming packet, recvfrom returns -1 is nothing has been received
+      if (self->m_pChannel->recvfrom(addr, unit->m_Packet) < 0)
          goto TIMER_CHECK;
 
       id = unit->m_Packet.m_iID;
@@ -969,8 +1021,15 @@ void CRcvQueue::init(const int& qsize, const int& payload, const int& version, c
       {
          if (NULL != self->m_pListener)
             ((CUDT*)self->m_pListener)->listen(addr, unit->m_Packet);
-         else if (self->m_pRendezvousQueue->retrieve(addr, id))
-            self->storePkt(id, unit->m_Packet.clone());
+         else if (NULL != (u = self->m_pRendezvousQueue->retrieve(addr, id)))
+         {
+            // asynchronous connect: call connect here
+            // otherwise wait for the UDT socket to retrieve this packet
+            if (!u->m_bSynRecving)
+               u->connect(unit->m_Packet);
+            else
+               self->storePkt(id, unit->m_Packet.clone());
+         }
       }
       else if (id > 0)
       {
@@ -990,18 +1049,23 @@ void CRcvQueue::init(const int& qsize, const int& payload, const int& version, c
                }
             }
          }
-         else if (self->m_pRendezvousQueue->retrieve(addr, id))
-            self->storePkt(id, unit->m_Packet.clone());
+         else if (NULL != (u = self->m_pRendezvousQueue->retrieve(addr, id)))
+         {
+            if (!u->m_bSynRecving)
+               u->connect(unit->m_Packet);
+            else
+               self->storePkt(id, unit->m_Packet.clone());
+         }
       }
 
 TIMER_CHECK:
       // take care of the timing event for all UDT sockets
 
-      CRNode* ul = self->m_pRcvUList->m_pUList;
       uint64_t currtime;
       CTimer::rdtsc(currtime);
-      uint64_t ctime = currtime - 100000 * CTimer::getCPUFrequency();
 
+      CRNode* ul = self->m_pRcvUList->m_pUList;
+      uint64_t ctime = currtime - 100000 * CTimer::getCPUFrequency();
       while ((NULL != ul) && (ul->m_llTimeStamp < ctime))
       {
          CUDT* u = ul->m_pUDT;
@@ -1021,6 +1085,9 @@ TIMER_CHECK:
 
          ul = self->m_pRcvUList->m_pUList;
       }
+
+      // Check connection requests status for all sockets in the RendezvousQueue.
+      self->m_pRendezvousQueue->updateConnStatus();
    }
 
    if (AF_INET == self->m_UnitQueue.m_iIPversion)
@@ -1040,7 +1107,7 @@ int CRcvQueue::recvfrom(const int32_t& id, CPacket& packet)
 {
    CGuard bufferlock(m_PassLock);
 
-   map<int32_t, queue<CPacket*> >::iterator i = m_mBuffer.find(id);
+   map<int32_t, std::queue<CPacket*> >::iterator i = m_mBuffer.find(id);
 
    if (i == m_mBuffer.end())
    {
@@ -1100,7 +1167,7 @@ int CRcvQueue::setListener(const CUDT* u)
       return -1;
 
    m_pListener = (CUDT*)u;
-   return 1;
+   return 0;
 }
 
 void CRcvQueue::removeListener(const CUDT* u)
@@ -1111,10 +1178,34 @@ void CRcvQueue::removeListener(const CUDT* u)
       m_pListener = NULL;
 }
 
+void CRcvQueue::registerConnector(const UDTSOCKET& id, CUDT* u, const int& ipv, const sockaddr* addr, const uint64_t& ttl)
+{
+   m_pRendezvousQueue->insert(id, u, ipv, addr, ttl);
+}
+
+void CRcvQueue::removeConnector(const UDTSOCKET& id)
+{
+   m_pRendezvousQueue->remove(id);
+
+   CGuard bufferlock(m_PassLock);
+
+   map<int32_t, std::queue<CPacket*> >::iterator i = m_mBuffer.find(id);
+   if (i != m_mBuffer.end())
+   {
+      while (!i->second.empty())
+      {
+         delete [] i->second.front()->m_pcData;
+         delete i->second.front();
+         i->second.pop();
+      }
+      m_mBuffer.erase(i);
+   }
+}
+
 void CRcvQueue::setNewEntry(CUDT* u)
 {
    CGuard listguard(m_IDLock);
-   m_vNewEntry.insert(m_vNewEntry.end(), u);
+   m_vNewEntry.push_back(u);
 }
 
 bool CRcvQueue::ifNewEntry()
@@ -1139,7 +1230,7 @@ void CRcvQueue::storePkt(const int32_t& id, CPacket* pkt)
 {
    CGuard bufferlock(m_PassLock);   
 
-   map<int32_t, queue<CPacket*> >::iterator i = m_mBuffer.find(id);
+   map<int32_t, std::queue<CPacket*> >::iterator i = m_mBuffer.find(id);
 
    if (i == m_mBuffer.end())
    {

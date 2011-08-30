@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 12/14/2010
+   Yunhong Gu, last updated 02/12/2011
 *****************************************************************************/
 
 
@@ -270,6 +270,8 @@ void CPacket::pack(const int& pkttype, void* lparam, void* rparam, const int& si
       m_PacketVector[1].iov_base = (char *)&__pad; //NULL;
       m_PacketVector[1].iov_len = 4; //0;
 
+      break;
+
    case 32767: //0x7FFF - Reserved for user defined control packets
       // for extended control packet
       // "lparam" contains the extended type information for bit 16 - 31
@@ -360,12 +362,13 @@ m_iMSS(0),
 m_iFlightFlagSize(0),
 m_iReqType(0),
 m_iID(0),
-m_iCookie(0),
-m_piPeerIP()
+m_iCookie(0)
 {
+   for (int i = 0; i < 4; ++ i)
+      m_piPeerIP[i] = 0;
 }
 
-int CHandShake::serialize(char* buf, const int& size)
+int CHandShake::serialize(char* buf, int& size)
 {
    if (size < m_iContentSize)
       return -1;
@@ -381,6 +384,8 @@ int CHandShake::serialize(char* buf, const int& size)
    *p++ = m_iCookie;
    for (int i = 0; i < 4; ++ i)
       *p++ = m_piPeerIP[i];
+
+   size = m_iContentSize;
 
    return 0;
 }

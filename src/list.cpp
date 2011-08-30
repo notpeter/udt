@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/05/2009
+   Yunhong Gu, last updated 01/22/2011
 *****************************************************************************/
 
 #include "list.h"
@@ -427,8 +427,7 @@ m_piPrior(NULL),
 m_iHead(-1),
 m_iTail(-1),
 m_iLength(0),
-m_iSize(size),
-m_TimeStamp()
+m_iSize(size)
 {
    m_piData1 = new int32_t [m_iSize];
    m_piData2 = new int32_t [m_iSize];
@@ -441,8 +440,6 @@ m_TimeStamp()
       m_piData1[i] = -1;
       m_piData2[i] = -1;
    }
-
-   m_TimeStamp = CTimer::getTime();
 }
 
 CRcvLossList::~CRcvLossList()
@@ -455,8 +452,6 @@ CRcvLossList::~CRcvLossList()
 
 void CRcvLossList::insert(const int32_t& seqno1, const int32_t& seqno2)
 {
-   m_TimeStamp = CTimer::getTime();
-
    // Data to be inserted must be larger than all those in the list
    // guaranteed by the UDT receiver
 
@@ -505,8 +500,6 @@ void CRcvLossList::insert(const int32_t& seqno1, const int32_t& seqno2)
 
 bool CRcvLossList::remove(const int32_t& seqno)
 {
-   m_TimeStamp = CTimer::getTime();
-
    if (0 == m_iLength)
       return false; 
 
@@ -686,13 +679,9 @@ int CRcvLossList::getFirstLostSeq() const
    return m_piData1[m_iHead];
 }
 
-void CRcvLossList::getLossArray(int32_t* array, int& len, const int& limit, const int& threshold)
+void CRcvLossList::getLossArray(int32_t* array, int& len, const int& limit)
 {
    len = 0;
-
-   // do not feedback NAK unless no retransmission is received within a certain interval
-   if (int(CTimer::getTime() - m_TimeStamp) < threshold)
-      return;
 
    int i = m_iHead;
 
@@ -711,6 +700,4 @@ void CRcvLossList::getLossArray(int32_t* array, int& len, const int& limit, cons
 
       i = m_piNext[i];
    }
-
-   m_TimeStamp = CTimer::getTime();
 }

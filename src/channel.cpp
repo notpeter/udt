@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /****************************************************************************
 written by
-   Yunhong Gu, last updated 09/13/2008
+   Yunhong Gu, last updated 01/27/2011
 *****************************************************************************/
 
 #ifndef WIN32
@@ -69,6 +69,7 @@ written by
 
 CChannel::CChannel():
 m_iIPversion(AF_INET),
+m_iSockAddrSize(sizeof(sockaddr_in)),
 m_iSocket(),
 m_iSndBufSize(65536),
 m_iRcvBufSize(65536)
@@ -81,6 +82,7 @@ m_iSocket(),
 m_iSndBufSize(65536),
 m_iRcvBufSize(65536)
 {
+   m_iSockAddrSize = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
 }
 
 CChannel::~CChannel()
@@ -101,7 +103,7 @@ void CChannel::open(const sockaddr* addr)
 
    if (NULL != addr)
    {
-      socklen_t namelen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+      socklen_t namelen = m_iSockAddrSize;
 
       if (0 != bind(m_iSocket, addr, namelen))
          throw CUDTException(1, 3, NET_ERROR);
@@ -218,14 +220,14 @@ void CChannel::setRcvBufSize(const int& size)
 
 void CChannel::getSockAddr(sockaddr* addr) const
 {
-   socklen_t namelen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+   socklen_t namelen = m_iSockAddrSize;
 
    getsockname(m_iSocket, addr, &namelen);
 }
 
 void CChannel::getPeerAddr(sockaddr* addr) const
 {
-   socklen_t namelen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+   socklen_t namelen = m_iSockAddrSize;
 
    getpeername(m_iSocket, addr, &namelen);
 }
@@ -250,7 +252,7 @@ int CChannel::sendto(const sockaddr* addr, CPacket& packet) const
    #ifndef WIN32
       msghdr mh;
       mh.msg_name = (sockaddr*)addr;
-      mh.msg_namelen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+      mh.msg_namelen = m_iSockAddrSize;
       mh.msg_iov = (iovec*)packet.m_PacketVector;
       mh.msg_iovlen = 2;
       mh.msg_control = NULL;
@@ -260,7 +262,7 @@ int CChannel::sendto(const sockaddr* addr, CPacket& packet) const
       int res = sendmsg(m_iSocket, &mh, 0);
    #else
       DWORD size = CPacket::m_iPktHdrSize + packet.getLength();
-      int addrsize = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+      int addrsize = m_iSockAddrSize;
       int res = WSASendTo(m_iSocket, (LPWSABUF)packet.m_PacketVector, 2, &size, 0, addr, addrsize, NULL, NULL);
       res = (0 == res) ? size : -1;
    #endif
@@ -276,8 +278,10 @@ int CChannel::sendto(const sockaddr* addr, CPacket& packet) const
    }
 
    if (packet.getFlag())
+   {
       for (int l = 0, n = packet.getLength() / 4; l < n; ++ l)
          *((uint32_t *)packet.m_pcData + l) = ntohl(*((uint32_t *)packet.m_pcData + l));
+   }
 
    return res;
 }
@@ -287,7 +291,7 @@ int CChannel::recvfrom(sockaddr* addr, CPacket& packet) const
    #ifndef WIN32
       msghdr mh;   
       mh.msg_name = addr;
-      mh.msg_namelen = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+      mh.msg_namelen = m_iSockAddrSize;
       mh.msg_iov = packet.m_PacketVector;
       mh.msg_iovlen = 2;
       mh.msg_control = NULL;
@@ -308,7 +312,7 @@ int CChannel::recvfrom(sockaddr* addr, CPacket& packet) const
    #else
       DWORD size = CPacket::m_iPktHdrSize + packet.getLength();
       DWORD flag = 0;
-      int addrsize = (AF_INET == m_iIPversion) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+      int addrsize = m_iSockAddrSize;
 
       int res = WSARecvFrom(m_iSocket, (LPWSABUF)packet.m_PacketVector, 2, &size, &flag, addr, &addrsize, NULL, NULL);
       res = (0 == res) ? size : -1;
@@ -333,8 +337,10 @@ int CChannel::recvfrom(sockaddr* addr, CPacket& packet) const
    }
 
    if (packet.getFlag())
+   {
       for (int j = 0, n = packet.getLength() / 4; j < n; ++ j)
          *((uint32_t *)packet.m_pcData + j) = ntohl(*((uint32_t *)packet.m_pcData + j));
+   }
 
    return packet.getLength();
 }

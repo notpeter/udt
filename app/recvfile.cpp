@@ -1,5 +1,6 @@
 #ifndef WIN32
    #include <arpa/inet.h>
+   #include <netdb.h>
 #else
    #include <winsock2.h>
    #include <ws2tcpip.h>
@@ -17,33 +18,36 @@ int main(int argc, char* argv[])
    if ((argc != 5) || (0 == atoi(argv[2])))
    {
       cout << "usage: recvfile server_ip server_port remote_filename local_filename" << endl;
-      return 0;
+      return -1;
    }
 
    // use this function to initialize the UDT library
    UDT::startup();
 
-   UDTSOCKET fhandle = UDT::socket(AF_INET, SOCK_STREAM, 0);
+   struct addrinfo hints, *peer;
 
-   sockaddr_in serv_addr;
-   serv_addr.sin_family = AF_INET;
-   serv_addr.sin_port = htons(short(atoi(argv[2])));
-#ifndef WIN32
-   if (inet_pton(AF_INET, argv[1], &serv_addr.sin_addr) <= 0)
-#else
-   if (INADDR_NONE == (serv_addr.sin_addr.s_addr = inet_addr(argv[1])))
-#endif
+   memset(&hints, 0, sizeof(struct addrinfo));
+   hints.ai_flags = AI_PASSIVE;
+   hints.ai_family = AF_INET;
+   hints.ai_socktype = SOCK_STREAM;
+
+   UDTSOCKET fhandle = UDT::socket(hints.ai_family, hints.ai_socktype, hints.ai_protocol);
+
+   if (0 != getaddrinfo(argv[1], argv[2], &hints, &peer))
    {
-      cout << "incorrect network address.\n";
-      return 0;
+      cout << "incorrect server/peer address. " << argv[1] << ":" << argv[2] << endl;
+      return -1;
    }
-   memset(&(serv_addr.sin_zero), '\0', 8);
 
-   if (UDT::ERROR == UDT::connect(fhandle, (sockaddr*)&serv_addr, sizeof(serv_addr)))
+   // connect to the server, implict bind
+   if (UDT::ERROR == UDT::connect(fhandle, peer->ai_addr, peer->ai_addrlen))
    {
       cout << "connect: " << UDT::getlasterror().getErrorMessage() << endl;
-      return 0;
+      return -1;
    }
+
+   freeaddrinfo(peer);
+
 
    // send name information of the requested file
    int len = strlen(argv[3]);
@@ -51,13 +55,13 @@ int main(int argc, char* argv[])
    if (UDT::ERROR == UDT::send(fhandle, (char*)&len, sizeof(int), 0))
    {
       cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
-      return 0;
+      return -1;
    }
 
    if (UDT::ERROR == UDT::send(fhandle, argv[3], len, 0))
    {
       cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
-      return 0;
+      return -1;
    }
 
    // get size information
@@ -66,7 +70,13 @@ int main(int argc, char* argv[])
    if (UDT::ERROR == UDT::recv(fhandle, (char*)&size, sizeof(int64_t), 0))
    {
       cout << "send: " << UDT::getlasterror().getErrorMessage() << endl;
-      return 0;
+      return -1;
+   }
+
+   if (size < 0)
+   {
+      cout << "no such file " << argv[3] << " on the server\n";
+      return -1;
    }
 
    // receive the file
@@ -77,7 +87,7 @@ int main(int argc, char* argv[])
    if (UDT::ERROR == (recvsize = UDT::recvfile(fhandle, ofs, offset, size)))
    {
       cout << "recvfile: " << UDT::getlasterror().getErrorMessage() << endl;
-      return 0;
+      return -1;
    }
 
    UDT::close(fhandle);
@@ -87,5 +97,5 @@ int main(int argc, char* argv[])
    // use this function to release the UDT library
    UDT::cleanup();
 
-   return 1;
+   return 0;
 }

@@ -1,3 +1,10 @@
+version 4.9
+
+some bug fixes, especially on EPOLL
+improved cache code
+removed unnecessary NAK (reduced loss retransmission)
+receiver side error can unblock a blocked sender
+
 version 4.8
 
 fix a bug that may cause seg fault on concurrent close on the same socket

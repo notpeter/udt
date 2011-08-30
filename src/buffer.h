@@ -50,7 +50,7 @@ written by
 class CSndBuffer
 {
 public:
-   CSndBuffer(const int& size, const int& mss);
+   CSndBuffer(const int& size = 32, const int& mss = 1500);
    ~CSndBuffer();
 
       // Functionality:
@@ -162,8 +162,7 @@ private:
 class CRcvBuffer
 {
 public:
-   CRcvBuffer(CUnitQueue* queue);
-   CRcvBuffer(const int& bufsize, CUnitQueue* queue);
+   CRcvBuffer(CUnitQueue* queue, const int& bufsize = 65536);
    ~CRcvBuffer();
 
       // Functionality:
@@ -267,6 +266,7 @@ private:
    int m_iNotch;			// the starting read point of the first unit
 
 private:
+   CRcvBuffer();
    CRcvBuffer(const CRcvBuffer&);
    CRcvBuffer& operator=(const CRcvBuffer&);
 };

@@ -58,7 +58,6 @@ public:
    CUDTSocket();
    ~CUDTSocket();
 
-   enum UDTSTATUS {INIT = 1, OPENED, LISTENING, CONNECTED, BROKEN, CLOSED};
    UDTSTATUS m_Status;                       // current socket state
 
    uint64_t m_TimeStamp;                     // time when the socket is closed
@@ -85,6 +84,8 @@ public:
 
    int m_iMuxID;                             // multiplexer ID
 
+   pthread_mutex_t m_ControlLock;            // lock this socket exclusively for control APIs: bind/listen/connect
+
 private:
    CUDTSocket(const CUDTSocket&);
    CUDTSocket& operator=(const CUDTSocket&);
@@ -95,6 +96,7 @@ private:
 class CUDTUnited
 {
 friend class CUDT;
+friend class CRendezvousQueue;
 
 public:
    CUDTUnited();
@@ -155,9 +157,9 @@ public:
       // Parameters:
       //    0) [in] u: the UDT socket ID.
       // Returned value:
-      //    UDT socket status, or INIT if not found.
+      //    UDT socket status, or NONEXIST if not found.
 
-   CUDTSocket::UDTSTATUS getStatus(const UDTSOCKET u);
+   UDTSTATUS getStatus(const UDTSOCKET u);
 
       // socket APIs
 
@@ -218,8 +220,9 @@ private:
    #endif
 
 private:
+   void connect_complete(const UDTSOCKET u);
    CUDTSocket* locate(const UDTSOCKET u);
-   CUDTSocket* locate(const UDTSOCKET u, const sockaddr* peer, const UDTSOCKET& id, const int32_t& isn);
+   CUDTSocket* locate(const sockaddr* peer, const UDTSOCKET& id, const int32_t& isn);
    void updateMux(CUDTSocket* s, const sockaddr* addr = NULL, const UDPSOCKET* = NULL);
    void updateMux(CUDTSocket* s, const CUDTSocket* ls);
 
@@ -228,7 +231,7 @@ private:
    pthread_mutex_t m_MultiplexerLock;
 
 private:
-   CCache* m_pCache;					// UDT network information cache
+   CCache<CInfoBlock>* m_pCache;			// UDT network information cache
 
 private:
    volatile bool m_bClosing;

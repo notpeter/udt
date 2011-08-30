@@ -19,7 +19,7 @@ ifeq ($(arch), POWERPC)
 endif
 
 ifeq ($(arch), SPARC)
-   CCFLAGS += -mcpu=sparc
+   CCFLAGS += -DSPARC
 endif
 
 ifeq ($(arch), IA64)

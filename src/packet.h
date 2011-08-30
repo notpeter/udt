@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 04/25/2010
+   Yunhong Gu, last updated 01/02/2011
 *****************************************************************************/
 
 #ifndef __UDT_PACKET_H__
@@ -201,7 +201,7 @@ class CHandShake
 public:
    CHandShake();
 
-   int serialize(char* buf, const int& size);
+   int serialize(char* buf, int& size);
    int deserialize(const char* buf, const int& size);
 
 public:

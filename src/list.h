@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/05/2009
+   Yunhong Gu, last updated 01/22/2011
 *****************************************************************************/
 
 #ifndef __UDT_LIST_H__
@@ -49,7 +49,7 @@ written by
 class CSndLossList
 {
 public:
-   CSndLossList(const int& size);
+   CSndLossList(const int& size = 1024);
    ~CSndLossList();
 
       // Functionality:
@@ -111,7 +111,7 @@ private:
 class CRcvLossList
 {
 public:
-   CRcvLossList(const int& size);
+   CRcvLossList(const int& size = 1024);
    ~CRcvLossList();
 
       // Functionality:
@@ -177,11 +177,10 @@ public:
       //    0) [out] array: the result list of seq. no. to be included in NAK.
       //    1) [out] physical length of the result array.
       //    2) [in] limit: maximum length of the array.
-      //    3) [in] threshold: Time threshold from last NAK report.
       // Returned value:
       //    None.
 
-   void getLossArray(int32_t* array, int& len, const int& limit, const int& threshold);
+   void getLossArray(int32_t* array, int& len, const int& limit);
 
 private:
    int32_t* m_piData1;                  // sequence number starts
@@ -193,8 +192,6 @@ private:
    int m_iTail;                         // last node in the list;
    int m_iLength;                       // loss length
    int m_iSize;                         // size of the static array
-
-   uint64_t m_TimeStamp;		// last list update time or NAK feedback time
 
 private:
    CRcvLossList(const CRcvLossList&);

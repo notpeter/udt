@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2009, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 05/05/2009
+   Yunhong Gu, last updated 01/22/2011
 *****************************************************************************/
 
 #ifndef __UDT_WINDOW_H__
@@ -52,8 +52,7 @@ written by
 class CACKWindow
 {
 public:
-   CACKWindow();
-   CACKWindow(const int& size);
+   CACKWindow(const int& size = 1024);
    ~CACKWindow();
 
       // Functionality:
@@ -95,8 +94,7 @@ private:
 class CPktTimeWindow
 {
 public:
-   CPktTimeWindow();
-   CPktTimeWindow(const int& asize, const int& psize);
+   CPktTimeWindow(const int& asize = 16, const int& psize = 16);
    ~CPktTimeWindow();
 
       // Functionality:
@@ -165,10 +163,12 @@ public:
 private:
    int m_iAWSize;               // size of the packet arrival history window
    int* m_piPktWindow;          // packet information window
+   int* m_piPktReplica;
    int m_iPktWindowPtr;         // position pointer of the packet info. window.
 
    int m_iPWSize;               // size of probe history window size
    int* m_piProbeWindow;        // record inter-packet time for probing packet pairs
+   int* m_piProbeReplica;
    int m_iProbeWindowPtr;       // position pointer to the probing window
 
    int m_iLastSentTime;         // last packet sending time

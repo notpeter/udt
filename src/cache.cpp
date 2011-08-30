@@ -52,119 +52,64 @@ written by
 
 using namespace std;
 
-bool CIPComp::operator()(const CInfoBlock* ib1, const CInfoBlock* ib2) const
+CInfoBlock& CInfoBlock::operator=(const CInfoBlock& obj)
 {
-   if (ib1->m_iIPversion != ib2->m_iIPversion)
-      return (ib1->m_iIPversion < ib2->m_iIPversion);
-   else if (ib1->m_iIPversion == AF_INET)
-      return (ib1->m_piIP[0] > ib2->m_piIP[0]);
-   else
-   {
-      for (int i = 0; i < 4; ++ i)
-      {
-         if (ib1->m_piIP[i] != ib2->m_piIP[i])
-            return (ib1->m_piIP[i] > ib2->m_piIP[i]);
-      }
+   std::copy(obj.m_piIP, obj.m_piIP + 3, m_piIP);
+   m_iIPversion = obj.m_iIPversion;
+   m_ullTimeStamp = obj.m_ullTimeStamp;
+   m_iRTT = obj.m_iRTT;
+   m_iBandwidth = obj.m_iBandwidth;
+   m_iLossRate = obj.m_iLossRate;
+   m_iReorderDistance = obj.m_iReorderDistance;
+   m_dInterval = obj.m_dInterval;
+   m_dCWnd = obj.m_dCWnd;
+
+   return *this;
+}
+
+bool CInfoBlock::operator==(const CInfoBlock& obj)
+{
+   if (m_iIPversion != obj.m_iIPversion)
       return false;
-   }
-}
 
-bool CTSComp::operator()(const CInfoBlock* ib1, const CInfoBlock* ib2) const
-{
-   return (ib1->m_ullTimeStamp > ib2->m_ullTimeStamp);
-}
+   else if (m_iIPversion == AF_INET)
+      return (m_piIP[0] == obj.m_piIP[0]);
 
-CCache::CCache():
-m_uiSize(1024),
-m_sIPIndex(),
-m_sTSIndex(),
-m_Lock()
-{
-   #ifndef WIN32
-      pthread_mutex_init(&m_Lock, NULL);
-   #else
-      m_Lock = CreateMutex(NULL, false, NULL);
-   #endif
-}
-
-CCache::CCache(const unsigned int& size):
-m_uiSize(size),
-m_sIPIndex(),
-m_sTSIndex(),
-m_Lock()
-{
-   #ifndef WIN32
-      pthread_mutex_init(&m_Lock, NULL);
-   #else
-      m_Lock = CreateMutex(NULL, false, NULL);
-   #endif
-}
-
-CCache::~CCache()
-{
-   for (set<CInfoBlock*, CTSComp>::iterator i = m_sTSIndex.begin(); i != m_sTSIndex.end(); ++ i)
-      delete *i;
-
-   #ifndef WIN32
-      pthread_mutex_destroy(&m_Lock);
-   #else
-      CloseHandle(m_Lock);
-   #endif
-}
-
-void CCache::update(const sockaddr* addr, const int& ver, CInfoBlock* ib)
-{
-   CGuard cacheguard(m_Lock);
-
-   CInfoBlock* newib = new CInfoBlock;
-   convert(addr, ver, newib->m_piIP);
-   newib->m_iIPversion = ver;
-
-   set<CInfoBlock*, CIPComp>::iterator i = m_sIPIndex.find(newib);
-
-   if (i != m_sIPIndex.end())
+   for (int i = 0; i < 4; ++ i)
    {
-      m_sTSIndex.erase(*i);
-      delete *i;
-      m_sIPIndex.erase(i);
+      if (m_piIP[i] != obj.m_piIP[i])
+         return false;
    }
 
-   newib->m_iRTT = ib->m_iRTT;
-   newib->m_iBandwidth = ib->m_iBandwidth;
-   newib->m_ullTimeStamp = CTimer::getTime();
-
-   m_sIPIndex.insert(newib);
-   m_sTSIndex.insert(newib);
-
-   if (m_sTSIndex.size() > m_uiSize)
-   {
-      CInfoBlock* tmp = *m_sTSIndex.begin();
-      m_sIPIndex.erase(tmp);
-      m_sTSIndex.erase(m_sTSIndex.begin());
-      delete tmp;
-   }
+   return true;
 }
 
-int CCache::lookup(const sockaddr* addr, const int& ver, CInfoBlock* ib)
+CInfoBlock* CInfoBlock::clone()
 {
-   CGuard cacheguard(m_Lock);
+   CInfoBlock* obj = new CInfoBlock;
 
-   convert(addr, ver, ib->m_piIP);
-   ib->m_iIPversion = ver;
+   std::copy(m_piIP, m_piIP + 3, obj->m_piIP);
+   obj->m_iIPversion = m_iIPversion;
+   obj->m_ullTimeStamp = m_ullTimeStamp;
+   obj->m_iRTT = m_iRTT;
+   obj->m_iBandwidth = m_iBandwidth;
+   obj->m_iLossRate = m_iLossRate;
+   obj->m_iReorderDistance = m_iReorderDistance;
+   obj->m_dInterval = m_dInterval;
+   obj->m_dCWnd = m_dCWnd;
 
-   set<CInfoBlock*, CIPComp>::iterator i = m_sIPIndex.find(ib);
-
-   if (i == m_sIPIndex.end())
-      return -1;
-
-   ib->m_ullTimeStamp = (*i)->m_ullTimeStamp;
-   ib->m_iRTT = (*i)->m_iRTT;
-   ib->m_iBandwidth = (*i)->m_iBandwidth;
-
-   return 1;
+   return obj;
 }
 
-void CCache::convert(const sockaddr* addr, const int& ver, uint32_t* ip)
+int CInfoBlock::getKey()
+{
+   if (m_iIPversion == AF_INET)
+      return m_piIP[0];
+
+   return m_piIP[0] + m_piIP[1] + m_piIP[2] + m_piIP[3];
+}
+
+void CInfoBlock::convert(const sockaddr* addr, const int& ver, uint32_t ip[])
 {
    if (ver == AF_INET)
    {

@@ -1,5 +1,5 @@
 /*****************************************************************************
-Copyright (c) 2001 - 2010, The Board of Trustees of the University of Illinois.
+Copyright (c) 2001 - 2011, The Board of Trustees of the University of Illinois.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,19 +35,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************
 written by
-   Yunhong Gu, last updated 10/12/2010
+   Yunhong Gu, last updated 01/01/2011
 *****************************************************************************/
 
-#include "udt.h"
-#include "common.h"
-#include "epoll.h"
-#include <errno.h>
-#include <algorithm>
-#include <iterator>
 #ifdef LINUX
    #include <sys/epoll.h>
    #include <unistd.h>
 #endif
+#include <algorithm>
+#include <cerrno>
+#include <cstring>
+#include <iterator>
+
+#include "common.h"
+#include "epoll.h"
+#include "udt.h"
 
 using namespace std;
 
@@ -145,6 +147,10 @@ int CEPoll::remove_usock(const int eid, const UDTSOCKET& u, const int* /*events*
 
    p->second.m_sUDTSocks.erase(u);
 
+   // when the socket is removed from a monitoring, it is not available anymore for any IO notification
+   p->second.m_sUDTReads.erase(u);
+   p->second.m_sUDTWrites.erase(u);
+
    return 0;
 }
 
@@ -183,6 +189,10 @@ int CEPoll::remove_ssock(const int eid, const SYSSOCKET& s, const int* events)
 
 int CEPoll::wait(const int eid, set<UDTSOCKET>* readfds, set<UDTSOCKET>* writefds, int64_t msTimeOut, set<SYSSOCKET>* lrfds, set<SYSSOCKET>* lwfds)
 {
+   // if all fields is NULL and waiting time is infinite, then this would be a deadlock
+   if (!readfds && !writefds && !lrfds && lwfds && (msTimeOut < 0))
+      throw CUDTException(5, 3, 0);
+
    int total = 0;
 
    int64_t entertime = CTimer::getTime();
@@ -195,6 +205,13 @@ int CEPoll::wait(const int eid, set<UDTSOCKET>* readfds, set<UDTSOCKET>* writefd
       {
          CGuard::leaveCS(m_EPollLock);
          throw CUDTException(5, 13);
+      }
+
+      if (((readfds || writefds) && p->second.m_sUDTSocks.empty()) && ((lrfds || lwfds) && p->second.m_sLocals.empty()))
+      {
+         // no socket is being monitored, this may be a deadlock
+         CGuard::leaveCS(m_EPollLock);
+         throw CUDTException(5, 3);
       }
 
       if ((NULL != readfds) && !p->second.m_sUDTReads.empty())

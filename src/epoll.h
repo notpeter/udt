@@ -62,6 +62,7 @@ struct CEPollDesc
 class CEPoll
 {
 friend class CUDT;
+friend class CRendezvousQueue;
 
 public:
    CEPoll();
