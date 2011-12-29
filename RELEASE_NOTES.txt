@@ -1,5 +1,13 @@
+version 4.10
+
+added UDT_SNDDATA and UDT_RCVDATA options
+fixed a bug that causes unnecessary connection timeout
+improved epoll UDT event handling
+
 version 4.9
 
+asynchronous close
+asynchronous connect
 some bug fixes, especially on EPOLL
 improved cache code
 removed unnecessary NAK (reduced loss retransmission)

@@ -74,7 +74,7 @@
       <td>UDT_FC</td>
       <td>int</td>
       <td>Maximum window size (packets)</td>
-      <td>Default 25600.</td>
+      <td>Default 25600. Do NOT change this unless you know what you are doing. Must change this before modifying the buffer sizes. </td>
     </tr>
     <tr>
       <td>UDT_SNDBUF</td>
@@ -146,6 +146,18 @@
       <td>UDT_EVENT</td>
       <td>int32_t</td>
       <td>The EPOLL events available to this socket.</td>
+      <td>Read only.</td>
+    </tr>
+    <tr>
+      <td>UDT_SNDDATA</td>
+      <td>int32_t</td>
+      <td>Size of pending data in the sending buffer.</td>
+      <td>Read only.</td>
+    </tr>
+    <tr>
+      <td>UDT_RCVDATA</td>
+      <td>int32_t</td>
+      <td>Size of data available to read, in the receiving buffer.</td>
       <td>Read only.</td>
     </tr>
   </table>

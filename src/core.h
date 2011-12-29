@@ -100,8 +100,8 @@ public: //API
    static int epoll_create();
    static int epoll_add_usock(const int eid, const UDTSOCKET u, const int* events = NULL);
    static int epoll_add_ssock(const int eid, const SYSSOCKET s, const int* events = NULL);
-   static int epoll_remove_usock(const int eid, const UDTSOCKET u, const int* events = NULL);
-   static int epoll_remove_ssock(const int eid, const SYSSOCKET s, const int* events = NULL);
+   static int epoll_remove_usock(const int eid, const UDTSOCKET u);
+   static int epoll_remove_ssock(const int eid, const SYSSOCKET s);
    static int epoll_wait(const int eid, std::set<UDTSOCKET>* readfds, std::set<UDTSOCKET>* writefds, int64_t msTimeOut, std::set<SYSSOCKET>* lrfds = NULL, std::set<SYSSOCKET>* wrfds = NULL);
    static int epoll_release(const int eid);
    static CUDTException& getlasterror();
@@ -422,13 +422,11 @@ private: // Timers
 
    uint64_t m_ullNextACKTime;			// Next ACK time, in CPU clock cycles, same below
    uint64_t m_ullNextNAKTime;			// Next NAK time
-   uint64_t m_ullNextEXPTime;			// Next timeout
 
    volatile uint64_t m_ullSYNInt;		// SYN interval
    volatile uint64_t m_ullACKInt;		// ACK interval
    volatile uint64_t m_ullNAKInt;		// NAK interval
-   volatile uint64_t m_ullEXPInt;		// EXP interval
-   volatile int64_t m_llLastRspTime;		// time stamp of last response from the peer
+   volatile uint64_t m_ullLastRspTime;		// time stamp of last response from the peer
 
    uint64_t m_ullMinNakInt;			// NAK timeout lower bound; too small value can cause unnecessary retransmission
    uint64_t m_ullMinExpInt;			// timeout lower bound threshold: too small timeout can cause problem

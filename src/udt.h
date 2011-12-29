@@ -149,7 +149,9 @@ enum UDTOpt
    UDT_REUSEADDR,	// reuse an existing port or create a new one
    UDT_MAXBW,		// maximum bandwidth (bytes per second) that the connection can use
    UDT_STATE,		// current socket state, see UDTSTATUS, read only
-   UDT_EVENT		// current avalable events associated with the socket
+   UDT_EVENT,		// current avalable events associated with the socket
+   UDT_SNDDATA,		// size of data in the sending buffer
+   UDT_RCVDATA		// size of data available for recv
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -324,8 +326,8 @@ UDT_API int selectEx(const std::vector<UDTSOCKET>& fds, std::vector<UDTSOCKET>* 
 UDT_API int epoll_create();
 UDT_API int epoll_add_usock(const int eid, const UDTSOCKET u, const int* events = NULL);
 UDT_API int epoll_add_ssock(const int eid, const SYSSOCKET s, const int* events = NULL);
-UDT_API int epoll_remove_usock(const int eid, const UDTSOCKET u, const int* events = NULL);
-UDT_API int epoll_remove_ssock(const int eid, const SYSSOCKET s, const int* events = NULL);
+UDT_API int epoll_remove_usock(const int eid, const UDTSOCKET u);
+UDT_API int epoll_remove_ssock(const int eid, const SYSSOCKET s);
 UDT_API int epoll_wait(const int eid, std::set<UDTSOCKET>* readfds, std::set<UDTSOCKET>* writefds, int64_t msTimeOut, std::set<SYSSOCKET>* lrfds = NULL, std::set<SYSSOCKET>* wrfds = NULL);
 UDT_API int epoll_release(const int eid);
 UDT_API ERRORINFO& getlasterror();

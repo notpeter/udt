@@ -43,6 +43,9 @@ written by
    #include <cstring>
    #include <cerrno>
    #include <unistd.h>
+   #ifdef OSX
+      #include <mach/mach_time.h>
+   #endif
 #else
    #include <winsock2.h>
    #include <ws2tcpip.h>
@@ -50,7 +53,7 @@ written by
       #include <wspiapi.h>
    #endif
 #endif
-#
+
 #include <cmath>
 #include "md5.h"
 #include "common.h"
@@ -96,10 +99,10 @@ void CTimer::rdtsc(uint64_t &x)
       //DWORD_PTR dwOldMask = ::SetThreadAffinityMask(hCurThread, 1); 
       BOOL ret = QueryPerformanceCounter((LARGE_INTEGER *)&x);
       //SetThreadAffinityMask(hCurThread, dwOldMask);
-
       if (!ret)
          x = getTime() * s_ullCPUFrequency;
-
+   #elif OSX
+      x = mach_absolute_time();
    #elif IA32
       uint32_t lval, hval;
       //asm volatile ("push %eax; push %ebx; push %ecx; push %edx");

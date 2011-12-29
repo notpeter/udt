@@ -50,7 +50,8 @@ written by
 struct CEPollDesc
 {
    int m_iID;                                // epoll ID
-   std::set<UDTSOCKET> m_sUDTSocks;          // set of UDT sockets waiting for events
+   std::set<UDTSOCKET> m_sUDTSocksOut;       // set of UDT sockets waiting for write events
+   std::set<UDTSOCKET> m_sUDTSocksIn;        // set of UDT sockets waiting for read events
 
    int m_iLocalID;                           // local system epoll ID
    std::set<SYSSOCKET> m_sLocals;            // set of local (non-UDT) descriptors
@@ -106,22 +107,20 @@ public: // for CUDTUnited API
       // Parameters:
       //    0) [in] eid: EPoll ID.
       //    1) [in] u: UDT socket ID.
-      //    2) [in] events: events to delete.
       // Returned value:
       //    0 if success, otherwise an error number.
 
-   int remove_usock(const int eid, const UDTSOCKET& u, const int* events = NULL);
+   int remove_usock(const int eid, const UDTSOCKET& u);
 
       // Functionality:
       //    remove a system socket event from an EPoll; socket will be removed if no events to watch
       // Parameters:
       //    0) [in] eid: EPoll ID.
       //    1) [in] s: system socket ID.
-      //    2) [in] events: events to delete.
       // Returned value:
       //    0 if success, otherwise an error number.
 
-   int remove_ssock(const int eid, const SYSSOCKET& s, const int* events = NULL);
+   int remove_ssock(const int eid, const SYSSOCKET& s);
 
       // Functionality:
       //    wait for EPoll events or timeout.

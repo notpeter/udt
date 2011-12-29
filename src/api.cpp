@@ -642,7 +642,12 @@ UDTSOCKET CUDTUnited::accept(const UDTSOCKET listen, sockaddr* addr, int* addrle
       {
          pthread_mutex_lock(&(ls->m_AcceptLock));
 
-         if (ls->m_pQueuedSockets->size() > 0)
+         if ((LISTENING != ls->m_Status) || ls->m_pUDT->m_bBroken)
+         {
+            // This socket has been closed.
+            accepted = true;
+         }
+         else if (ls->m_pQueuedSockets->size() > 0)
          {
             u = *(ls->m_pQueuedSockets->begin());
             ls->m_pAcceptSockets->insert(ls->m_pAcceptSockets->end(), u);
@@ -650,12 +655,12 @@ UDTSOCKET CUDTUnited::accept(const UDTSOCKET listen, sockaddr* addr, int* addrle
             accepted = true;
          }
          else if (!ls->m_pUDT->m_bSynRecving)
+         {
             accepted = true;
-         else if (LISTENING == ls->m_Status)
-            pthread_cond_wait(&(ls->m_AcceptCond), &(ls->m_AcceptLock));
+         }
 
-         if ((LISTENING != ls->m_Status) || ls->m_pUDT->m_bBroken)
-            accepted = true;
+         if (!accepted && (LISTENING == ls->m_Status))
+            pthread_cond_wait(&(ls->m_AcceptCond), &(ls->m_AcceptLock));
 
          if (ls->m_pQueuedSockets->empty())
             m_EPoll.disable_read(listen, ls->m_pUDT->m_sPollID);
@@ -685,6 +690,7 @@ UDTSOCKET CUDTUnited::accept(const UDTSOCKET listen, sockaddr* addr, int* addrle
 
          if ((LISTENING != ls->m_Status) || ls->m_pUDT->m_bBroken)
          {
+            // Send signal to other threads that are waiting to accept.
             SetEvent(ls->m_AcceptCond);
             accepted = true;
          }
@@ -1083,8 +1089,10 @@ int CUDTUnited::epoll_create()
 int CUDTUnited::epoll_add_usock(const int eid, const UDTSOCKET u, const int* events)
 {
    CUDTSocket* s = locate(u);
+   int ret = -1;
    if (NULL != s)
    {
+      ret = m_EPoll.add_usock(eid, u, events);
       s->m_pUDT->addEPoll(eid);
    }
    else
@@ -1092,7 +1100,7 @@ int CUDTUnited::epoll_add_usock(const int eid, const UDTSOCKET u, const int* eve
       throw CUDTException(5, 4);
    }
 
-   return m_EPoll.add_usock(eid, u, events);
+   return ret;
 }
 
 int CUDTUnited::epoll_add_ssock(const int eid, const SYSSOCKET s, const int* events)
@@ -1100,7 +1108,7 @@ int CUDTUnited::epoll_add_ssock(const int eid, const SYSSOCKET s, const int* eve
    return m_EPoll.add_ssock(eid, s, events);
 }
 
-int CUDTUnited::epoll_remove_usock(const int eid, const UDTSOCKET u, const int* events)
+int CUDTUnited::epoll_remove_usock(const int eid, const UDTSOCKET u)
 {
    CUDTSocket* s = locate(u);
    if (NULL != s)
@@ -1112,12 +1120,12 @@ int CUDTUnited::epoll_remove_usock(const int eid, const UDTSOCKET u, const int* 
    //   throw CUDTException(5, 4);
    //}
 
-   return m_EPoll.remove_usock(eid, u, events);
+   return m_EPoll.remove_usock(eid, u);
 }
 
-int CUDTUnited::epoll_remove_ssock(const int eid, const SYSSOCKET s, const int* events)
+int CUDTUnited::epoll_remove_ssock(const int eid, const SYSSOCKET s)
 {
-   return m_EPoll.remove_ssock(eid, s, events);
+   return m_EPoll.remove_ssock(eid, s);
 }
 
 int CUDTUnited::epoll_wait(const int eid, set<UDTSOCKET>* readfds, set<UDTSOCKET>* writefds, int64_t msTimeOut, set<SYSSOCKET>* lrfds, set<SYSSOCKET>* lwfds)
@@ -2019,11 +2027,11 @@ int CUDT::epoll_add_ssock(const int eid, const SYSSOCKET s, const int* events)
    }
 }
 
-int CUDT::epoll_remove_usock(const int eid, const UDTSOCKET u, const int* events)
+int CUDT::epoll_remove_usock(const int eid, const UDTSOCKET u)
 {
    try
    {
-      return s_UDTUnited.epoll_remove_usock(eid, u, events);
+      return s_UDTUnited.epoll_remove_usock(eid, u);
    }
    catch (CUDTException e)
    {
@@ -2037,11 +2045,11 @@ int CUDT::epoll_remove_usock(const int eid, const UDTSOCKET u, const int* events
    }
 }
 
-int CUDT::epoll_remove_ssock(const int eid, const SYSSOCKET s, const int* events)
+int CUDT::epoll_remove_ssock(const int eid, const SYSSOCKET s)
 {
    try
    {
-      return s_UDTUnited.epoll_remove_ssock(eid, s, events);
+      return s_UDTUnited.epoll_remove_ssock(eid, s);
    }
    catch (CUDTException e)
    {
@@ -2267,14 +2275,14 @@ int epoll_add_ssock(const int eid, const SYSSOCKET s, const int* events)
    return CUDT::epoll_add_ssock(eid, s, events);
 }
 
-int epoll_remove_usock(const int eid, const UDTSOCKET u, const int* events)
+int epoll_remove_usock(const int eid, const UDTSOCKET u)
 {
-   return CUDT::epoll_remove_usock(eid, u, events);
+   return CUDT::epoll_remove_usock(eid, u);
 }
 
-int epoll_remove_ssock(const int eid, const SYSSOCKET s, const int* events)
+int epoll_remove_ssock(const int eid, const SYSSOCKET s)
 {
-   return CUDT::epoll_remove_usock(eid, s, events);
+   return CUDT::epoll_remove_ssock(eid, s);
 }
 
 int epoll_wait(const int eid, set<int>* readfds, set<int>* writefds, int64_t msTimeOut, set<SYSSOCKET>* lrfds, set<SYSSOCKET>* lwfds)

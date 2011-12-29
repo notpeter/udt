@@ -76,7 +76,7 @@ public:
 
    virtual int getKey() = 0;
 
-   // If there is any shared resources between the cache item and it clone,
+   // If there is any shared resources between the cache item and its clone,
    // the shared resource should be released by this function.
    virtual void release() {}
 };
