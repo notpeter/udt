@@ -652,10 +652,10 @@ Yunhong Gu            Expires - October 12, 2010             [Page 11]
       in this section) and reset the associated time variables. For 
       ACK, also check the ACK packet interval. 
    2) Start time bounded UDP receiving. If no packet arrives, go to 1). 
-   1) Reset the ExpCount to 1. If there is no unacknowledged data 
+   3) Reset the ExpCount to 1. If there is no unacknowledged data 
       packet, or if this is an ACK or NAK control packet, reset the EXP 
       timer. 
-   3) Check the flag bit of the packet header. If it is a control 
+   4) Check the flag bit of the packet header. If it is a control 
  
  
 Yunhong Gu            Expires - October 12, 2010             [Page 12] 
@@ -663,18 +663,18 @@ Yunhong Gu            Expires - October 12, 2010             [Page 12]
  
  
       packet, process it according to its type and go to 1). 
-   4) If the sequence number of the current data packet is 16n + 1, 
+   5) If the sequence number of the current data packet is 16n + 1, 
       where n is an integer, record the time interval between this 
       packet and the last data packet in the Packet Pair Window. 
-   5) Record the packet arrival time in PKT History Window. 
-   6)  
+   6) Record the packet arrival time in PKT History Window. 
+   7)  
         a. If the sequence number of the current data packet is greater 
            than LRSN + 1, put all the sequence numbers between (but 
            excluding) these two values into the receiver's loss list and 
            send them to the sender in an NAK packet. 
         b. If the sequence number is less than LRSN, remove it from the 
            receiver's loss list. 
-   7) Update LRSN. Go to 1). 
+   8) Update LRSN. Go to 1). 
     
    ACK Event Processing: 
    1) Find the sequence number prior to which all the packets have been 
@@ -893,13 +893,13 @@ Yunhong Gu            Expires - October 12, 2010             [Page 16]
    3) The number of sent packets to be increased in the next SYN period 
       (inc) is calculated as:  
          if (B <= C) 
-            inc = 1/PS; 
+            inc = min_inc; 
          else 
-            inc = max(10^(ceil(log10((B-C)*PS*8))) * Beta/PS, 1/PS); 
+            inc = max(10^(ceil(log10((B-C)*PS*8))) * Beta/PS, min_inc); 
       where B is the estimated link capacity and C is the current 
-      sending speed. All are counted as packets per second. PS is the 
-      fixed size of UDT packet counted in bytes. Beta is a constant 
-      value of 0.0000015. 
+      sending speed. All are counted as packets per second. Beta is a
+      constant value of 0.0000015. "min_inc" is the minimum increase
+      value, 0.01 - i.e., we will increase at least 1 packet per second.
    4) The SND period is updated as: 
          SND = (SND * SYN) / (SND * inc + SYN). 
     
@@ -916,8 +916,11 @@ Yunhong Gu            Expires - October 12, 2010             [Page 16]
    NAKCount is the current number of NAKs in the current period. 
     
    On NAK packet received: 
-   1) If it is in slow start phase, set inter-packet interval to 
-      1/recvrate. Slow start ends. Stop. 
+   1) If it is in slow start phase, slow start ends.
+      If receiving rate has been observed set inter-packet interval to
+      1/recvrate, stop. Otherwise, set the sending rate according to
+      the current window size (cwnd / rtt + SYN), continue to decrease
+      it with step 2.
    2) If this NAK starts a new congestion period, increase inter-packet 
       interval (snd) to snd = snd * 1.125; Update AvgNAKNum, reset 
       NAKCount to 1, and compute DecRandom to a random (average 
